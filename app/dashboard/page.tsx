@@ -28,6 +28,7 @@ import ActivityChart from '@/components/dashboard/ActivityChart';
 import JobList from '@/components/dashboard/JobList';
 import SystemStatus from '@/components/dashboard/SystemStatus';
 import FilterPanel from '@/components/dashboard/FilterPanel';
+import DataSourceModule from '@/components/dashboard/datasource/DataSourceModule';
 
 interface SystemMetrics {
   timestamp: string;
@@ -72,6 +73,7 @@ export default function DashboardPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'success' | 'failed' | 'running'>('all');
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [activeTab, setActiveTab] = useState<'overview' | 'datasources'>('overview');
 
   useEffect(() => {
     setMounted(true);
@@ -269,6 +271,31 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        <div className="mb-8 border-b border-gray-200 dark:border-gray-700">
+          <nav className="flex gap-8">
+            <button
+              onClick={() => setActiveTab('overview')}
+              className={`pb-4 text-sm font-medium transition-colors ${
+                activeTab === 'overview'
+                  ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
+                  : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
+              }`}
+            >
+              系统概览
+            </button>
+            <button
+              onClick={() => setActiveTab('datasources')}
+              className={`pb-4 text-sm font-medium transition-colors ${
+                activeTab === 'datasources'
+                  ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
+                  : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
+              }`}
+            >
+              数据源管理
+            </button>
+          </nav>
+        </div>
+
         {showFilterPanel && (
           <FilterPanel
             statusFilter={statusFilter}
@@ -277,7 +304,7 @@ export default function DashboardPage() {
           />
         )}
 
-        {metrics && (
+        {activeTab === 'overview' && metrics && (
           <>
             <div className="mb-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
               <MetricsCard
@@ -375,7 +402,11 @@ export default function DashboardPage() {
           </>
         )}
 
-        {!metrics && !loading && (
+        {activeTab === 'datasources' && (
+          <DataSourceModule />
+        )}
+
+        {!metrics && !loading && activeTab === 'overview' && (
           <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-300 bg-white p-12 dark:border-gray-700 dark:bg-gray-800">
             <AlertTriangle className="mb-4 h-16 w-16 text-gray-400" />
             <h3 className="mb-2 text-xl font-semibold text-gray-900 dark:text-white">
