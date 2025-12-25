@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Database, RefreshCw, AlertCircle, Plus } from 'lucide-react';
 import DataSourceInfoCard from './DataSourceInfoCard';
 import DataSourceHealthPanel from './DataSourceHealthPanel';
@@ -9,12 +10,12 @@ import DataSourceFilterPanel, { FilterState } from './DataSourceFilterPanel';
 import { DataSourceMetrics, DataSourceStats } from '@/lib/services/datasource.service';
 
 export default function DataSourceModule() {
+  const router = useRouter();
   const [metrics, setMetrics] = useState<DataSourceMetrics[]>([]);
   const [stats, setStats] = useState<DataSourceStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedDataSource, setSelectedDataSource] = useState<DataSourceMetrics | null>(null);
-  const [showAddDialog, setShowAddDialog] = useState(false);
   const [filters, setFilters] = useState<FilterState>({
     searchQuery: '',
     statusFilter: 'all',
@@ -63,7 +64,7 @@ export default function DataSourceModule() {
   };
 
   const handleAddDataSource = () => {
-    setShowAddDialog(true);
+    router.push('/databases/add');
   };
 
   const getFilteredAndSortedMetrics = () => {

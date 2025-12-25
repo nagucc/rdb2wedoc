@@ -1,0 +1,512 @@
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { 
+  ArrowLeft, 
+  Database, 
+  Save, 
+  TestTube, 
+  AlertCircle,
+  CheckCircle,
+  Loader2,
+  Eye,
+  EyeOff,
+  Info
+} from 'lucide-react';
+
+interface DatabaseConfig {
+  name: string;
+  type: 'mysql' | 'postgresql' | 'sqlserver' | 'oracle';
+  host: string;
+  port: string;
+  username: string;
+  password: string;
+  database: string;
+  options?: {
+    ssl?: boolean;
+    timezone?: string;
+    connectionTimeout?: number;
+    maxConnections?: number;
+  };
+}
+
+const databaseTypes = [
+  { value: 'mysql', label: 'MySQL', icon: '🐬', defaultPort: '3306' },
+  { value: 'postgresql', label: 'PostgreSQL', icon: '🐘', defaultPort: '5432' },
+  { value: 'sqlserver', label: 'SQL Server', icon: '🔷', defaultPort: '1433' },
+  { value: 'oracle', label: 'Oracle', icon: '🔴', defaultPort: '1521' }
+];
+
+export default function AddDatabasePage() {
+  const router = useRouter();
+  const [config, setConfig] = useState<DatabaseConfig>({
+    name: '',
+    type: 'mysql',
+    host: 'localhost',
+    port: '3306',
+    username: '',
+    password: '',
+    database: '',
+    options: {
+      ssl: false,
+      timezone: 'UTC',
+      connectionTimeout: 30,
+      maxConnections: 10
+    }
+  });
+  const [showPassword, setShowPassword] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const handleTypeChange = (type: DatabaseConfig['type']) => {
+    const selectedType = databaseTypes.find(t => t.value === type);
+    setConfig(prev => ({
+      ...prev,
+      type,
+      port: selectedType?.defaultPort || '3306'
+    }));
+    setTestResult(null);
+  };
+
+  const handleInputChange = (field: keyof DatabaseConfig, value: string) => {
+    setConfig(prev => ({ ...prev, [field]: value }));
+    setErrors(prev => ({ ...prev, [field]: '' }));
+    setTestResult(null);
+  };
+
+  const handleOptionChange = (field: string, value: any) => {
+    setConfig(prev => ({
+      ...prev,
+      options: { ...prev.options, [field]: value }
+    }));
+  };
+
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    if (!config.name.trim()) {
+      newErrors.name = '请输入数据源名称';
+    }
+    if (!config.host.trim()) {
+      newErrors.host = '请输入主机地址';
+    }
+    if (!config.port.trim()) {
+      newErrors.port = '请输入端口号';
+    }
+    if (!config.username.trim()) {
+      newErrors.username = '请输入用户名';
+    }
+    if (!config.password.trim()) {
+      newErrors.password = '请输入密码';
+    }
+    if (!config.database.trim()) {
+      newErrors.database = '请输入数据库名称';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleTestConnection = async () => {
+    if (!validateForm()) return;
+
+    setTesting(true);
+    setTestResult(null);
+
+    try {
+      const response = await fetch('/api/databases/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(config)
+      });
+
+      const result = await response.json();
+      setTestResult({
+        success: result.success,
+        message: result.message || (result.success ? '连接成功' : '连接失败')
+      });
+    } catch (error) {
+      setTestResult({
+        success: false,
+        message: '连接测试失败，请检查网络连接'
+      });
+    } finally {
+      setTesting(false);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!validateForm()) return;
+
+    setSaving(true);
+
+    try {
+      const response = await fetch('/api/databases', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(config)
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        router.push('/dashboard?tab=datasources');
+      } else {
+        setTestResult({
+          success: false,
+          message: result.error || '保存失败'
+        });
+      }
+    } catch (error) {
+      setTestResult({
+        success: false,
+        message: '保存失败，请重试'
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+      <header className="border-b border-gray-200 bg-white/80 backdrop-blur-sm dark:border-gray-700 dark:bg-gray-800/80">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => router.back()}
+                className="flex items-center gap-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+              >
+                <ArrowLeft className="h-5 w-5" />
+                返回
+              </button>
+              <div className="h-6 w-px bg-gray-300 dark:bg-gray-600" />
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600">
+                  <Database className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+                    添加数据源
+                  </h1>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    配置数据库连接信息
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main className="container mx-auto px-4 py-8">
+        <div className="mx-auto max-w-4xl">
+          <div className="mb-8 rounded-2xl border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20">
+            <div className="flex items-start gap-3">
+              <Info className="mt-0.5 h-5 w-5 text-blue-600 dark:text-blue-400" />
+              <div className="flex-1">
+                <h3 className="font-semibold text-blue-900 dark:text-blue-200">
+                  配置说明
+                </h3>
+                <p className="mt-1 text-sm text-blue-700 dark:text-blue-300">
+                  请填写数据库连接信息。系统将自动测试连接，确保配置正确后才能保存。
+                  支持的数据库类型包括 MySQL、PostgreSQL、SQL Server 和 Oracle。
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            <div className="border-b border-gray-200 p-6 dark:border-gray-700">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                基本信息
+              </h2>
+            </div>
+
+            <div className="space-y-6 p-6">
+              <div>
+                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  数据源名称 <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={config.name}
+                  onChange={(e) => handleInputChange('name', e.target.value)}
+                  placeholder="例如：生产环境数据库"
+                  className={`w-full rounded-lg border px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white ${
+                    errors.name ? 'border-red-500' : ''
+                  }`}
+                />
+                {errors.name && (
+                  <p className="mt-1 text-sm text-red-600">{errors.name}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  数据库类型 <span className="text-red-500">*</span>
+                </label>
+                <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+                  {databaseTypes.map((type) => (
+                    <button
+                      key={type.value}
+                      onClick={() => handleTypeChange(type.value as DatabaseConfig['type'])}
+                      className={`flex flex-col items-center gap-2 rounded-lg border-2 p-4 transition-all ${
+                        config.type === type.value
+                          ? 'border-blue-500 bg-blue-50 dark:border-blue-500 dark:bg-blue-900/20'
+                          : 'border-gray-200 hover:border-gray-300 dark:border-gray-600 dark:hover:border-gray-500'
+                      }`}
+                    >
+                      <span className="text-3xl">{type.icon}</span>
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">
+                        {type.label}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid gap-6 md:grid-cols-2">
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    主机地址 <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={config.host}
+                    onChange={(e) => handleInputChange('host', e.target.value)}
+                    placeholder="localhost 或 IP 地址"
+                    className={`w-full rounded-lg border px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white ${
+                      errors.host ? 'border-red-500' : ''
+                    }`}
+                  />
+                  {errors.host && (
+                    <p className="mt-1 text-sm text-red-600">{errors.host}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    端口 <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={config.port}
+                    onChange={(e) => handleInputChange('port', e.target.value)}
+                    placeholder="端口号"
+                    className={`w-full rounded-lg border px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white ${
+                      errors.port ? 'border-red-500' : ''
+                    }`}
+                  />
+                  {errors.port && (
+                    <p className="mt-1 text-sm text-red-600">{errors.port}</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid gap-6 md:grid-cols-2">
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    用户名 <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={config.username}
+                    onChange={(e) => handleInputChange('username', e.target.value)}
+                    placeholder="数据库用户名"
+                    className={`w-full rounded-lg border px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white ${
+                      errors.username ? 'border-red-500' : ''
+                    }`}
+                  />
+                  {errors.username && (
+                    <p className="mt-1 text-sm text-red-600">{errors.username}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    密码 <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      value={config.password}
+                      onChange={(e) => handleInputChange('password', e.target.value)}
+                      placeholder="数据库密码"
+                      className={`w-full rounded-lg border px-4 py-2.5 pr-10 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white ${
+                        errors.password ? 'border-red-500' : ''
+                      }`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-5 w-5" />
+                      ) : (
+                        <Eye className="h-5 w-5" />
+                      )}
+                    </button>
+                  </div>
+                  {errors.password && (
+                    <p className="mt-1 text-sm text-red-600">{errors.password}</p>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  数据库名称 <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={config.database}
+                  onChange={(e) => handleInputChange('database', e.target.value)}
+                  placeholder="要连接的数据库名"
+                  className={`w-full rounded-lg border px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white ${
+                    errors.database ? 'border-red-500' : ''
+                  }`}
+                />
+                {errors.database && (
+                  <p className="mt-1 text-sm text-red-600">{errors.database}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="border-t border-gray-200 p-6 dark:border-gray-700">
+              <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+                高级选项
+              </h2>
+              <div className="grid gap-6 md:grid-cols-2">
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    SSL 连接
+                  </label>
+                  <select
+                    value={config.options?.ssl ? 'true' : 'false'}
+                    onChange={(e) => handleOptionChange('ssl', e.target.value === 'true')}
+                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                  >
+                    <option value="false">禁用</option>
+                    <option value="true">启用</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    时区
+                  </label>
+                  <select
+                    value={config.options?.timezone || 'UTC'}
+                    onChange={(e) => handleOptionChange('timezone', e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                  >
+                    <option value="UTC">UTC</option>
+                    <option value="Asia/Shanghai">Asia/Shanghai</option>
+                    <option value="Asia/Tokyo">Asia/Tokyo</option>
+                    <option value="America/New_York">America/New_York</option>
+                    <option value="Europe/London">Europe/London</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    连接超时（秒）
+                  </label>
+                  <input
+                    type="number"
+                    value={config.options?.connectionTimeout || 30}
+                    onChange={(e) => handleOptionChange('connectionTimeout', parseInt(e.target.value))}
+                    min="1"
+                    max="300"
+                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    最大连接数
+                  </label>
+                  <input
+                    type="number"
+                    value={config.options?.maxConnections || 10}
+                    onChange={(e) => handleOptionChange('maxConnections', parseInt(e.target.value))}
+                    min="1"
+                    max="100"
+                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {testResult && (
+              <div className={`border-t p-4 ${
+                testResult.success 
+                  ? 'bg-green-50 dark:bg-green-900/20' 
+                  : 'bg-red-50 dark:bg-red-900/20'
+              }`}>
+                <div className="flex items-center gap-3">
+                  {testResult.success ? (
+                    <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+                  ) : (
+                    <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
+                  )}
+                  <span className={`text-sm font-medium ${
+                    testResult.success 
+                      ? 'text-green-900 dark:text-green-200' 
+                      : 'text-red-900 dark:text-red-200'
+                  }`}>
+                    {testResult.message}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            <div className="border-t border-gray-200 bg-gray-50 p-6 dark:border-gray-700 dark:bg-gray-800/50">
+              <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+                <button
+                  onClick={handleTestConnection}
+                  disabled={testing || saving}
+                  className="flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-6 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                >
+                  {testing ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      测试中...
+                    </>
+                  ) : (
+                    <>
+                      <TestTube className="h-4 w-4" />
+                      测试连接
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={handleSave}
+                  disabled={saving || testing || (testResult && !testResult.success)}
+                  className="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {saving ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      保存中...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4" />
+                      保存配置
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
