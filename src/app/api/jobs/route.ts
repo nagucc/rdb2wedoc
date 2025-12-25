@@ -1,0 +1,101 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { SyncJob } from '@/types';
+import { getJobs, saveJob, saveHistory } from '@/lib/config/storage';
+import { generateId, validateCronExpression, Logger } from '@/lib/utils/helpers';
+
+// 获取所有同步作业
+export async function GET(request: NextRequest) {
+  try {
+    const jobs = getJobs();
+    
+    return NextResponse.json({
+      success: true,
+      data: jobs
+    });
+  } catch (error) {
+    Logger.error('获取同步作业列表失败', { error: (error as Error).message });
+    return NextResponse.json(
+      { success: false, error: '获取作业列表失败' },
+      { status: 500 }
+    );
+  }
+}
+
+// 创建同步作业
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { 
+      name, 
+      databaseId, 
+      documentId, 
+      tableConfig, 
+      fieldMapping, 
+      cronExpression,
+      conflictStrategy,
+      enabled 
+    } = body;
+
+    // 验证必填字段
+    if (!name || !databaseId || !documentId || !tableConfig || !fieldMapping) {
+      return NextResponse.json(
+        { success: false, error: '所有必填字段都必须填写' },
+        { status: 400 }
+      );
+    }
+
+    // 验证Cron表达式
+    if (cronExpression && !validateCronExpression(cronExpression)) {
+      return NextResponse.json(
+        { success: false, error: 'Cron表达式格式不正确' },
+        { status: 400 }
+      );
+    }
+
+    // 创建作业配置
+    const job: SyncJob = {
+      id: generateId(),
+      name,
+      databaseId,
+      documentId,
+      tableConfig,
+      fieldMapping,
+      cronExpression: cronExpression || '0 0 * * *',
+      conflictStrategy: conflictStrategy || 'overwrite',
+      enabled: enabled !== undefined ? enabled : true,
+      lastRunAt: null,
+      lastRunStatus: null,
+      lastRunMessage: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    // 保存作业配置
+    await saveJob(job);
+
+    // 记录历史
+    await saveHistory({
+      id: generateId(),
+      entityType: 'job',
+      entityId: job.id,
+      action: 'create',
+      newConfig: { name, databaseId, documentId },
+      userId: 'system',
+      timestamp: new Date().toISOString()
+    });
+
+    Logger.info(`同步作业创建成功: ${name}`, { jobId: job.id });
+
+    return NextResponse.json({
+      success: true,
+      data: job,
+      message: '作业创建成功'
+    });
+  } catch (error) {
+    Logger.error('创建同步作业失败', { error: (error as Error).message });
+    return NextResponse.json(
+      { success: false, error: '创建作业失败' },
+      { status: 500 }
+    );
+  }
+}

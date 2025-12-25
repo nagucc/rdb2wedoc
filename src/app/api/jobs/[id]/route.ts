@@ -1,0 +1,231 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { getJobById, updateJob, deleteJob, saveHistory } from '@/lib/config/storage';
+import { validateCronExpression, Logger } from '@/lib/utils/helpers';
+
+// 获取单个同步作业
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const job = await getJobById(params.id);
+    
+    if (!job) {
+      return NextResponse.json(
+        { success: false, error: '作业不存在' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: job
+    });
+  } catch (error) {
+    Logger.error('获取同步作业失败', { error: (error as Error).message });
+    return NextResponse.json(
+      { success: false, error: '获取作业失败' },
+      { status: 500 }
+    );
+  }
+}
+
+// 更新同步作业
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const existingJob = await getJobById(params.id);
+    
+    if (!existingJob) {
+      return NextResponse.json(
+        { success: false, error: '作业不存在' },
+        { status: 404 }
+      );
+    }
+
+    const body = await request.json();
+    const { 
+      name, 
+      databaseId, 
+      documentId, 
+      tableConfig, 
+      fieldMapping, 
+      cronExpression,
+      conflictStrategy,
+      enabled 
+    } = body;
+
+    // 验证Cron表达式
+    if (cronExpression && !validateCronExpression(cronExpression)) {
+      return NextResponse.json(
+        { success: false, error: 'Cron表达式格式不正确' },
+        { status: 400 }
+      );
+    }
+
+    // 更新作业配置
+    const updatedJob = {
+      ...existingJob,
+      name: name || existingJob.name,
+      databaseId: databaseId || existingJob.databaseId,
+      documentId: documentId || existingJob.documentId,
+      tableConfig: tableConfig || existingJob.tableConfig,
+      fieldMapping: fieldMapping || existingJob.fieldMapping,
+      cronExpression: cronExpression || existingJob.cronExpression,
+      conflictStrategy: conflictStrategy || existingJob.conflictStrategy,
+      enabled: enabled !== undefined ? enabled : existingJob.enabled,
+      updatedAt: new Date().toISOString()
+    };
+
+    await updateJob(updatedJob);
+
+    // 记录历史
+    await saveHistory({
+      id: generateId(),
+      entityType: 'job',
+      entityId: updatedJob.id,
+      action: 'update',
+      oldConfig: { name: existingJob.name },
+      newConfig: { name: updatedJob.name },
+      userId: 'system',
+      timestamp: new Date().toISOString()
+    });
+
+    Logger.info(`同步作业更新成功: ${updatedJob.name}`, { jobId: updatedJob.id });
+
+    return NextResponse.json({
+      success: true,
+      data: updatedJob,
+      message: '作业更新成功'
+    });
+  } catch (error) {
+    Logger.error('更新同步作业失败', { error: (error as Error).message });
+    return NextResponse.json(
+      { success: false, error: '更新作业失败' },
+      { status: 500 }
+    );
+  }
+}
+
+// 删除同步作业
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const job = await getJobById(params.id);
+    
+    if (!job) {
+      return NextResponse.json(
+        { success: false, error: '作业不存在' },
+        { status: 404 }
+      );
+    }
+
+    await deleteJob(params.id);
+
+    // 记录历史
+    await saveHistory({
+      id: generateId(),
+      entityType: 'job',
+      entityId: job.id,
+      action: 'delete',
+      oldConfig: { name: job.name },
+      userId: 'system',
+      timestamp: new Date().toISOString()
+    });
+
+    Logger.info(`同步作业删除成功: ${job.name}`, { jobId: job.id });
+
+    return NextResponse.json({
+      success: true,
+      message: '作业删除成功'
+    });
+  } catch (error) {
+    Logger.error('删除同步作业失败', { error: (error as Error).message });
+    return NextResponse.json(
+      { success: false, error: '删除作业失败' },
+      { status: 500 }
+    );
+  }
+}
+
+// 启动同步作业
+export async function POST(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const job = await getJobById(params.id);
+    
+    if (!job) {
+      return NextResponse.json(
+        { success: false, error: '作业不存在' },
+        { status: 404 }
+      );
+    }
+
+    const updatedJob = {
+      ...job,
+      enabled: true,
+      updatedAt: new Date().toISOString()
+    };
+
+    await updateJob(updatedJob);
+
+    Logger.info(`同步作业启动成功: ${job.name}`, { jobId: job.id });
+
+    return NextResponse.json({
+      success: true,
+      data: updatedJob,
+      message: '作业启动成功'
+    });
+  } catch (error) {
+    Logger.error('启动同步作业失败', { error: (error as Error).message });
+    return NextResponse.json(
+      { success: false, error: '启动作业失败' },
+      { status: 500 }
+    );
+  }
+}
+
+// 停止同步作业
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const job = await getJobById(params.id);
+    
+    if (!job) {
+      return NextResponse.json(
+        { success: false, error: '作业不存在' },
+        { status: 404 }
+      );
+    }
+
+    const updatedJob = {
+      ...job,
+      enabled: false,
+      updatedAt: new Date().toISOString()
+    };
+
+    await updateJob(updatedJob);
+
+    Logger.info(`同步作业停止成功: ${job.name}`, { jobId: job.id });
+
+    return NextResponse.json({
+      success: true,
+      data: updatedJob,
+      message: '作业停止成功'
+    });
+  } catch (error) {
+    Logger.error('停止同步作业失败', { error: (error as Error).message });
+    return NextResponse.json(
+      { success: false, error: '停止作业失败' },
+      { status: 500 }
+    );
+  }
+}
