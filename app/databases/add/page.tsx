@@ -77,7 +77,7 @@ export default function AddDatabasePage() {
     setTestResult(null);
   };
 
-  const handleOptionChange = (field: string, value: any) => {
+  const handleOptionChange = (field: string, value: string | number | boolean) => {
     setConfig(prev => ({
       ...prev,
       options: { ...prev.options, [field]: value }
@@ -89,21 +89,63 @@ export default function AddDatabasePage() {
 
     if (!config.name.trim()) {
       newErrors.name = '请输入数据源名称';
+    } else if (config.name.length < 2) {
+      newErrors.name = '数据源名称至少需要2个字符';
+    } else if (config.name.length > 100) {
+      newErrors.name = '数据源名称不能超过100个字符';
     }
+
     if (!config.host.trim()) {
       newErrors.host = '请输入主机地址';
+    } else {
+      const hostPattern = /^([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)*[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?$/;
+      const ipPattern = /^(\d{1,3}\.){3}\d{1,3}$/;
+      const localhostPattern = /^(localhost|127\.0\.0\.1)$/;
+      
+      if (!hostPattern.test(config.host) && !ipPattern.test(config.host) && !localhostPattern.test(config.host)) {
+        newErrors.host = '请输入有效的主机地址或IP';
+      }
     }
+
     if (!config.port.trim()) {
       newErrors.port = '请输入端口号';
+    } else {
+      const portNum = parseInt(config.port);
+      if (isNaN(portNum) || portNum < 1 || portNum > 65535) {
+        newErrors.port = '端口号必须在1-65535之间';
+      }
     }
+
     if (!config.username.trim()) {
       newErrors.username = '请输入用户名';
+    } else if (config.username.length > 64) {
+      newErrors.username = '用户名不能超过64个字符';
     }
+
     if (!config.password.trim()) {
       newErrors.password = '请输入密码';
+    } else if (config.password.length < 4) {
+      newErrors.password = '密码至少需要4个字符';
     }
+
     if (!config.database.trim()) {
       newErrors.database = '请输入数据库名称';
+    } else if (!/^[a-zA-Z0-9_][a-zA-Z0-9_\-]*$/.test(config.database)) {
+      newErrors.database = '数据库名称只能包含字母、数字、下划线和连字符';
+    }
+
+    if (config.options?.connectionTimeout !== undefined) {
+      const timeout = config.options.connectionTimeout;
+      if (isNaN(timeout) || timeout < 1 || timeout > 300) {
+        newErrors.connectionTimeout = '连接超时必须在1-300秒之间';
+      }
+    }
+
+    if (config.options?.maxConnections !== undefined) {
+      const maxConn = config.options.maxConnections;
+      if (isNaN(maxConn) || maxConn < 1 || maxConn > 100) {
+        newErrors.maxConnections = '最大连接数必须在1-100之间';
+      }
     }
 
     setErrors(newErrors);
@@ -128,7 +170,7 @@ export default function AddDatabasePage() {
         success: result.success,
         message: result.message || (result.success ? '连接成功' : '连接失败')
       });
-    } catch (error) {
+    } catch {
       setTestResult({
         success: false,
         message: '连接测试失败，请检查网络连接'
@@ -139,31 +181,71 @@ export default function AddDatabasePage() {
   };
 
   const handleSave = async () => {
-    if (!validateForm()) return;
+    if (!validateForm()) {
+      return;
+    }
+
+    if (!testResult || !testResult.success) {
+      setTestResult({
+        success: false,
+        message: '请先测试数据库连接，确保配置正确后再保存'
+      });
+      return;
+    }
 
     setSaving(true);
+    setTestResult(null);
 
     try {
       const response = await fetch('/api/databases', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify(config)
       });
 
       const result = await response.json();
 
-      if (result.success) {
-        router.push('/dashboard?tab=datasources');
-      } else {
+      if (response.ok && result.success) {
         setTestResult({
-          success: false,
-          message: result.error || '保存失败'
+          success: true,
+          message: '数据源保存成功！正在跳转...'
         });
+        
+        setTimeout(() => {
+          router.push('/dashboard?tab=datasources');
+        }, 1500);
+      } else {
+        const errorMessage = result.error || '保存失败，请重试';
+        
+        if (response.status === 400) {
+          setTestResult({
+            success: false,
+            message: `配置错误: ${errorMessage}`
+          });
+        } else if (response.status === 409) {
+          setTestResult({
+            success: false,
+            message: `数据源名称已存在，请使用其他名称`
+          });
+        } else if (response.status === 500) {
+          setTestResult({
+            success: false,
+            message: `服务器错误: ${errorMessage}`
+          });
+        } else {
+          setTestResult({
+            success: false,
+            message: errorMessage
+          });
+        }
       }
     } catch (error) {
+      console.error('保存数据源失败:', error);
       setTestResult({
         success: false,
-        message: '保存失败，请重试'
+        message: '网络错误，请检查连接后重试'
       });
     } finally {
       setSaving(false);

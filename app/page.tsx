@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Database, FileText, RefreshCw, Settings, BarChart3, Shield, LogOut, User, AlertCircle } from 'lucide-react';
@@ -16,16 +16,8 @@ interface User {
 
 export default function Home() {
   const router = useRouter();
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(() => authService.getCurrentUser());
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
-  const [mounted, setMounted] = useState(false);
-
-  // 组件挂载后检查登录状态
-  useEffect(() => {
-    setMounted(true);
-    const user = authService.getCurrentUser();
-    setCurrentUser(user);
-  }, []);
 
   // 处理登出
   const handleLogout = async () => {
@@ -40,7 +32,7 @@ export default function Home() {
   };
 
   // 处理功能点击
-  const handleFeatureClick = (e: React.MouseEvent, link: string) => {
+  const handleFeatureClick = (e: React.MouseEvent) => {
     if (!currentUser) {
       e.preventDefault();
       setShowLoginPrompt(true);
@@ -86,11 +78,6 @@ export default function Home() {
     }
   ];
 
-  // 未登录时返回简化版本
-  if (!mounted) {
-    return null;
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       {/* Header */}
@@ -113,7 +100,7 @@ export default function Home() {
             <nav className="flex items-center gap-4">
               <Link
                 href="/dashboard"
-                onClick={(e) => handleFeatureClick(e, '/dashboard')}
+                onClick={(e) => handleFeatureClick(e)}
                 className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
                   currentUser 
                     ? 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
