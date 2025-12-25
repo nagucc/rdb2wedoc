@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getJobById, updateJob, deleteJob, saveHistory } from '@/lib/config/storage';
-import { validateCronExpression, Logger } from '@/lib/utils/helpers';
+import { generateId, validateCronExpression, Logger } from '@/lib/utils/helpers';
 
 // 获取单个同步作业
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const job = await getJobById(params.id);
+    const { id } = await params;
+    const job = await getJobById(id);
     
     if (!job) {
       return NextResponse.json(
@@ -33,10 +34,11 @@ export async function GET(
 // 更新同步作业
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const existingJob = await getJobById(params.id);
+    const { id } = await params;
+    const existingJob = await getJobById(id);
     
     if (!existingJob) {
       return NextResponse.json(
@@ -50,15 +52,16 @@ export async function PUT(
       name, 
       databaseId, 
       documentId, 
-      tableConfig, 
-      fieldMapping, 
-      cronExpression,
+      table, 
+      sheetId,
+      fieldMappings, 
+      schedule,
       conflictStrategy,
       enabled 
     } = body;
 
     // 验证Cron表达式
-    if (cronExpression && !validateCronExpression(cronExpression)) {
+    if (schedule && !validateCronExpression(schedule)) {
       return NextResponse.json(
         { success: false, error: 'Cron表达式格式不正确' },
         { status: 400 }
@@ -71,9 +74,10 @@ export async function PUT(
       name: name || existingJob.name,
       databaseId: databaseId || existingJob.databaseId,
       documentId: documentId || existingJob.documentId,
-      tableConfig: tableConfig || existingJob.tableConfig,
-      fieldMapping: fieldMapping || existingJob.fieldMapping,
-      cronExpression: cronExpression || existingJob.cronExpression,
+      table: table || existingJob.table,
+      sheetId: sheetId || existingJob.sheetId,
+      fieldMappings: fieldMappings || existingJob.fieldMappings,
+      schedule: schedule || existingJob.schedule,
       conflictStrategy: conflictStrategy || existingJob.conflictStrategy,
       enabled: enabled !== undefined ? enabled : existingJob.enabled,
       updatedAt: new Date().toISOString()
@@ -112,10 +116,11 @@ export async function PUT(
 // 删除同步作业
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const job = await getJobById(params.id);
+    const { id } = await params;
+    const job = await getJobById(id);
     
     if (!job) {
       return NextResponse.json(
@@ -124,7 +129,7 @@ export async function DELETE(
       );
     }
 
-    await deleteJob(params.id);
+    await deleteJob(id);
 
     // 记录历史
     await saveHistory({
@@ -155,10 +160,11 @@ export async function DELETE(
 // 启动同步作业
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const job = await getJobById(params.id);
+    const { id } = await params;
+    const job = await getJobById(id);
     
     if (!job) {
       return NextResponse.json(
@@ -194,10 +200,11 @@ export async function POST(
 // 停止同步作业
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const job = await getJobById(params.id);
+    const { id } = await params;
+    const job = await getJobById(id);
     
     if (!job) {
       return NextResponse.json(

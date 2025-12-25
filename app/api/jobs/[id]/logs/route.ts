@@ -6,10 +6,11 @@ import { generateId, Logger } from '@/lib/utils/helpers';
 // 获取同步作业的执行日志
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const job = await getJobById(params.id);
+    const { id } = await params;
+    const job = await getJobById(id);
     
     if (!job) {
       return NextResponse.json(
@@ -18,7 +19,7 @@ export async function GET(
       );
     }
 
-    const logs = getJobLogs(params.id);
+    const logs = getJobLogs(id);
 
     return NextResponse.json({
       success: true,
@@ -36,10 +37,11 @@ export async function GET(
 // 手动执行同步作业
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const job = await getJobById(params.id);
+    const { id } = await params;
+    const job = await getJobById(id);
     
     if (!job) {
       return NextResponse.json(

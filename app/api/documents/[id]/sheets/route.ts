@@ -6,10 +6,11 @@ import { Logger } from '@/lib/utils/helpers';
 // 获取文档的所有Sheet
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const document = await getDocumentById(params.id);
+    const { id } = await params;
+    const document = await getDocumentById(id);
     
     if (!document) {
       return NextResponse.json(
@@ -18,7 +19,8 @@ export async function GET(
       );
     }
 
-    const sheets = await weComDocumentService.getSheets(document);
+    const accessToken = await weComDocumentService.getAccessToken(document.id, document.accessToken);
+    const sheets = await weComDocumentService.getDocumentSheets(accessToken, document.documentId);
 
     Logger.info(`获取企业微信文档Sheet列表成功: ${document.name}`, { 
       docId: document.id, 

@@ -61,12 +61,14 @@ export class FieldMappingService {
       }
 
       // 获取表结构
-      const tableStructure = await databaseService.getTableStructure(
-        database,
-        tableName
-      );
+      const tables = await databaseService.getTables(database);
+      const table = tables.find(t => t.name === tableName);
+      
+      if (!table) {
+        throw new Error(`表不存在: ${tableName}`);
+      }
 
-      return tableStructure.map((column: any) => ({
+      return table.columns.map((column: any) => ({
         name: column.name,
         type: column.type,
         nullable: column.nullable,
@@ -96,8 +98,12 @@ export class FieldMappingService {
         throw new Error('文档不存在');
       }
 
+      // 获取访问令牌
+      const accessToken = await weComDocumentService.getAccessToken(document.id, document.accessToken);
+
       // 获取Sheet字段
       const fields = await weComDocumentService.getSheetFields(
+        accessToken,
         document.documentId,
         sheetId
       );
@@ -301,6 +307,9 @@ export class FieldMappingService {
 
       // 获取样本数据
       const database = await getDatabaseById(databaseId);
+      if (!database) {
+        throw new Error('数据库连接不存在');
+      }
       const sampleData = await databaseService.query(
         database,
         `SELECT * FROM ${tableName} LIMIT ${limit}`
@@ -336,16 +345,16 @@ export class FieldMappingService {
    */
   applyTransform(value: any, transform: string): any {
     const transforms: Record<string, (val: any) => any> = {
-      'toString': (val) => String(val),
-      'toNumber': (val) => Number(val),
-      'toUpperCase': (val) => String(val).toUpperCase(),
-      'toLowerCase': (val) => String(val).toLowerCase(),
-      'trim': (val) => String(val).trim(),
-      'toDate': (val) => new Date(val).toISOString(),
-      'toBoolean': (val) => Boolean(val),
-      'toFixed': (val, decimals = 2) => Number(val).toFixed(decimals),
-      'toDateString': (val) => new Date(val).toLocaleDateString(),
-      'toDateTimeString': (val) => new Date(val).toLocaleString()
+      'toString': (val: any) => String(val),
+      'toNumber': (val: any) => Number(val),
+      'toUpperCase': (val: any) => String(val).toUpperCase(),
+      'toLowerCase': (val: any) => String(val).toLowerCase(),
+      'trim': (val: any) => String(val).trim(),
+      'toDate': (val: any) => new Date(val).toISOString(),
+      'toBoolean': (val: any) => Boolean(val),
+      'toFixed': (val: any, decimals: number = 2) => Number(val).toFixed(decimals),
+      'toDateString': (val: any) => new Date(val).toLocaleDateString(),
+      'toDateTimeString': (val: any) => new Date(val).toLocaleString()
     };
 
     const transformFn = transforms[transform];

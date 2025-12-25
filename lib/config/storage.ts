@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { DatabaseConnection, WeComDocument, SyncJob, User, ConfigHistory, NotificationConfig, JobTemplate } from '@/types';
+import { DatabaseConnection, WeComDocument, SyncJob, User, ConfigHistory, NotificationConfig, JobTemplate, ExecutionLog } from '@/types';
 
 const DATA_DIR = path.join(process.cwd(), 'public', 'data');
 
@@ -224,6 +224,22 @@ export function saveJob(job: SyncJob): boolean {
   return writeJsonFile(getJobFilePath(job.id), job);
 }
 
+export function updateJob(jobOrId: SyncJob | string, updates?: Partial<SyncJob>): boolean {
+  let job: SyncJob | null;
+  
+  if (typeof jobOrId === 'string') {
+    // 旧方式: updateJob(jobId, updates)
+    if (!updates) return false;
+    job = getJobById(jobOrId);
+    if (!job) return false;
+    const updatedJob = { ...job, ...updates };
+    return saveJob(updatedJob);
+  } else {
+    // 新方式: updateJob(job)
+    return saveJob(jobOrId);
+  }
+}
+
 export function deleteJob(jobId: string): boolean {
   return deleteFile(getJobFilePath(jobId));
 }
@@ -233,12 +249,20 @@ export function getLogFilePath(logId: string): string {
   return path.join(DATA_DIR, 'logs', `${logId}.json`);
 }
 
+export function getJobLogs(jobId: string, limit: number = 100) {
+  return getLogsByJob(jobId, limit);
+}
+
+export function saveJobLog(log: any): boolean {
+  return saveLog(log);
+}
+
 export function getLogsByJob(jobId: string, limit: number = 100) {
   const files = listFiles(path.join(DATA_DIR, 'logs'));
-  const logs: any[] = [];
+  const logs: ExecutionLog[] = [];
   
   files.forEach(file => {
-    const log = readJsonFile(path.join(DATA_DIR, 'logs', file));
+    const log = readJsonFile<ExecutionLog>(path.join(DATA_DIR, 'logs', file));
     if (log && log.jobId === jobId) {
       logs.push(log);
     }

@@ -8,11 +8,11 @@ import { Logger } from '@/lib/utils/helpers';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
+  
   try {
-    const { id } = params;
-
     Logger.info('获取错误详情请求', { errorId: id });
 
     const errorLog = errorHandlerService.getErrorById(id);
@@ -32,7 +32,7 @@ export async function GET(
     });
   } catch (error) {
     Logger.error('获取错误详情失败', { 
-      errorId: params.id,
+      errorId: id,
       error: (error as Error).message 
     });
     return NextResponse.json({
@@ -48,10 +48,11 @@ export async function GET(
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
+  
   try {
-    const { id } = params;
     const body = await request.json();
     const { resolvedBy, note } = body;
 
@@ -81,7 +82,7 @@ export async function PUT(
     }
   } catch (error) {
     Logger.error('标记错误为已解决失败', { 
-      errorId: params.id,
+      errorId: id,
       error: (error as Error).message 
     });
     return NextResponse.json({

@@ -1,4 +1,4 @@
-import cron from 'node-cron';
+import * as cron from 'node-cron';
 import { databaseService } from './database.service';
 import { weComDocumentService } from './wecom-document.service';
 import { SyncJob, FieldMapping, ConflictStrategy, ExecutionLog } from '@/types';
@@ -146,13 +146,13 @@ export class SyncService {
   private applyTransform(value: any, transform: string): any {
     // 简单的转换函数
     const transforms: Record<string, (val: any) => any> = {
-      'toString': (val) => String(val),
-      'toNumber': (val) => Number(val),
-      'toUpperCase': (val) => String(val).toUpperCase(),
-      'toLowerCase': (val) => String(val).toLowerCase(),
-      'trim': (val) => String(val).trim(),
-      'toDate': (val) => new Date(val).toISOString(),
-      'toBoolean': (val) => Boolean(val)
+      'toString': (val: any) => String(val),
+      'toNumber': (val: any) => Number(val),
+      'toUpperCase': (val: any) => String(val).toUpperCase(),
+      'toLowerCase': (val: any) => String(val).toLowerCase(),
+      'trim': (val: any) => String(val).trim(),
+      'toDate': (val: any) => new Date(val).toISOString(),
+      'toBoolean': (val: any) => Boolean(val)
     };
 
     const transformFn = transforms[transform];
@@ -193,11 +193,8 @@ export class SyncService {
         } catch (error) {
           Logger.error(`调度任务执行失败: ${job.name}`, { error: (error as Error).message });
         }
-      }, {
-        scheduled: false
       });
 
-      task.start();
       this.scheduledJobs.set(job.id, task);
 
       Logger.info(`同步作业已调度: ${job.name}`, { jobId: job.id, schedule: job.schedule });

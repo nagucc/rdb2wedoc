@@ -6,10 +6,11 @@ import { Logger } from '@/lib/utils/helpers';
 // 获取Sheet的字段信息
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string; sheetId: string } }
+  { params }: { params: Promise<{ id: string; sheetId: string }> }
 ) {
   try {
-    const document = await getDocumentById(params.id);
+    const { id, sheetId } = await params;
+    const document = await getDocumentById(id);
     
     if (!document) {
       return NextResponse.json(
@@ -18,11 +19,12 @@ export async function GET(
       );
     }
 
-    const fields = await weComDocumentService.getFields(document, params.sheetId);
+    const accessToken = await weComDocumentService.getAccessToken(document.id, document.accessToken);
+    const fields = await weComDocumentService.getSheetFields(accessToken, document.documentId, sheetId);
 
     Logger.info(`获取企业微信文档Sheet字段成功: ${document.name}`, { 
       docId: document.id, 
-      sheetId: params.sheetId,
+      sheetId: sheetId,
       fieldCount: fields.length 
     });
 

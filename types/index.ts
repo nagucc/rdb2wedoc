@@ -121,7 +121,7 @@ export interface ExecutionLog {
 // 配置历史记录
 export interface ConfigHistory {
   id: string;
-  entityType: 'database' | 'document' | 'job';
+  entityType: 'database' | 'document' | 'job' | 'user';
   entityId: string;
   action: 'create' | 'update' | 'delete';
   oldConfig?: any;

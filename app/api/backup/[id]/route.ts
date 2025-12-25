@@ -8,10 +8,10 @@ import { Logger } from '@/lib/utils/helpers';
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     Logger.info('恢复备份请求', { backupId: id });
 
@@ -32,8 +32,9 @@ export async function POST(
       }, { status: 500 });
     }
   } catch (error) {
+    const { id } = await params;
     Logger.error('恢复备份失败', { 
-      backupId: params.id,
+      backupId: id,
       error: (error as Error).message 
     });
     return NextResponse.json({
@@ -49,10 +50,10 @@ export async function POST(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     Logger.info('删除备份请求', { backupId: id });
 
@@ -72,8 +73,9 @@ export async function DELETE(
       }, { status: 500 });
     }
   } catch (error) {
+    const { id } = await params;
     Logger.error('删除备份失败', { 
-      backupId: params.id,
+      backupId: id,
       error: (error as Error).message 
     });
     return NextResponse.json({

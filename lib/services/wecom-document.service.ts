@@ -82,7 +82,7 @@ export class WeComDocumentService {
         throw new Error(`获取Sheet字段失败: ${response.data.errmsg}`);
       }
 
-      const fields: DocumentField[] = [];
+      let fields: DocumentField[] = [];
       
       if (response.data.property && response.data.property.columns) {
         fields = response.data.property.columns.map((col: any) => ({

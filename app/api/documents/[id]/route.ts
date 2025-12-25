@@ -7,10 +7,11 @@ import { generateId, Logger } from '@/lib/utils/helpers';
 // 获取单个企业微信文档
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const document = await getDocumentById(params.id);
+    const { id } = await params;
+    const document = await getDocumentById(id);
     
     if (!document) {
       return NextResponse.json(
@@ -38,10 +39,11 @@ export async function GET(
 // 更新企业微信文档
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const document = await getDocumentById(params.id);
+    const { id } = await params;
+    const document = await getDocumentById(id);
     
     if (!document) {
       return NextResponse.json(
@@ -107,10 +109,11 @@ export async function PUT(
 // 删除企业微信文档
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const document = await getDocumentById(params.id);
+    const { id } = await params;
+    const document = await getDocumentById(id);
     
     if (!document) {
       return NextResponse.json(
@@ -130,7 +133,7 @@ export async function DELETE(
       timestamp: new Date().toISOString()
     });
 
-    await deleteDocument(params.id);
+    await deleteDocument(id);
 
     Logger.info(`企业微信文档删除成功: ${document.name}`, { docId: document.id });
 

@@ -5,10 +5,11 @@ import { hashPassword, generateId, validatePassword, Logger } from '@/lib/utils/
 // 获取单个用户
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getUserById(params.id);
+    const { id } = await params;
+    const user = await getUserById(id);
     
     if (!user) {
       return NextResponse.json(
@@ -36,10 +37,11 @@ export async function GET(
 // 更新用户
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getUserById(params.id);
+    const { id } = await params;
+    const user = await getUserById(id);
     
     if (!user) {
       return NextResponse.json(
@@ -111,10 +113,11 @@ export async function PUT(
 // 删除用户
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getUserById(params.id);
+    const { id } = await params;
+    const user = await getUserById(id);
     
     if (!user) {
       return NextResponse.json(
@@ -134,7 +137,7 @@ export async function DELETE(
       timestamp: new Date().toISOString()
     });
 
-    await deleteUser(params.id);
+    await deleteUser(id);
 
     Logger.info(`用户删除成功: ${user.username}`, { userId: user.id });
 

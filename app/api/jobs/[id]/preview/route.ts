@@ -6,10 +6,11 @@ import { Logger } from '@/lib/utils/helpers';
 // 预览同步作业数据
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const job = await getJobById(params.id);
+    const { id } = await params;
+    const job = await getJobById(id);
     
     if (!job) {
       return NextResponse.json(
@@ -19,7 +20,7 @@ export async function POST(
     }
 
     // 获取预览数据
-    const previewData = await syncService.previewJob(job.id);
+    const previewData = await syncService.previewData(job);
 
     Logger.info(`同步作业预览成功: ${job.name}`, { 
       jobId: job.id, 

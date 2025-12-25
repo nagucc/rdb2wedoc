@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { DatabaseConnection, WeComDocument, SyncJob, User, ConfigHistory, NotificationConfig, JobTemplate } from '@/types';
+import { DatabaseConnection, WeComDocument, SyncJob, User, ConfigHistory, NotificationConfig, JobTemplate, ExecutionLog } from '@/types';
 
 const DATA_DIR = path.join(process.cwd(), 'public', 'data');
 
@@ -235,10 +235,10 @@ export function getLogFilePath(logId: string): string {
 
 export function getLogsByJob(jobId: string, limit: number = 100) {
   const files = listFiles(path.join(DATA_DIR, 'logs'));
-  const logs: any[] = [];
+  const logs: ExecutionLog[] = [];
   
   files.forEach(file => {
-    const log = readJsonFile(path.join(DATA_DIR, 'logs', file));
+    const log = readJsonFile<ExecutionLog>(path.join(DATA_DIR, 'logs', file));
     if (log && log.jobId === jobId) {
       logs.push(log);
     }
@@ -250,7 +250,7 @@ export function getLogsByJob(jobId: string, limit: number = 100) {
   return logs.slice(0, limit);
 }
 
-export function saveLog(log: any): boolean {
+export function saveLog(log: ExecutionLog): boolean {
   return writeJsonFile(getLogFilePath(log.id), log);
 }
 

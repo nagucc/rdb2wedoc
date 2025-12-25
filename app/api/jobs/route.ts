@@ -29,15 +29,16 @@ export async function POST(request: NextRequest) {
       name, 
       databaseId, 
       documentId, 
-      tableConfig, 
-      fieldMapping, 
-      cronExpression,
+      table,
+      sheetId,
+      fieldMappings, 
+      schedule,
       conflictStrategy,
       enabled 
     } = body;
 
     // 验证必填字段
-    if (!name || !databaseId || !documentId || !tableConfig || !fieldMapping) {
+    if (!name || !databaseId || !documentId || !table || !sheetId || !fieldMappings) {
       return NextResponse.json(
         { success: false, error: '所有必填字段都必须填写' },
         { status: 400 }
@@ -45,7 +46,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 验证Cron表达式
-    if (cronExpression && !validateCronExpression(cronExpression)) {
+    if (schedule && !validateCronExpression(schedule)) {
       return NextResponse.json(
         { success: false, error: 'Cron表达式格式不正确' },
         { status: 400 }
@@ -58,14 +59,15 @@ export async function POST(request: NextRequest) {
       name,
       databaseId,
       documentId,
-      tableConfig,
-      fieldMapping,
-      cronExpression: cronExpression || '0 0 * * *',
+      table,
+      sheetId,
+      fieldMappings,
+      schedule: schedule || '0 0 * * *',
       conflictStrategy: conflictStrategy || 'overwrite',
+      status: 'idle',
       enabled: enabled !== undefined ? enabled : true,
-      lastRunAt: null,
-      lastRunStatus: null,
-      lastRunMessage: null,
+      retryCount: 0,
+      maxRetries: 3,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };

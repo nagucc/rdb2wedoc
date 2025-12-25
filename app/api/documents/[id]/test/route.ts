@@ -6,10 +6,11 @@ import { Logger } from '@/lib/utils/helpers';
 // 测试企业微信文档连接
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const document = await getDocumentById(params.id);
+    const { id } = await params;
+    const document = await getDocumentById(id);
     
     if (!document) {
       return NextResponse.json(

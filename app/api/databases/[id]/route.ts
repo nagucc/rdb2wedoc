@@ -7,10 +7,11 @@ import { generateId, validatePort, Logger } from '@/lib/utils/helpers';
 // 获取单个数据源
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const database = await getDatabaseById(params.id);
+    const { id } = await params;
+    const database = await getDatabaseById(id);
     
     if (!database) {
       return NextResponse.json(
@@ -38,10 +39,11 @@ export async function GET(
 // 更新数据源
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const database = await getDatabaseById(params.id);
+    const { id } = await params;
+    const database = await getDatabaseById(id);
     
     if (!database) {
       return NextResponse.json(
@@ -115,10 +117,11 @@ export async function PUT(
 // 删除数据源
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const database = await getDatabaseById(params.id);
+    const { id } = await params;
+    const database = await getDatabaseById(id);
     
     if (!database) {
       return NextResponse.json(
@@ -138,7 +141,7 @@ export async function DELETE(
       timestamp: new Date().toISOString()
     });
 
-    await deleteDatabase(params.id);
+    await deleteDatabase(id);
 
     Logger.info(`数据源删除成功: ${database.name}`, { dbId: database.id });
 
