@@ -154,6 +154,10 @@ class AuthService {
     // 模拟验证逻辑
     // 实际项目中应该调用后端API进行验证
     
+    // 去除用户名和密码的前后空格
+    const trimmedUsername = credentials.username.trim();
+    const trimmedPassword = credentials.password.trim();
+    
     // 演示用的测试账号
     const testUsers = [
       { username: 'admin', password: 'admin123', role: 'admin' as const },
@@ -161,7 +165,7 @@ class AuthService {
     ];
 
     const testUser = testUsers.find(
-      u => u.username === credentials.username && u.password === credentials.password
+      u => u.username === trimmedUsername && u.password === trimmedPassword
     );
 
     if (!testUser) {

@@ -1,0 +1,9 @@
+{
+  "id": "user_001",
+  "username": "user",
+  "email": "user@example.com",
+  "passwordHash": "$2b$10$trr9o.NFD7g8NF5WvpLxO.lP0llMTMdC4Noft8Tob.yzvfRdS68ga",
+  "role": "user",
+  "createdAt": "2024-01-01T00:00:00.000Z",
+  "updatedAt": "2024-01-01T00:00:00.000Z"
+}

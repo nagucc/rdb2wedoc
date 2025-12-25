@@ -38,7 +38,7 @@ export interface RestoreResult {
 export class BackupService {
   private static instance: BackupService;
   private config: BackupConfig = {
-    backupDir: path.join(process.cwd(), 'public', 'data', 'backups'),
+    backupDir: path.join(process.cwd(), 'data', 'backups'),
     maxBackups: 10,
     autoBackup: false,
     backupInterval: 24

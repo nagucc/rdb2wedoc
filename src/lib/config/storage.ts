@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { DatabaseConnection, WeComDocument, SyncJob, User, ConfigHistory, NotificationConfig, JobTemplate, ExecutionLog } from '@/types';
 
-const DATA_DIR = path.join(process.cwd(), 'public', 'data');
+const DATA_DIR = path.join(process.cwd(), 'data');
 
 // 确保数据目录存在
 export function ensureDataDir() {
