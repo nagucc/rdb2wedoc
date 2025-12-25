@@ -1,7 +1,52 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Database, FileText, RefreshCw, Settings, BarChart3, Shield } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Database, FileText, RefreshCw, Settings, BarChart3, Shield, LogOut, User, AlertCircle } from 'lucide-react';
+import { authService } from '@/lib/services/authService';
+
+interface User {
+  id: string;
+  username: string;
+  email: string;
+  role: 'admin' | 'user';
+  createdAt: string;
+}
 
 export default function Home() {
+  const router = useRouter();
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  // 组件挂载后检查登录状态
+  useEffect(() => {
+    setMounted(true);
+    const user = authService.getCurrentUser();
+    setCurrentUser(user);
+  }, []);
+
+  // 处理登出
+  const handleLogout = async () => {
+    try {
+      await authService.logout();
+      setCurrentUser(null);
+      router.push('/');
+      router.refresh();
+    } catch (error) {
+      console.error('登出失败:', error);
+    }
+  };
+
+  // 处理功能点击
+  const handleFeatureClick = (e: React.MouseEvent, link: string) => {
+    if (!currentUser) {
+      e.preventDefault();
+      setShowLoginPrompt(true);
+    }
+  };
+
   const features = [
     {
       icon: Database,
@@ -41,6 +86,11 @@ export default function Home() {
     }
   ];
 
+  // 未登录时返回简化版本
+  if (!mounted) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       {/* Header */}
@@ -63,16 +113,39 @@ export default function Home() {
             <nav className="flex items-center gap-4">
               <Link
                 href="/dashboard"
-                className="rounded-lg px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                onClick={(e) => handleFeatureClick(e, '/dashboard')}
+                className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+                  currentUser 
+                    ? 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
+                    : 'cursor-not-allowed text-gray-400 dark:text-gray-600'
+                }`}
               >
                 控制台
               </Link>
-              <Link
-                href="/settings"
-                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
-              >
-                开始使用
-              </Link>
+              {currentUser ? (
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 rounded-lg bg-gray-100 px-3 py-2 dark:bg-gray-700">
+                    <User className="h-4 w-4 text-gray-600 dark:text-gray-300" />
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      {currentUser.username}
+                    </span>
+                  </div>
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    退出
+                  </button>
+                </div>
+              ) : (
+                <Link
+                  href="/login"
+                  className="flex h-10 w-[120px] items-center justify-center rounded-lg bg-blue-600 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+                >
+                  登录
+                </Link>
+              )}
             </nav>
           </div>
         </div>
@@ -106,13 +179,23 @@ export default function Home() {
           <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Link
               href="/databases"
-              className="flex h-12 items-center justify-center rounded-lg bg-blue-600 px-8 text-base font-medium text-white transition-all hover:bg-blue-700 hover:shadow-lg"
+              onClick={(e) => handleFeatureClick(e, '/databases')}
+              className={`flex h-12 items-center justify-center rounded-lg px-8 text-base font-medium transition-all ${
+                currentUser
+                  ? 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-lg'
+                  : 'cursor-not-allowed bg-gray-300 text-gray-500 dark:bg-gray-700 dark:text-gray-500'
+              }`}
             >
               添加数据源
             </Link>
             <Link
               href="/jobs"
-              className="flex h-12 items-center justify-center rounded-lg border-2 border-gray-300 px-8 text-base font-medium text-gray-700 transition-all hover:border-gray-400 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:border-gray-500 dark:hover:bg-gray-800"
+              onClick={(e) => handleFeatureClick(e, '/jobs')}
+              className={`flex h-12 items-center justify-center rounded-lg border-2 px-8 text-base font-medium transition-all ${
+                currentUser
+                  ? 'border-gray-300 text-gray-700 hover:border-gray-400 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:border-gray-500 dark:hover:bg-gray-800'
+                  : 'cursor-not-allowed border-gray-200 bg-gray-50 text-gray-400 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-600'
+              }`}
             >
               创建同步任务
             </Link>
@@ -132,37 +215,49 @@ export default function Home() {
         </div>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {features.map((feature, index) => (
-            <Link
+            <div
               key={index}
-              href={feature.link}
-              className="group rounded-2xl border border-gray-200 bg-white p-6 transition-all hover:border-blue-300 hover:shadow-xl dark:border-gray-700 dark:bg-gray-800 dark:hover:border-blue-500"
+              onClick={(e) => handleFeatureClick(e, feature.link)}
+              className={`group rounded-2xl border p-6 transition-all ${
+                currentUser
+                  ? 'border-gray-200 bg-white hover:border-blue-300 hover:shadow-xl cursor-pointer dark:border-gray-700 dark:bg-gray-800 dark:hover:border-blue-500'
+                  : 'border-gray-200 bg-gray-50 cursor-not-allowed dark:border-gray-700 dark:bg-gray-800/50'
+              }`}
             >
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 text-white group-hover:scale-110 transition-transform">
+              <div className={`mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 text-white ${
+                currentUser ? 'group-hover:scale-110 transition-transform' : 'opacity-50'
+              }`}>
                 <feature.icon className="h-6 w-6" />
               </div>
-              <h4 className="mb-2 text-xl font-semibold text-gray-900 dark:text-white">
+              <h4 className={`mb-2 text-xl font-semibold ${
+                currentUser ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-600'
+              }`}>
                 {feature.title}
               </h4>
-              <p className="text-gray-600 dark:text-gray-400">
+              <p className={`${
+                currentUser ? 'text-gray-600 dark:text-gray-400' : 'text-gray-400 dark:text-gray-600'
+              }`}>
                 {feature.description}
               </p>
-              <div className="mt-4 flex items-center text-sm font-medium text-blue-600 dark:text-blue-400">
-                了解更多
-                <svg
-                  className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 5l7 7-7 7"
-                  />
-                </svg>
-              </div>
-            </Link>
+              {currentUser && (
+                <div className="mt-4 flex items-center text-sm font-medium text-blue-600 dark:text-blue-400">
+                  了解更多
+                  <svg
+                    className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5l7 7-7 7"
+                    />
+                  </svg>
+                </div>
+              )}
+            </div>
           ))}
         </div>
       </section>
@@ -197,6 +292,42 @@ export default function Home() {
           </p>
         </div>
       </footer>
+
+      {/* 登录提示对话框 */}
+      {showLoginPrompt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="mx-4 max-w-md rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-800">
+            <div className="flex items-start gap-4">
+              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/20">
+                <AlertCircle className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div className="flex-1">
+                <h3 className="mb-2 text-lg font-semibold text-gray-900 dark:text-white">
+                  请先登录系统
+                </h3>
+                <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">
+                  请先登录系统以使用完整功能
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowLoginPrompt(false)}
+                    className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+                  >
+                    取消
+                  </button>
+                  <Link
+                    href="/login"
+                    onClick={() => setShowLoginPrompt(false)}
+                    className="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-center text-sm font-medium text-white transition-colors hover:bg-blue-700"
+                  >
+                    去登录
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
