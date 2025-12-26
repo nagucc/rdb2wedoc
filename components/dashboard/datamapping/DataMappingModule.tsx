@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import {
   RefreshCw,
   Plus,
@@ -305,13 +306,13 @@ export default function DataMappingModule() {
             <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
             刷新
           </button>
-          <button
-            onClick={() => setShowCreateModal(true)}
+          <Link
+            href="/mappings/create"
             className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
           >
             <Plus className="h-4 w-4" />
             新建映射
-          </button>
+          </Link>
         </div>
       </div>
 
