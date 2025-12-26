@@ -182,6 +182,22 @@ export function deleteDocument(docId: string): boolean {
   return deleteFile(getDocumentFilePath(docId));
 }
 
+export function getDocumentSheetsFilePath(docId: string): string {
+  return path.join(DATA_DIR, 'documents', `${docId}_sheets.json`);
+}
+
+export function getDocumentSheets(docId: string): DocumentSheet[] | null {
+  return readJsonFile<DocumentSheet[]>(getDocumentSheetsFilePath(docId));
+}
+
+export function saveDocumentSheets(docId: string, sheets: DocumentSheet[]): boolean {
+  return writeJsonFile(getDocumentSheetsFilePath(docId), sheets);
+}
+
+export function deleteDocumentSheets(docId: string): boolean {
+  return deleteFile(getDocumentSheetsFilePath(docId));
+}
+
 // 同步作业管理
 export function getJobFilePath(jobId: string): string {
   return path.join(DATA_DIR, 'jobs', `${jobId}.json`);

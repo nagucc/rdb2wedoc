@@ -29,6 +29,7 @@ import JobList from '@/components/dashboard/JobList';
 import SystemStatus from '@/components/dashboard/SystemStatus';
 import FilterPanel from '@/components/dashboard/FilterPanel';
 import DataSourceModule from '@/components/dashboard/datasource/DataSourceModule';
+import DataTargetModule from '@/components/dashboard/datatarget/DataTargetModule';
 
 interface SystemMetrics {
   timestamp: string;
@@ -73,7 +74,7 @@ export default function DashboardPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'success' | 'failed' | 'running'>('all');
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
-  const [activeTab, setActiveTab] = useState<'overview' | 'datasources'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'datasources' | 'datatargets'>('overview');
 
   useEffect(() => {
     setMounted(true);
@@ -293,6 +294,16 @@ export default function DashboardPage() {
             >
               数据源管理
             </button>
+            <button
+              onClick={() => setActiveTab('datatargets')}
+              className={`pb-4 text-sm font-medium transition-colors ${
+                activeTab === 'datatargets'
+                  ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
+                  : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
+              }`}
+            >
+              数据目标
+            </button>
           </nav>
         </div>
 
@@ -404,6 +415,10 @@ export default function DashboardPage() {
 
         {activeTab === 'datasources' && (
           <DataSourceModule />
+        )}
+
+        {activeTab === 'datatargets' && (
+          <DataTargetModule />
         )}
 
         {!metrics && !loading && activeTab === 'overview' && (
