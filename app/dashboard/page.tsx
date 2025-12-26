@@ -29,6 +29,7 @@ import SystemStatus from '@/components/dashboard/SystemStatus';
 import FilterPanel from '@/components/dashboard/FilterPanel';
 import DataSourceModule from '@/components/dashboard/datasource/DataSourceModule';
 import DataTargetModule from '@/components/dashboard/datatarget/DataTargetModule';
+import SyncJobsModule from '@/components/dashboard/syncjobs/SyncJobsModule';
 
 interface SystemMetrics {
   timestamp: string;
@@ -73,7 +74,7 @@ export default function DashboardPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'success' | 'failed' | 'running'>('all');
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
-  const [activeTab, setActiveTab] = useState<'overview' | 'datasources' | 'datatargets'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'datasources' | 'datatargets' | 'syncjobs'>('overview');
 
   useEffect(() => {
     setMounted(true);
@@ -309,6 +310,16 @@ export default function DashboardPage() {
             >
               数据目标
             </button>
+            <button
+              onClick={() => setActiveTab('syncjobs')}
+              className={`pb-4 text-sm font-medium transition-colors ${
+                activeTab === 'syncjobs'
+                  ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
+                  : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
+              }`}
+            >
+              同步作业
+            </button>
           </nav>
         </div>
 
@@ -424,6 +435,10 @@ export default function DashboardPage() {
 
         {activeTab === 'datatargets' && (
           <DataTargetModule />
+        )}
+
+        {activeTab === 'syncjobs' && (
+          <SyncJobsModule />
         )}
 
         {!metrics && !loading && activeTab === 'overview' && (
