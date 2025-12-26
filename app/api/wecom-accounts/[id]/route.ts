@@ -5,10 +5,11 @@ import { generateId, Logger } from '@/lib/utils/helpers';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const account = getWeComAccountById(params.id);
+    const { id } = await params;
+    const account = getWeComAccountById(id);
     
     if (!account) {
       return NextResponse.json(
@@ -34,13 +35,14 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const body = await request.json();
     const { name, corpId, corpSecret, enabled } = body;
 
-    const existingAccount = getWeComAccountById(params.id);
+    const existingAccount = getWeComAccountById(id);
     if (!existingAccount) {
       return NextResponse.json(
         { success: false, error: '账号不存在' },
@@ -68,7 +70,7 @@ export async function PUT(
     await saveHistory({
       id: generateId(),
       entityType: 'wecom_account',
-      entityId: params.id,
+      entityId: id,
       action: 'update',
       oldConfig: { name: existingAccount.name, corpId: existingAccount.corpId },
       newConfig: { name: updatedAccount.name, corpId: updatedAccount.corpId },
@@ -76,7 +78,7 @@ export async function PUT(
       timestamp: new Date().toISOString()
     });
 
-    Logger.info('企业微信账号更新成功', { accountId: params.id });
+    Logger.info('企业微信账号更新成功', { accountId: id });
 
     const { corpSecret: _, ...accountWithoutSecret } = updatedAccount;
     return NextResponse.json({
@@ -95,10 +97,11 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const existingAccount = getWeComAccountById(params.id);
+    const { id } = await params;
+    const existingAccount = getWeComAccountById(id);
     if (!existingAccount) {
       return NextResponse.json(
         { success: false, error: '账号不存在' },
@@ -106,7 +109,7 @@ export async function DELETE(
       );
     }
 
-    const deleted = deleteWeComAccount(params.id);
+    const deleted = deleteWeComAccount(id);
     if (!deleted) {
       return NextResponse.json(
         { success: false, error: '删除账号失败' },
@@ -117,14 +120,14 @@ export async function DELETE(
     await saveHistory({
       id: generateId(),
       entityType: 'wecom_account',
-      entityId: params.id,
+      entityId: id,
       action: 'delete',
       oldConfig: { name: existingAccount.name, corpId: existingAccount.corpId },
       userId: 'system',
       timestamp: new Date().toISOString()
     });
 
-    Logger.info('企业微信账号删除成功', { accountId: params.id });
+    Logger.info('企业微信账号删除成功', { accountId: id });
 
     return NextResponse.json({
       success: true,

@@ -266,7 +266,8 @@ export default function WeComAccountsPage() {
             {accounts.map((account) => (
               <div
                 key={account.id}
-                className="flex items-center justify-between p-6 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                className="flex items-center justify-between p-6 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"
+                onClick={() => router.push(`/dashboard/wecom-accounts/${account.id}`)}
               >
                 <div className="flex items-center gap-4">
                   <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 dark:bg-blue-900/20">
@@ -281,7 +282,7 @@ export default function WeComAccountsPage() {
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
                   <span
                     className={`rounded-full px-3 py-1 text-xs font-medium ${
                       account.enabled
