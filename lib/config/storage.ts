@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { DatabaseConnection, WeComAccount, WeComDocument, SyncJob, User, ConfigHistory, NotificationConfig, JobTemplate, ExecutionLog } from '@/types';
+import { DatabaseConnection, WeComAccount, WeComDocument, SyncJob, User, ConfigHistory, NotificationConfig, JobTemplate, ExecutionLog, MappingConfig } from '@/types';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 
@@ -17,6 +17,7 @@ export function ensureDataDir() {
     path.join(DATA_DIR, 'history'),
     path.join(DATA_DIR, 'templates'),
     path.join(DATA_DIR, 'notifications'),
+    path.join(DATA_DIR, 'mappings'),
   ];
   
   dirs.forEach(dir => {
@@ -498,6 +499,66 @@ export function deleteBackup(backupName: string): boolean {
     console.error('Error deleting backup:', error);
   }
   return false;
+}
+
+export function getMappingFilePath(mappingId: string): string {
+  return path.join(DATA_DIR, 'mappings', `${mappingId}.json`);
+}
+
+export function getMappings(): MappingConfig[] {
+  const files = listFiles(path.join(DATA_DIR, 'mappings'));
+  const mappings: MappingConfig[] = [];
+  
+  files.forEach(file => {
+    const mapping = readJsonFile<MappingConfig>(path.join(DATA_DIR, 'mappings', file));
+    if (mapping) {
+      mappings.push(mapping);
+    }
+  });
+  
+  return mappings;
+}
+
+export function getMappingById(mappingId: string): MappingConfig | null {
+  return readJsonFile<MappingConfig>(getMappingFilePath(mappingId));
+}
+
+export function getMappingsBySourceType(sourceType: 'database' | 'api' | 'file'): MappingConfig[] {
+  const mappings = getMappings();
+  return mappings.filter(mapping => mapping.sourceType === sourceType);
+}
+
+export function getMappingsByTargetType(targetType: 'wecom_doc' | 'database' | 'api'): MappingConfig[] {
+  const mappings = getMappings();
+  return mappings.filter(mapping => mapping.targetType === targetType);
+}
+
+export function getActiveMappings(): MappingConfig[] {
+  const mappings = getMappings();
+  return mappings.filter(mapping => mapping.status === 'active');
+}
+
+export function saveMapping(mapping: MappingConfig): boolean {
+  return writeJsonFile(getMappingFilePath(mapping.id), mapping);
+}
+
+export function deleteMapping(mappingId: string): boolean {
+  return deleteFile(getMappingFilePath(mappingId));
+}
+
+export function updateMappingStatus(mappingId: string, status: 'active' | 'inactive' | 'draft'): boolean {
+  const mapping = getMappingById(mappingId);
+  if (!mapping) {
+    return false;
+  }
+  
+  const updatedMapping = {
+    ...mapping,
+    status,
+    updatedAt: new Date().toISOString()
+  };
+  
+  return saveMapping(updatedMapping);
 }
 
 // 初始化数据目录

@@ -163,6 +163,23 @@ export interface JobTemplate {
   updatedAt: string;
 }
 
+// 数据映射相关类型
+export type MappingStatus = 'active' | 'inactive' | 'draft';
+
+export interface MappingConfig {
+  id: string;
+  name: string;
+  sourceType: 'database' | 'api' | 'file';
+  sourceName: string;
+  targetType: 'wecom_doc' | 'database' | 'api';
+  targetName: string;
+  status: MappingStatus;
+  fieldMappings: FieldMapping[];
+  createdAt: string;
+  updatedAt: string;
+  lastSyncTime?: string;
+}
+
 // API响应类型
 export interface ApiResponse<T = any> {
   success: boolean;
