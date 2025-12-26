@@ -1,7 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, RefreshCw, AlertCircle, Building2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Plus, Edit, Trash2, RefreshCw, AlertCircle, Building2, User, LogOut } from 'lucide-react';
+import { authService } from '@/lib/services/authService';
 
 interface WeComAccount {
   id: string;
@@ -14,6 +16,8 @@ interface WeComAccount {
 }
 
 export default function WeComAccountsPage() {
+  const router = useRouter();
+  const [currentUser, setCurrentUser] = useState<{ username: string } | null>(null);
   const [accounts, setAccounts] = useState<WeComAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -25,6 +29,15 @@ export default function WeComAccountsPage() {
     corpSecret: '',
     enabled: true
   });
+
+  const handleLogout = async () => {
+    try {
+      await authService.logout();
+      router.push('/login');
+    } catch (error) {
+      console.error('登出失败:', error);
+    }
+  };
 
   const fetchAccounts = async () => {
     try {
@@ -47,8 +60,14 @@ export default function WeComAccountsPage() {
   };
 
   useEffect(() => {
+    const user = authService.getCurrentUser();
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+    setCurrentUser(user);
     fetchAccounts();
-  }, []);
+  }, [router]);
 
   const handleCreate = () => {
     setEditingAccount(null);
@@ -155,7 +174,51 @@ export default function WeComAccountsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+      <header className="border-b border-gray-200 bg-white/80 backdrop-blur-sm dark:border-gray-700 dark:bg-gray-800/80">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600">
+                <RefreshCw className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+                  RDB2WeDoc
+                </h1>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  数据库到企业微信文档同步系统
+                </p>
+              </div>
+            </div>
+            <nav className="flex items-center gap-4">
+              <div className="flex items-center gap-2 rounded-lg bg-blue-100 px-3 py-2 dark:bg-blue-900/20">
+                <span className="text-sm font-medium text-blue-700 dark:text-blue-400">
+                  企业微信账号
+                </span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 rounded-lg bg-gray-100 px-3 py-2 dark:bg-gray-700">
+                  <User className="h-4 w-4 text-gray-600 dark:text-gray-300" />
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {currentUser?.username || 'admin'}
+                  </span>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700"
+                >
+                  <LogOut className="h-4 w-4" />
+                  退出
+                </button>
+              </div>
+            </nav>
+          </div>
+        </div>
+      </header>
+
+      <main className="container mx-auto px-4 py-8">
+        <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Building2 className="h-8 w-8 text-blue-600" />
@@ -326,6 +389,8 @@ export default function WeComAccountsPage() {
           </div>
         </div>
       )}
+        </div>
+      </main>
     </div>
   );
 }
