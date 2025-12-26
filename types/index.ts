@@ -52,6 +52,17 @@ export interface DatabaseColumn {
 }
 
 // 企业微信文档相关类型
+export interface WeComAccount {
+  id: string;
+  name: string;
+  corpId: string;
+  corpSecret: string;
+  agentId: string;
+  enabled: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface WeComDocument {
   id: string;
   name: string;

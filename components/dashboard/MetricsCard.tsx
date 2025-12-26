@@ -1,4 +1,5 @@
 import { LucideIcon } from 'lucide-react';
+import Link from 'next/link';
 
 interface MetricsCardProps {
   title: string;
@@ -7,6 +8,8 @@ interface MetricsCardProps {
   color: 'blue' | 'green' | 'red' | 'purple' | 'orange';
   trend: string;
   description: string;
+  onClick?: () => void;
+  href?: string;
 }
 
 const colorClasses = {
@@ -43,11 +46,14 @@ export default function MetricsCard({
   icon: Icon,
   color,
   trend,
-  description
+  description,
+  onClick,
+  href
 }: MetricsCardProps) {
   const classes = colorClasses[color];
+  const isClickable = onClick || href;
 
-  return (
+  const cardContent = (
     <div className="group relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition-all hover:shadow-lg dark:border-gray-700 dark:bg-gray-800">
       <div className="absolute -right-4 -top-4 h-24 w-24 rounded-full opacity-10 group-hover:scale-150 group-hover:opacity-20 transition-all duration-300" style={{ backgroundColor: classes.text.replace('text-', '') }}></div>
       
@@ -79,4 +85,22 @@ export default function MetricsCard({
       </div>
     </div>
   );
+
+  if (href) {
+    return (
+      <Link href={href} className="block cursor-pointer">
+        {cardContent}
+      </Link>
+    );
+  }
+
+  if (onClick) {
+    return (
+      <div className="cursor-pointer" onClick={onClick}>
+        {cardContent}
+      </div>
+    );
+  }
+
+  return cardContent;
 }

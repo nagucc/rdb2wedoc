@@ -103,6 +103,7 @@ export default function DataTargetModule() {
           color="blue"
           trend={`${metrics?.activeWeComAccounts || 0} 活跃`}
           description="已配置的企业微信账号"
+          href="/dashboard/wecom-accounts"
         />
         <MetricsCard
           title="智能文档"
@@ -111,6 +112,7 @@ export default function DataTargetModule() {
           color="green"
           trend={`${metrics?.activeDocuments || 0} 活跃`}
           description="已配置的智能文档"
+          href="/dashboard/documents"
         />
         <MetricsCard
           title="工作表"

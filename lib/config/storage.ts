@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { DatabaseConnection, WeComDocument, SyncJob, User, ConfigHistory, NotificationConfig, JobTemplate, ExecutionLog } from '@/types';
+import { DatabaseConnection, WeComAccount, WeComDocument, SyncJob, User, ConfigHistory, NotificationConfig, JobTemplate, ExecutionLog } from '@/types';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 
@@ -9,6 +9,7 @@ export function ensureDataDir() {
   const dirs = [
     path.join(DATA_DIR, 'users'),
     path.join(DATA_DIR, 'databases'),
+    path.join(DATA_DIR, 'wecom_accounts'),
     path.join(DATA_DIR, 'documents'),
     path.join(DATA_DIR, 'jobs'),
     path.join(DATA_DIR, 'logs'),
@@ -145,6 +146,45 @@ export function saveDatabase(database: DatabaseConnection): boolean {
 
 export function deleteDatabase(dbId: string): boolean {
   return deleteFile(getDatabaseFilePath(dbId));
+}
+
+// 企业微信账号管理
+export function getWeComAccountFilePath(accountId: string): string {
+  return path.join(DATA_DIR, 'wecom_accounts', `${accountId}.json`);
+}
+
+export function getWeComAccounts(): WeComAccount[] {
+  const files = listFiles(path.join(DATA_DIR, 'wecom_accounts'));
+  const accounts: WeComAccount[] = [];
+  
+  files.forEach(file => {
+    const account = readJsonFile<WeComAccount>(path.join(DATA_DIR, 'wecom_accounts', file));
+    if (account) {
+      accounts.push({
+        ...account,
+        corpSecret: '******'
+      });
+    }
+  });
+  
+  return accounts;
+}
+
+export function getWeComAccountById(accountId: string): WeComAccount | null {
+  return readJsonFile<WeComAccount>(getWeComAccountFilePath(accountId));
+}
+
+export function saveWeComAccount(account: WeComAccount): boolean {
+  return writeJsonFile(getWeComAccountFilePath(account.id), account);
+}
+
+export function deleteWeComAccount(accountId: string): boolean {
+  return deleteFile(getWeComAccountFilePath(accountId));
+}
+
+export function getEnabledWeComAccounts(): WeComAccount[] {
+  const accounts = getWeComAccounts();
+  return accounts.filter(account => account.enabled);
 }
 
 // 企业微信文档管理
