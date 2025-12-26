@@ -38,7 +38,7 @@ export async function PUT(
 ) {
   try {
     const body = await request.json();
-    const { name, corpId, corpSecret, agentId, enabled } = body;
+    const { name, corpId, corpSecret, enabled } = body;
 
     const existingAccount = getWeComAccountById(params.id);
     if (!existingAccount) {
@@ -53,7 +53,6 @@ export async function PUT(
       name: name || existingAccount.name,
       corpId: corpId || existingAccount.corpId,
       corpSecret: corpSecret || existingAccount.corpSecret,
-      agentId: agentId || existingAccount.agentId,
       enabled: enabled !== undefined ? enabled : existingAccount.enabled,
       updatedAt: new Date().toISOString()
     };

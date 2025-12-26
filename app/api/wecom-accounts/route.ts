@@ -25,9 +25,9 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, corpId, corpSecret, agentId } = body;
+    const { name, corpId, corpSecret } = body;
 
-    if (!name || !corpId || !corpSecret || !agentId) {
+    if (!name || !corpId || !corpSecret) {
       return NextResponse.json(
         { success: false, error: '所有字段都必须填写' },
         { status: 400 }
@@ -39,7 +39,6 @@ export async function POST(request: NextRequest) {
       name,
       corpId,
       corpSecret,
-      agentId,
       enabled: true,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
@@ -58,7 +57,7 @@ export async function POST(request: NextRequest) {
       entityType: 'wecom_account',
       entityId: account.id,
       action: 'create',
-      newConfig: { name, corpId, agentId },
+      newConfig: { name, corpId },
       userId: 'system',
       timestamp: new Date().toISOString()
     });

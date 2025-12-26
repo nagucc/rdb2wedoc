@@ -8,7 +8,6 @@ interface WeComAccount {
   name: string;
   corpId: string;
   corpSecret: string;
-  agentId: string;
   enabled: boolean;
   createdAt: string;
   updatedAt: string;
@@ -24,7 +23,6 @@ export default function WeComAccountsPage() {
     name: '',
     corpId: '',
     corpSecret: '',
-    agentId: '',
     enabled: true
   });
 
@@ -58,7 +56,6 @@ export default function WeComAccountsPage() {
       name: '',
       corpId: '',
       corpSecret: '',
-      agentId: '',
       enabled: true
     });
     setShowModal(true);
@@ -70,7 +67,6 @@ export default function WeComAccountsPage() {
       name: account.name,
       corpId: account.corpId,
       corpSecret: '',
-      agentId: account.agentId,
       enabled: account.enabled
     });
     setShowModal(true);
@@ -220,9 +216,6 @@ export default function WeComAccountsPage() {
                     <p className="text-sm text-gray-600 dark:text-gray-400">
                       Corp ID: {account.corpId}
                     </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-500">
-                      Agent ID: {account.agentId}
-                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -300,19 +293,6 @@ export default function WeComAccountsPage() {
                   className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
                   placeholder={editingAccount ? '留空保持不变' : '输入应用密钥'}
                   required={!editingAccount}
-                />
-              </div>
-              <div>
-                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  应用 ID (Agent ID)
-                </label>
-                <input
-                  type="text"
-                  value={formData.agentId}
-                  onChange={(e) => setFormData({ ...formData, agentId: e.target.value })}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-                  placeholder="输入应用 ID"
-                  required
                 />
               </div>
               <div className="flex items-center gap-3">

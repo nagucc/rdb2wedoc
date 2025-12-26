@@ -57,7 +57,6 @@ export interface WeComAccount {
   name: string;
   corpId: string;
   corpSecret: string;
-  agentId: string;
   enabled: boolean;
   createdAt: string;
   updatedAt: string;
