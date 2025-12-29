@@ -398,7 +398,18 @@ export default function WeComAccountDetailPage() {
                           {doc.name}
                         </h4>
                         <p className="text-sm text-gray-600 dark:text-gray-400">
-                          ID: {doc.id} · {doc.sheetCount} 个工作表
+                          {doc.sheetCount} 个工作表
+                          {doc.lastSyncTime && (
+                            <span className="ml-3">
+                              更新于 {new Date(doc.lastSyncTime).toLocaleString('zh-CN', {
+                                year: 'numeric',
+                                month: '2-digit',
+                                day: '2-digit',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </span>
+                          )}
                         </p>
                       </div>
                     </div>
@@ -406,11 +417,6 @@ export default function WeComAccountDetailPage() {
                       <span className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusColor(doc.status)}`}>
                         {getStatusText(doc.status)}
                       </span>
-                      {doc.lastSyncTime && (
-                        <span className="text-sm text-gray-500 dark:text-gray-400">
-                          {new Date(doc.lastSyncTime).toLocaleString('zh-CN')}
-                        </span>
-                      )}
                       <button
                         onClick={() => handleDeleteDocument(doc)}
                         className="flex items-center gap-1 rounded-lg border border-red-300 bg-white px-3 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 dark:border-red-800 dark:bg-gray-800 dark:text-red-400 dark:hover:bg-red-900/20"
