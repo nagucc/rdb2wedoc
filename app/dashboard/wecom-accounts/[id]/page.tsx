@@ -21,6 +21,7 @@ interface IntelligentDocument {
   lastSyncTime?: string;
   sheetCount: number;
   createdAt: string;
+  accountId: string;
 }
 
 export default function WeComAccountDetailPage() {

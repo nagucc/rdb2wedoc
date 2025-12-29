@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getWeComAccountById } from '@/lib/config/storage';
+import { getWeComAccountById, getIntelligentDocumentsByAccountId, saveIntelligentDocument, deleteIntelligentDocument } from '@/lib/config/storage';
 
 interface IntelligentDocument {
   id: string;
@@ -8,6 +8,7 @@ interface IntelligentDocument {
   lastSyncTime?: string;
   sheetCount: number;
   createdAt: string;
+  accountId: string;
 }
 
 export async function GET(
@@ -25,7 +26,7 @@ export async function GET(
       );
     }
     
-    const documents: IntelligentDocument[] = [];
+    const documents = getIntelligentDocumentsByAccountId(id);
     
     return NextResponse.json({
       success: true,
@@ -65,15 +66,26 @@ export async function POST(
       );
     }
 
+    const newDocument: IntelligentDocument = {
+      id: documentId,
+      name: `文档 ${documentId}`,
+      status: 'active',
+      sheetCount: 0,
+      createdAt: new Date().toISOString(),
+      accountId: id
+    };
+
+    const saved = saveIntelligentDocument(newDocument);
+    if (!saved) {
+      return NextResponse.json(
+        { success: false, error: '保存文档失败' },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json({
       success: true,
-      data: {
-        id: documentId,
-        name: `文档 ${documentId}`,
-        status: 'active',
-        sheetCount: 0,
-        createdAt: new Date().toISOString()
-      },
+      data: newDocument,
       message: '文档添加成功'
     });
   } catch (error) {

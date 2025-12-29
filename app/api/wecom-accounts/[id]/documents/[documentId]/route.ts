@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getWeComAccountById } from '@/lib/config/storage';
+import { getWeComAccountById, deleteIntelligentDocument } from '@/lib/config/storage';
 
 export async function DELETE(
   request: NextRequest,
@@ -13,6 +13,14 @@ export async function DELETE(
       return NextResponse.json(
         { success: false, error: '账号不存在' },
         { status: 404 }
+      );
+    }
+
+    const deleted = deleteIntelligentDocument(documentId);
+    if (!deleted) {
+      return NextResponse.json(
+        { success: false, error: '删除文档失败' },
+        { status: 500 }
       );
     }
 

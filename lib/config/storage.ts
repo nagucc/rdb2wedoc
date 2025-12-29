@@ -561,5 +561,43 @@ export function updateMappingStatus(mappingId: string, status: 'active' | 'inact
   return saveMapping(updatedMapping);
 }
 
+// 智能文档管理
+export function getIntelligentDocumentFilePath(docId: string): string {
+  return path.join(DATA_DIR, 'documents', `intelligent_${docId}.json`);
+}
+
+export function getIntelligentDocuments(): any[] {
+  const files = listFiles(path.join(DATA_DIR, 'documents'));
+  const documents: any[] = [];
+  
+  files.forEach(file => {
+    if (file.startsWith('intelligent_')) {
+      const doc = readJsonFile<any>(path.join(DATA_DIR, 'documents', file));
+      if (doc) {
+        documents.push(doc);
+      }
+    }
+  });
+  
+  return documents;
+}
+
+export function getIntelligentDocumentsByAccountId(accountId: string): any[] {
+  const documents = getIntelligentDocuments();
+  return documents.filter(doc => doc.accountId === accountId);
+}
+
+export function getIntelligentDocumentById(docId: string): any | null {
+  return readJsonFile<any>(getIntelligentDocumentFilePath(docId));
+}
+
+export function saveIntelligentDocument(document: any): boolean {
+  return writeJsonFile(getIntelligentDocumentFilePath(document.id), document);
+}
+
+export function deleteIntelligentDocument(docId: string): boolean {
+  return deleteFile(getIntelligentDocumentFilePath(docId));
+}
+
 // 初始化数据目录
 ensureDataDir();

@@ -71,6 +71,16 @@ export interface WeComDocument {
   updatedAt: string;
 }
 
+export interface IntelligentDocument {
+  id: string;
+  name: string;
+  status: 'active' | 'inactive' | 'syncing';
+  lastSyncTime?: string;
+  sheetCount: number;
+  createdAt: string;
+  accountId: string;
+}
+
 export interface DocumentSheet {
   id: string;
   name: string;
