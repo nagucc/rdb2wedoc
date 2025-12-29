@@ -333,8 +333,8 @@ function DashboardContent() {
             >
               同步作业
             </button>
-            <button
-              onClick={() => setActiveTab('datamapping')}
+            <Link
+              href="/mappings"
               className={`pb-4 text-sm font-medium transition-colors ${
                 activeTab === 'datamapping'
                   ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
@@ -342,7 +342,7 @@ function DashboardContent() {
               }`}
             >
               数据映射
-            </button>
+            </Link>
           </nav>
         </div>
 
@@ -467,10 +467,6 @@ function DashboardContent() {
 
         {activeTab === 'syncjobs' && (
           <SyncJobsModule />
-        )}
-
-        {activeTab === 'datamapping' && (
-          <DataMappingModule />
         )}
 
         {!metrics && !loading && activeTab === 'overview' && (
