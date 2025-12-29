@@ -17,11 +17,41 @@ interface FieldMapping {
   description?: string;
 }
 
+interface DatabaseConnection {
+  id: string;
+  name: string;
+  type: string;
+  host: string;
+  port: number;
+  username: string;
+  database: string;
+}
+
+interface Table {
+  name: string;
+  type: string;
+}
+
+interface WeComAccount {
+  id: string;
+  name: string;
+  corpId: string;
+}
+
+interface IntelligentDocument {
+  id: string;
+  name: string;
+  accountId: string;
+}
+
+interface Sheet {
+  sheet_id: string;
+  title: string;
+}
+
 interface MappingFormData {
   name: string;
-  sourceType: 'database' | 'api' | 'file';
   sourceName: string;
-  targetType: 'wecom_doc' | 'database' | 'api';
   targetName: string;
   status: 'active' | 'inactive' | 'draft';
   fieldMappings: FieldMapping[];
@@ -37,15 +67,30 @@ export default function CreateMappingPage() {
 
   const [formData, setFormData] = useState<MappingFormData>({
     name: '',
-    sourceType: 'database',
     sourceName: '',
-    targetType: 'wecom_doc',
     targetName: '',
     status: 'draft',
     fieldMappings: []
   });
 
   const [fieldMappings, setFieldMappings] = useState<FieldMapping[]>([]);
+
+  const [databases, setDatabases] = useState<DatabaseConnection[]>([]);
+  const [tables, setTables] = useState<Table[]>([]);
+  const [selectedDatabase, setSelectedDatabase] = useState<string>('');
+  const [selectedTable, setSelectedTable] = useState<string>('');
+  const [loadingDatabases, setLoadingDatabases] = useState(false);
+  const [loadingTables, setLoadingTables] = useState(false);
+
+  const [wecomAccounts, setWeComAccounts] = useState<WeComAccount[]>([]);
+  const [documents, setDocuments] = useState<IntelligentDocument[]>([]);
+  const [sheets, setSheets] = useState<Sheet[]>([]);
+  const [selectedWeComAccount, setSelectedWeComAccount] = useState<string>('');
+  const [selectedDocument, setSelectedDocument] = useState<string>('');
+  const [selectedSheet, setSelectedSheet] = useState<string>('');
+  const [loadingWeComAccounts, setLoadingWeComAccounts] = useState(false);
+  const [loadingDocuments, setLoadingDocuments] = useState(false);
+  const [loadingSheets, setLoadingSheets] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -56,6 +101,129 @@ export default function CreateMappingPage() {
     }
     setCurrentUser(user);
   }, [router]);
+
+  useEffect(() => {
+    const fetchDatabases = async () => {
+      try {
+        setLoadingDatabases(true);
+        const response = await fetch('/api/databases');
+        const result = await response.json();
+        if (result.success) {
+          setDatabases(result.data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch databases:', error);
+      } finally {
+        setLoadingDatabases(false);
+      }
+    };
+
+    fetchDatabases();
+  }, []);
+
+  useEffect(() => {
+    if (!selectedDatabase) {
+      setTables([]);
+      setSelectedTable('');
+      return;
+    }
+
+    const fetchTables = async () => {
+      try {
+        setLoadingTables(true);
+        const response = await fetch(`/api/databases/${selectedDatabase}/tables`);
+        const result = await response.json();
+        if (result.success) {
+          setTables(result.data);
+          setSelectedTable('');
+        }
+      } catch (error) {
+        console.error('Failed to fetch tables:', error);
+        setTables([]);
+      } finally {
+        setLoadingTables(false);
+      }
+    };
+
+    fetchTables();
+  }, [selectedDatabase]);
+
+  useEffect(() => {
+    const fetchWeComAccounts = async () => {
+      try {
+        setLoadingWeComAccounts(true);
+        const response = await fetch('/api/wecom-accounts');
+        const result = await response.json();
+        if (result.success) {
+          setWeComAccounts(result.data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch WeCom accounts:', error);
+      } finally {
+        setLoadingWeComAccounts(false);
+      }
+    };
+
+    fetchWeComAccounts();
+  }, []);
+
+  useEffect(() => {
+    if (!selectedWeComAccount) {
+      setDocuments([]);
+      setSelectedDocument('');
+      setSheets([]);
+      setSelectedSheet('');
+      return;
+    }
+
+    const fetchDocuments = async () => {
+      try {
+        setLoadingDocuments(true);
+        const response = await fetch(`/api/wecom-accounts/${selectedWeComAccount}/documents`);
+        const result = await response.json();
+        if (result.success) {
+          setDocuments(result.data);
+          setSelectedDocument('');
+          setSheets([]);
+          setSelectedSheet('');
+        }
+      } catch (error) {
+        console.error('Failed to fetch documents:', error);
+        setDocuments([]);
+      } finally {
+        setLoadingDocuments(false);
+      }
+    };
+
+    fetchDocuments();
+  }, [selectedWeComAccount]);
+
+  useEffect(() => {
+    if (!selectedDocument) {
+      setSheets([]);
+      setSelectedSheet('');
+      return;
+    }
+
+    const fetchSheets = async () => {
+      try {
+        setLoadingSheets(true);
+        const response = await fetch(`/api/documents/${selectedDocument}/sheets`);
+        const result = await response.json();
+        if (result.success) {
+          setSheets(result.data);
+          setSelectedSheet('');
+        }
+      } catch (error) {
+        console.error('Failed to fetch sheets:', error);
+        setSheets([]);
+      } finally {
+        setLoadingSheets(false);
+      }
+    };
+
+    fetchSheets();
+  }, [selectedDocument]);
 
   const handleLogout = async () => {
     try {
@@ -106,13 +274,25 @@ export default function CreateMappingPage() {
       return false;
     }
 
-    if (!formData.sourceName.trim()) {
-      setError('源名称不能为空');
+    if (!selectedDatabase) {
+      setError('请选择数据库');
+      return false;
+    }
+    if (!selectedTable) {
+      setError('请选择表');
       return false;
     }
 
-    if (!formData.targetName.trim()) {
-      setError('目标名称不能为空');
+    if (!selectedWeComAccount) {
+      setError('请选择企业微信账户');
+      return false;
+    }
+    if (!selectedDocument) {
+      setError('请选择智能文档');
+      return false;
+    }
+    if (!selectedSheet) {
+      setError('请选择子表');
       return false;
     }
 
@@ -147,15 +327,19 @@ export default function CreateMappingPage() {
     setLoading(true);
 
     try {
+      const submissionData = {
+        ...formData,
+        sourceName: `${selectedDatabase}.${selectedTable}`,
+        targetName: `${selectedWeComAccount}:${selectedDocument}:${selectedSheet}`,
+        fieldMappings: fieldMappings
+      };
+
       const response = await fetch('/api/mappings', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          ...formData,
-          fieldMappings: fieldMappings
-        })
+        body: JSON.stringify(submissionData)
       });
 
       if (!response.ok) {
@@ -301,69 +485,121 @@ export default function CreateMappingPage() {
               </div>
 
               <div>
-                <label htmlFor="sourceType" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  源类型
-                </label>
-                <select
-                  id="sourceType"
-                  name="sourceType"
-                  value={formData.sourceType}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:border-indigo-500 dark:focus:ring-indigo-500"
-                >
-                  <option value="database">数据库</option>
-                  <option value="api">API</option>
-                  <option value="file">文件</option>
-                </select>
-              </div>
-
-              <div>
                 <label htmlFor="sourceName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   源名称 <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="text"
-                  id="sourceName"
-                  name="sourceName"
-                  value={formData.sourceName}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:border-indigo-500 dark:focus:ring-indigo-500"
-                  placeholder="请输入源名称"
-                  required
-                />
-              </div>
-
-              <div>
-                <label htmlFor="targetType" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  目标类型
-                </label>
                 <select
-                  id="targetType"
-                  name="targetType"
-                  value={formData.targetType}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:border-indigo-500 dark:focus:ring-indigo-500"
-                >
-                  <option value="wecom_doc">企业微信文档</option>
-                  <option value="database">数据库</option>
-                  <option value="api">API</option>
-                </select>
-              </div>
+                      id="sourceDatabase"
+                      value={selectedDatabase}
+                      onChange={(e) => setSelectedDatabase(e.target.value)}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:border-indigo-500 dark:focus:ring-indigo-500"
+                      required
+                    >
+                      <option value="">请选择数据库</option>
+                      {loadingDatabases ? (
+                        <option disabled>加载中...</option>
+                      ) : databases.length === 0 ? (
+                        <option disabled>暂无可用数据库</option>
+                      ) : (
+                        databases.map((db) => (
+                          <option key={db.id} value={db.id}>
+                            {db.name} ({db.type})
+                          </option>
+                        ))
+                      )}
+                    </select>
+                    {selectedDatabase && (
+                      <select
+                        id="sourceTable"
+                        value={selectedTable}
+                        onChange={(e) => setSelectedTable(e.target.value)}
+                        className="mt-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:border-indigo-500 dark:focus:ring-indigo-500"
+                        required
+                      >
+                        <option value="">请选择表</option>
+                        {loadingTables ? (
+                          <option disabled>加载中...</option>
+                        ) : tables.length === 0 ? (
+                          <option disabled>暂无可用表</option>
+                        ) : (
+                          tables.map((table) => (
+                            <option key={table.name} value={table.name}>
+                              {table.name} ({table.type})
+                            </option>
+                          ))
+                        )}
+                      </select>
+                    )}
+                  </div>
 
               <div>
                 <label htmlFor="targetName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   目标名称 <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="text"
-                  id="targetName"
-                  name="targetName"
-                  value={formData.targetName}
-                  onChange={handleInputChange}
+                <select
+                  id="targetWeComAccount"
+                  value={selectedWeComAccount}
+                  onChange={(e) => setSelectedWeComAccount(e.target.value)}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:border-indigo-500 dark:focus:ring-indigo-500"
-                  placeholder="请输入目标名称"
                   required
-                />
+                >
+                  <option value="">请选择企业微信账户</option>
+                  {loadingWeComAccounts ? (
+                    <option disabled>加载中...</option>
+                  ) : wecomAccounts.length === 0 ? (
+                    <option disabled>暂无可用账户</option>
+                  ) : (
+                    wecomAccounts.map((account) => (
+                      <option key={account.id} value={account.id}>
+                        {account.name}
+                      </option>
+                    ))
+                  )}
+                </select>
+                {selectedWeComAccount && (
+                  <select
+                    id="targetDocument"
+                    value={selectedDocument}
+                    onChange={(e) => setSelectedDocument(e.target.value)}
+                    className="mt-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:border-indigo-500 dark:focus:ring-indigo-500"
+                    required
+                  >
+                    <option value="">请选择智能文档</option>
+                    {loadingDocuments ? (
+                      <option disabled>加载中...</option>
+                    ) : documents.length === 0 ? (
+                      <option disabled>暂无可用文档</option>
+                    ) : (
+                      documents.map((doc) => (
+                        <option key={doc.id} value={doc.id}>
+                          {doc.name}
+                        </option>
+                      ))
+                    )}
+                  </select>
+                )}
+                {selectedDocument && (
+                  <select
+                    id="targetSheet"
+                    value={selectedSheet}
+                    onChange={(e) => setSelectedSheet(e.target.value)}
+                    className="mt-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:border-indigo-500 dark:focus:ring-indigo-500"
+                    required
+                  >
+                    <option value="">请选择子表</option>
+                    {loadingSheets ? (
+                      <option disabled>加载中...</option>
+                    ) : sheets.length === 0 ? (
+                      <option disabled>暂无可用子表</option>
+                    ) : (
+                      sheets.map((sheet) => (
+                        <option key={sheet.sheet_id} value={sheet.sheet_id}>
+                          {sheet.title}
+                        </option>
+                      ))
+                    )}
+                  </select>
+                )}
               </div>
             </div>
 
