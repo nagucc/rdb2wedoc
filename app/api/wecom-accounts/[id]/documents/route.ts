@@ -124,12 +124,14 @@ export async function POST(
 
       if (nameData.success && nameData.data && nameData.data.name) {
         newDocument.name = nameData.data.name;
+        newDocument.lastSyncTime = new Date().toISOString();
         saveIntelligentDocument(newDocument);
         
         console.log(`[API] 文档名称更新成功`, {
           accountId: id,
           documentId,
           documentName: newDocument.name,
+          lastSyncTime: newDocument.lastSyncTime,
           timestamp: new Date().toISOString()
         });
       } else {
@@ -139,6 +141,8 @@ export async function POST(
           message: nameData.message || '未知错误',
           timestamp: new Date().toISOString()
         });
+        newDocument.lastSyncTime = new Date().toISOString();
+        saveIntelligentDocument(newDocument);
       }
     } catch (error) {
       console.error(`[API] 获取文档名称时发生错误`, {
@@ -147,6 +151,8 @@ export async function POST(
         error: (error as Error).message,
         timestamp: new Date().toISOString()
       });
+      newDocument.lastSyncTime = new Date().toISOString();
+      saveIntelligentDocument(newDocument);
     }
 
     return NextResponse.json({
