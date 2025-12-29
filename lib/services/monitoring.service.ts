@@ -1,4 +1,4 @@
-import { getJobs, getJobLogs } from '@/lib/config/storage';
+import { getJobs, getJobLogs, getWeComAccounts, getMappings } from '@/lib/config/storage';
 import { syncService } from './sync.service';
 import { dataSourceService } from './datasource.service';
 import { Logger } from '@/lib/utils/helpers';
@@ -15,6 +15,8 @@ export interface SystemMetrics {
   totalDataSources: number;
   connectedDataSources: number;
   disconnectedDataSources: number;
+  totalWeComAccounts: number;
+  totalMappings: number;
 }
 
 export interface JobMetrics {
@@ -101,6 +103,8 @@ export class MonitoringService {
       const jobs = await getJobs();
       const scheduledJobs = syncService.getScheduledJobs();
       const dataSourceStats = await dataSourceService.getDataSourceStats();
+      const weComAccounts = getWeComAccounts();
+      const mappings = getMappings();
 
       let totalJobs = jobs.length;
       let activeJobs = jobs.filter(j => j.enabled).length;
@@ -162,7 +166,9 @@ export class MonitoringService {
         totalRecordsProcessed,
         totalDataSources: dataSourceStats.totalDataSources,
         connectedDataSources: dataSourceStats.connectedDataSources,
-        disconnectedDataSources: dataSourceStats.disconnectedDataSources
+        disconnectedDataSources: dataSourceStats.disconnectedDataSources,
+        totalWeComAccounts: weComAccounts.length,
+        totalMappings: mappings.length
       };
 
       // 保存历史指标

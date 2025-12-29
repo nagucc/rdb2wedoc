@@ -20,7 +20,9 @@ import {
   CheckCircle,
   XCircle,
   PlayCircle,
-  PauseCircle
+  PauseCircle,
+  Users,
+  FileText
 } from 'lucide-react';
 import { authService } from '@/lib/services/authService';
 import MetricsCard from '@/components/dashboard/MetricsCard';
@@ -45,6 +47,8 @@ interface SystemMetrics {
   totalDataSources: number;
   connectedDataSources: number;
   disconnectedDataSources: number;
+  totalWeComAccounts: number;
+  totalMappings: number;
 }
 
 interface JobMetrics {
@@ -397,6 +401,27 @@ function DashboardContent() {
                 color="purple"
                 trend={metrics.successRate >= 90 ? '优秀' : metrics.successRate >= 70 ? '良好' : '需改进'}
                 description="作业执行成功率"
+              />
+            </div>
+
+            <div className="mb-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-2">
+              <MetricsCard
+                title="企业微信账号"
+                value={metrics.totalWeComAccounts}
+                icon={Users}
+                color="green"
+                trend={metrics.totalWeComAccounts > 0 ? '已配置' : '未配置'}
+                description="系统配置的企业微信账号"
+                href="/dashboard/wecom-accounts"
+              />
+              <MetricsCard
+                title="数据映射"
+                value={metrics.totalMappings}
+                icon={FileText}
+                color="purple"
+                trend={metrics.totalMappings > 0 ? `${metrics.totalMappings}个映射` : '无映射'}
+                description="数据源与目标的映射配置"
+                href="/mappings"
               />
             </div>
 
