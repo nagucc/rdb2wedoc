@@ -60,6 +60,7 @@ export default function EditDatabasePage() {
       maxConnections: 10
     }
   });
+  const [originalPassword, setOriginalPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [testing, setTesting] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -74,31 +75,30 @@ export default function EditDatabasePage() {
   const fetchDatabaseConfig = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/databases');
+      const response = await fetch(`/api/databases/${dbId}`);
       const result = await response.json();
       
       if (result.success && result.data) {
-        const db = result.data.find((d: any) => d.id === dbId);
-        if (db) {
-          setConfig({
-            id: db.id,
-            name: db.name,
-            type: db.type,
-            host: db.host,
-            port: db.port.toString(),
-            username: db.username,
-            password: '',
-            database: db.database,
-            options: db.options || {
-              ssl: false,
-              timezone: 'UTC',
-              connectionTimeout: 30,
-              maxConnections: 10
-            }
-          });
-        } else {
-          router.push('/dashboard?tab=datasources');
-        }
+        const db = result.data;
+        setOriginalPassword(db.password);
+        setConfig({
+          id: db.id,
+          name: db.name,
+          type: db.type,
+          host: db.host,
+          port: db.port.toString(),
+          username: db.username,
+          password: db.password,
+          database: db.database,
+          options: db.options || {
+            ssl: false,
+            timezone: 'UTC',
+            connectionTimeout: 30,
+            maxConnections: 10
+          }
+        });
+      } else {
+        router.push('/dashboard?tab=datasources');
       }
     } catch (error) {
       console.error('Failed to fetch database config:', error);
@@ -238,12 +238,16 @@ export default function EditDatabasePage() {
     setTestResult(null);
 
     try {
+      const configToSave = config.password === originalPassword 
+        ? { ...config, password: '' } 
+        : config;
+
       const response = await fetch('/api/databases', {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(config)
+        body: JSON.stringify(configToSave)
       });
 
       const result = await response.json();
