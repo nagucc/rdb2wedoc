@@ -41,6 +41,9 @@ interface SystemMetrics {
   successRate: number;
   avgExecutionTime: number;
   totalRecordsProcessed: number;
+  totalDataSources: number;
+  connectedDataSources: number;
+  disconnectedDataSources: number;
 }
 
 interface JobMetrics {
@@ -344,7 +347,15 @@ export default function DashboardPage() {
 
         {activeTab === 'overview' && metrics && (
           <>
-            <div className="mb-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="mb-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-5">
+              <MetricsCard
+                title="数据源总数"
+                value={metrics.totalDataSources}
+                icon={Database}
+                color="blue"
+                trend={metrics.connectedDataSources > 0 ? `${metrics.connectedDataSources}已连接` : '无数据源'}
+                description="系统配置的所有数据源"
+              />
               <MetricsCard
                 title="总作业数"
                 value={metrics.totalJobs}

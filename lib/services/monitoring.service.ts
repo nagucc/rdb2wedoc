@@ -1,5 +1,6 @@
 import { getJobs, getJobLogs } from '@/lib/config/storage';
 import { syncService } from './sync.service';
+import { dataSourceService } from './datasource.service';
 import { Logger } from '@/lib/utils/helpers';
 
 export interface SystemMetrics {
@@ -11,6 +12,9 @@ export interface SystemMetrics {
   successRate: number;
   avgExecutionTime: number;
   totalRecordsProcessed: number;
+  totalDataSources: number;
+  connectedDataSources: number;
+  disconnectedDataSources: number;
 }
 
 export interface JobMetrics {
@@ -96,6 +100,7 @@ export class MonitoringService {
     try {
       const jobs = await getJobs();
       const scheduledJobs = syncService.getScheduledJobs();
+      const dataSourceStats = await dataSourceService.getDataSourceStats();
 
       let totalJobs = jobs.length;
       let activeJobs = jobs.filter(j => j.enabled).length;
@@ -154,7 +159,10 @@ export class MonitoringService {
         failedJobs,
         successRate,
         avgExecutionTime,
-        totalRecordsProcessed
+        totalRecordsProcessed,
+        totalDataSources: dataSourceStats.totalDataSources,
+        connectedDataSources: dataSourceStats.connectedDataSources,
+        disconnectedDataSources: dataSourceStats.disconnectedDataSources
       };
 
       // 保存历史指标
