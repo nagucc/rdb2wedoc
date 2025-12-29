@@ -83,7 +83,7 @@ export default function DataSourceHealthPanel({ metrics }: DataSourceHealthPanel
     }
   };
 
-  const classes = colorClasses[healthStatus.color];
+  const classes = colorClasses[healthStatus.color as keyof typeof colorClasses];
   const HealthIcon = healthStatus.icon;
 
   return (

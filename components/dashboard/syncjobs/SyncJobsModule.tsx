@@ -207,8 +207,7 @@ export default function SyncJobsModule() {
     success: jobs.filter(j => j.status === 'success').length,
     failed: jobs.filter(j => j.status === 'failed').length,
     pending: jobs.filter(j => j.status === 'pending').length,
-    paused: jobs.filter(j => j.status === 'paused').length,
-    idle: jobs.filter(j => j.status === 'idle').length
+    paused: jobs.filter(j => j.status === 'paused').length
   };
 
   if (loading && jobs.length === 0) {
@@ -441,7 +440,7 @@ export default function SyncJobsModule() {
                         <PauseCircle className="h-4 w-4" />
                         停止
                       </button>
-                    ) : job.status === 'paused' || job.status === 'idle' ? (
+                    ) : job.status === 'paused' ? (
                       <button
                         onClick={() => handleJobAction(job.id, 'start')}
                         className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50 transition-colors text-sm"

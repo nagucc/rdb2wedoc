@@ -142,7 +142,7 @@ export interface ExecutionLog {
 // 配置历史记录
 export interface ConfigHistory {
   id: string;
-  entityType: 'database' | 'document' | 'job' | 'user';
+  entityType: 'database' | 'document' | 'job' | 'user' | 'wecom_account';
   entityId: string;
   action: 'create' | 'update' | 'delete';
   oldConfig?: any;

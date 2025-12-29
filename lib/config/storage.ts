@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { DatabaseConnection, WeComAccount, WeComDocument, SyncJob, User, ConfigHistory, NotificationConfig, JobTemplate, ExecutionLog, MappingConfig } from '@/types';
+import { DatabaseConnection, WeComAccount, WeComDocument, SyncJob, User, ConfigHistory, NotificationConfig, JobTemplate, ExecutionLog, MappingConfig, DocumentSheet } from '@/types';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 

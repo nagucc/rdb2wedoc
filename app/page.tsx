@@ -32,7 +32,7 @@ export default function Home() {
   };
 
   // 处理功能点击
-  const handleFeatureClick = (e: React.MouseEvent) => {
+  const handleFeatureClick = (e: React.MouseEvent, link?: string) => {
     if (!currentUser) {
       e.preventDefault();
       setShowLoginPrompt(true);
