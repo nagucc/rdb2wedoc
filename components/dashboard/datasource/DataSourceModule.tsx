@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Database, RefreshCw, AlertCircle, Plus } from 'lucide-react';
+import { Database, RefreshCw, AlertCircle, Plus, Trash2, Check, X } from 'lucide-react';
 import DataSourceInfoCard from './DataSourceInfoCard';
 import DataSourceHealthPanel from './DataSourceHealthPanel';
 import DataSourceStatsChart from './DataSourceStatsChart';
@@ -16,6 +16,8 @@ export default function DataSourceModule() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedDataSource, setSelectedDataSource] = useState<DataSourceMetrics | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<DataSourceMetrics | null>(null);
+  const [processing, setProcessing] = useState(false);
   const [filters, setFilters] = useState<FilterState>({
     searchQuery: '',
     statusFilter: 'all',
@@ -65,6 +67,43 @@ export default function DataSourceModule() {
 
   const handleAddDataSource = () => {
     router.push('/databases/add');
+  };
+
+  const handleEditDataSource = (metric: DataSourceMetrics) => {
+    router.push(`/databases/edit/${metric.dataSourceId}`);
+  };
+
+  const handleDeleteClick = (metric: DataSourceMetrics) => {
+    setDeleteConfirm(metric);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteConfirm) return;
+
+    try {
+      setProcessing(true);
+      const response = await fetch(`/api/databases?id=${deleteConfirm.dataSourceId}`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        await fetchDataSources();
+        setDeleteConfirm(null);
+      } else {
+        setError(data.error || '删除数据源失败');
+      }
+    } catch (err) {
+      setError('删除数据源时发生错误');
+      console.error('Error deleting data source:', err);
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteConfirm(null);
   };
 
   const getFilteredAndSortedMetrics = () => {
@@ -173,6 +212,8 @@ export default function DataSourceModule() {
             <DataSourceInfoCard
               metrics={metric}
               onClick={() => setSelectedDataSource(metric)}
+              onEdit={() => handleEditDataSource(metric)}
+              onDelete={() => handleDeleteClick(metric)}
             />
             <DataSourceHealthPanel metrics={metric} />
           </div>
@@ -184,6 +225,63 @@ export default function DataSourceModule() {
           <Database className="h-16 w-16 text-gray-300 mx-auto mb-4" />
           <p className="text-gray-500 text-lg">没有找到匹配的数据源</p>
           <p className="text-gray-400 text-sm mt-2">尝试调整筛选条件或重置搜索</p>
+        </div>
+      )}
+
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/20">
+                <Trash2 className="h-6 w-6 text-red-600 dark:text-red-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  确认删除数据源
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  此操作不可撤销
+                </p>
+              </div>
+            </div>
+            
+            <div className="mb-6">
+              <p className="text-gray-700 dark:text-gray-300">
+                您确定要删除数据源 <span className="font-semibold">{deleteConfirm.dataSourceName}</span> 吗？
+              </p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                删除后，所有相关的同步任务和数据映射也将被移除。
+              </p>
+            </div>
+
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={handleDeleteCancel}
+                disabled={processing}
+                className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+              >
+                <X className="h-4 w-4" />
+                取消
+              </button>
+              <button
+                onClick={handleDeleteConfirm}
+                disabled={processing}
+                className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {processing ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                    删除中...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-4 w-4" />
+                    确认删除
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

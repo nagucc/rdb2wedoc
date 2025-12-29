@@ -1,14 +1,16 @@
 'use client';
 
-import { Database, Clock, CheckCircle, XCircle, AlertCircle, Server, Calendar } from 'lucide-react';
+import { Database, Clock, CheckCircle, XCircle, AlertCircle, Server, Calendar, Edit, Trash2 } from 'lucide-react';
 import { DataSourceMetrics } from '@/lib/services/datasource.service';
 
 interface DataSourceInfoCardProps {
   metrics: DataSourceMetrics;
   onClick?: () => void;
+  onEdit?: () => void;
+  onDelete?: () => void;
 }
 
-export default function DataSourceInfoCard({ metrics, onClick }: DataSourceInfoCardProps) {
+export default function DataSourceInfoCard({ metrics, onClick, onEdit, onDelete }: DataSourceInfoCardProps) {
   const getStatusIcon = () => {
     switch (metrics.connectionStatus) {
       case 'connected':
@@ -104,11 +106,37 @@ export default function DataSourceInfoCard({ metrics, onClick }: DataSourceInfoC
             </div>
           </div>
           
-          <div className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 ${getHealthBg(metrics.healthScore)}`}>
-            <span className={`text-sm font-bold ${getHealthColor(metrics.healthScore)}`}>
-              {metrics.healthScore}
-            </span>
-            <span className="text-xs text-gray-600 dark:text-gray-400">健康分</span>
+          <div className="flex items-center gap-2">
+            <div className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 ${getHealthBg(metrics.healthScore)}`}>
+              <span className={`text-sm font-bold ${getHealthColor(metrics.healthScore)}`}>
+                {metrics.healthScore}
+              </span>
+              <span className="text-xs text-gray-600 dark:text-gray-400">健康分</span>
+            </div>
+            {onEdit && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit();
+                }}
+                className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100 text-blue-600 hover:bg-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/30 transition-colors"
+                title="编辑"
+              >
+                <Edit className="h-4 w-4" />
+              </button>
+            )}
+            {onDelete && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete();
+                }}
+                className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-100 text-red-600 hover:bg-red-200 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30 transition-colors"
+                title="删除"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            )}
           </div>
         </div>
 

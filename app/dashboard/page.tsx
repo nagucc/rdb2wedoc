@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { 
   RefreshCw,
   Database,
@@ -66,8 +67,9 @@ interface User {
   createdAt: string;
 }
 
-export default function DashboardPage() {
+function DashboardContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [mounted, setMounted] = useState(false);
   const [metrics, setMetrics] = useState<SystemMetrics | null>(null);
@@ -90,6 +92,13 @@ export default function DashboardPage() {
     setCurrentUser(user);
     fetchDashboardData();
   }, [router]);
+
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam && ['overview', 'datasources', 'datatargets', 'syncjobs', 'datamapping'].includes(tabParam)) {
+      setActiveTab(tabParam as any);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (!autoRefresh) return;
@@ -294,8 +303,8 @@ export default function DashboardPage() {
             >
               系统概览
             </button>
-            <button
-              onClick={() => setActiveTab('datasources')}
+            <Link
+              href="/databases"
               className={`pb-4 text-sm font-medium transition-colors ${
                 activeTab === 'datasources'
                   ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
@@ -303,7 +312,7 @@ export default function DashboardPage() {
               }`}
             >
               数据源管理
-            </button>
+            </Link>
             <button
               onClick={() => setActiveTab('datatargets')}
               className={`pb-4 text-sm font-medium transition-colors ${
@@ -355,6 +364,7 @@ export default function DashboardPage() {
                 color="blue"
                 trend={metrics.connectedDataSources > 0 ? `${metrics.connectedDataSources}已连接` : '无数据源'}
                 description="系统配置的所有数据源"
+                href="/databases"
               />
               <MetricsCard
                 title="总作业数"
@@ -451,10 +461,6 @@ export default function DashboardPage() {
           </>
         )}
 
-        {activeTab === 'datasources' && (
-          <DataSourceModule />
-        )}
-
         {activeTab === 'datatargets' && (
           <DataTargetModule />
         )}
@@ -487,5 +493,15 @@ export default function DashboardPage() {
         )}
       </main>
     </div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen">
+      <RefreshCw className="h-8 w-8 animate-spin text-blue-600" />
+    </div>}>
+      <DashboardContent />
+    </Suspense>
   );
 }
