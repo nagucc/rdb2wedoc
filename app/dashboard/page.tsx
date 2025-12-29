@@ -2,7 +2,6 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
 import { 
   RefreshCw,
   Database,
@@ -31,9 +30,7 @@ import JobList from '@/components/dashboard/JobList';
 import SystemStatus from '@/components/dashboard/SystemStatus';
 import FilterPanel from '@/components/dashboard/FilterPanel';
 import DataSourceModule from '@/components/dashboard/datasource/DataSourceModule';
-import DataTargetModule from '@/components/dashboard/datatarget/DataTargetModule';
 import SyncJobsModule from '@/components/dashboard/syncjobs/SyncJobsModule';
-import DataMappingModule from '@/components/dashboard/datamapping/DataMappingModule';
 
 interface SystemMetrics {
   timestamp: string;
@@ -84,7 +81,7 @@ function DashboardContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'success' | 'failed' | 'running'>('all');
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
-  const [activeTab, setActiveTab] = useState<'overview' | 'datasources' | 'datatargets' | 'syncjobs' | 'datamapping'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'syncjobs'>('overview');
 
   useEffect(() => {
     setMounted(true);
@@ -99,7 +96,7 @@ function DashboardContent() {
 
   useEffect(() => {
     const tabParam = searchParams.get('tab');
-    if (tabParam && ['overview', 'datasources', 'datatargets', 'syncjobs', 'datamapping'].includes(tabParam)) {
+    if (tabParam && ['overview', 'syncjobs'].includes(tabParam)) {
       setActiveTab(tabParam as any);
     }
   }, [searchParams]);
@@ -307,26 +304,6 @@ function DashboardContent() {
             >
               系统概览
             </button>
-            <Link
-              href="/databases"
-              className={`pb-4 text-sm font-medium transition-colors ${
-                activeTab === 'datasources'
-                  ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
-                  : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
-              }`}
-            >
-              数据源管理
-            </Link>
-            <button
-              onClick={() => setActiveTab('datatargets')}
-              className={`pb-4 text-sm font-medium transition-colors ${
-                activeTab === 'datatargets'
-                  ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
-                  : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
-              }`}
-            >
-              数据目标
-            </button>
             <button
               onClick={() => setActiveTab('syncjobs')}
               className={`pb-4 text-sm font-medium transition-colors ${
@@ -337,16 +314,6 @@ function DashboardContent() {
             >
               同步作业
             </button>
-            <Link
-              href="/mappings"
-              className={`pb-4 text-sm font-medium transition-colors ${
-                activeTab === 'datamapping'
-                  ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
-                  : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
-              }`}
-            >
-              数据映射
-            </Link>
           </nav>
         </div>
 
@@ -484,10 +451,6 @@ function DashboardContent() {
               <JobList jobs={filteredJobs} />
             </div>
           </>
-        )}
-
-        {activeTab === 'datatargets' && (
-          <DataTargetModule />
         )}
 
         {activeTab === 'syncjobs' && (
