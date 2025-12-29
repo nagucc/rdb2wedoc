@@ -38,6 +38,8 @@ export default function WeComAccountDetailPage() {
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive' | 'syncing'>('all');
   const [showAddDocumentModal, setShowAddDocumentModal] = useState(false);
   const [newDocumentId, setNewDocumentId] = useState('');
+  const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
+  const [documentToDelete, setDocumentToDelete] = useState<IntelligentDocument | null>(null);
 
   const handleLogout = async () => {
     try {
@@ -145,20 +147,25 @@ export default function WeComAccountDetailPage() {
     }
   };
 
-  const handleDeleteDocument = async (documentId: string) => {
-    if (!confirm('确定要删除这个智能文档吗？')) {
-      return;
-    }
+  const handleDeleteDocument = async (document: IntelligentDocument) => {
+    setDocumentToDelete(document);
+    setShowDeleteConfirmModal(true);
+  };
+
+  const confirmDeleteDocument = async () => {
+    if (!documentToDelete) return;
 
     try {
-      const response = await fetch(`/api/wecom-accounts/${accountId}/documents/${documentId}`, {
+      const response = await fetch(`/api/wecom-accounts/${accountId}/documents/${documentToDelete.id}`, {
         method: 'DELETE'
       });
 
       const data = await response.json();
 
       if (data.success) {
-        fetchDocuments();
+        setShowDeleteConfirmModal(false);
+        setDocumentToDelete(null);
+        await fetchDocuments();
       } else {
         alert(data.error || '删除文档失败');
       }
@@ -166,6 +173,11 @@ export default function WeComAccountDetailPage() {
       alert('网络错误，请检查连接后重试');
       console.error('Error deleting document:', err);
     }
+  };
+
+  const cancelDeleteDocument = () => {
+    setShowDeleteConfirmModal(false);
+    setDocumentToDelete(null);
   };
 
   const filteredDocuments = documents.filter(doc => {
@@ -407,7 +419,7 @@ export default function WeComAccountDetailPage() {
                         </span>
                       )}
                       <button
-                        onClick={() => handleDeleteDocument(doc.id)}
+                        onClick={() => handleDeleteDocument(doc)}
                         className="flex items-center gap-1 rounded-lg border border-red-300 bg-white px-3 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 dark:border-red-800 dark:bg-gray-800 dark:text-red-400 dark:hover:bg-red-900/20"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -461,6 +473,51 @@ export default function WeComAccountDetailPage() {
                   添加
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDeleteConfirmModal && documentToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="mx-4 w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-800">
+            <div className="mb-4 flex items-center justify-center">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/20">
+                <Trash2 className="h-8 w-8 text-red-600 dark:text-red-400" />
+              </div>
+            </div>
+            <h3 className="mb-3 text-center text-xl font-semibold text-gray-900 dark:text-white">
+              确认删除文档
+            </h3>
+            <p className="mb-2 text-center text-sm text-gray-600 dark:text-gray-400">
+              您即将删除以下智能文档：
+            </p>
+            <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-900/10">
+              <p className="text-base font-semibold text-gray-900 dark:text-white">
+                {documentToDelete.name}
+              </p>
+              <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                文档ID: {documentToDelete.id}
+              </p>
+            </div>
+            <div className="mb-4 rounded-lg bg-yellow-50 border border-yellow-200 p-3 dark:bg-yellow-900/10 dark:border-yellow-800">
+              <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                ⚠️ 警告：此操作不可撤销，删除后文档将无法恢复
+              </p>
+            </div>
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={cancelDeleteDocument}
+                className="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+              >
+                取消
+              </button>
+              <button
+                onClick={confirmDeleteDocument}
+                className="flex-1 rounded-lg bg-red-600 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-red-700"
+              >
+                确认删除
+              </button>
             </div>
           </div>
         </div>
