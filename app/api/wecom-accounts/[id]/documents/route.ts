@@ -1,15 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getWeComAccountById, getIntelligentDocumentsByAccountId, saveIntelligentDocument, deleteIntelligentDocument } from '@/lib/config/storage';
-
-interface IntelligentDocument {
-  id: string;
-  name: string;
-  status: 'active' | 'inactive' | 'syncing';
-  lastSyncTime?: string;
-  sheetCount: number;
-  createdAt: string;
-  accountId: string;
-}
+import { weComDocumentService } from '@/lib/services/wecom-document.service';
+import { IntelligentDocument } from '@/types';
 
 export async function GET(
   request: NextRequest,
@@ -146,6 +138,39 @@ export async function POST(
       }
     } catch (error) {
       console.error(`[API] 获取文档名称时发生错误`, {
+        accountId: id,
+        documentId,
+        error: (error as Error).message,
+        timestamp: new Date().toISOString()
+      });
+      newDocument.lastSyncTime = new Date().toISOString();
+      saveIntelligentDocument(newDocument);
+    }
+
+    console.log(`[API] 开始获取文档Sheet列表`, {
+      accountId: id,
+      documentId,
+      timestamp: new Date().toISOString()
+    });
+
+    try {
+      const accessToken = await weComDocumentService.getAccessToken(account.corpId, account.corpSecret);
+      const sheets = await weComDocumentService.getDocumentSheets(accessToken, documentId);
+      
+      newDocument.sheets = sheets;
+      newDocument.sheetCount = sheets.length;
+      newDocument.lastSyncTime = new Date().toISOString();
+      saveIntelligentDocument(newDocument);
+      
+      console.log(`[API] 文档Sheet信息更新成功`, {
+        accountId: id,
+        documentId,
+        sheetCount: sheets.length,
+        lastSyncTime: newDocument.lastSyncTime,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error(`[API] 获取文档Sheet列表时发生错误`, {
         accountId: id,
         documentId,
         error: (error as Error).message,

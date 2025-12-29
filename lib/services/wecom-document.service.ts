@@ -35,39 +35,7 @@ export class WeComDocumentService {
     }
   }
 
-  async getDocumentSheets(accessToken: string, documentId: string): Promise<DocumentSheet[]> {
-    try {
-      // 企业微信智能文档API - 获取文档的所有Sheet
-      const response = await this.client.get('/cgi-bin/wedoc/smartsheet/get_sheet_list', {
-        params: {
-          access_token: accessToken,
-          docid: documentId
-        }
-      });
-
-      if (response.data.errcode !== 0) {
-        throw new Error(`获取Sheet列表失败: ${response.data.errmsg}`);
-      }
-
-      const sheets: DocumentSheet[] = [];
-      
-      if (response.data.sheet_list && response.data.sheet_list.length > 0) {
-        for (const sheet of response.data.sheet_list) {
-          const fields = await this.getSheetFields(accessToken, documentId, sheet.sheet_id);
-          sheets.push({
-            id: sheet.sheet_id,
-            name: sheet.title,
-            fields
-          });
-        }
-      }
-
-      return sheets;
-    } catch (error) {
-      Logger.error('获取文档Sheet列表失败', { error: (error as Error).message });
-      throw error;
-    }
-  }
+  
 
   async getSheetFields(accessToken: string, documentId: string, sheetId: string): Promise<DocumentField[]> {
     try {
@@ -256,6 +224,70 @@ export class WeComDocumentService {
         });
       }
       Logger.error('获取文档信息失败', { error: (error as Error).message });
+      throw error;
+    }
+  }
+
+  async getDocumentSheets(accessToken: string, documentId: string): Promise<DocumentSheet[]> {
+    try {
+      console.log(`[WeComService] 调用Sheet列表API`, {
+        endpoint: '/cgi-bin/wedoc/smartsheet/get_sheet',
+        documentId,
+        timestamp: new Date().toISOString()
+      });
+
+      const response = await this.client.post('/cgi-bin/wedoc/smartsheet/get_sheet', {
+        docid: documentId,
+        need_all_type_sheet: true
+      }, {
+        params: {
+          access_token: accessToken
+        }
+      });
+
+      console.log(`[WeComService] Sheet列表API响应`, {
+        status: response.status,
+        errcode: response.data.errcode,
+        errmsg: response.data.errmsg,
+        sheetCount: response.data.sheet_list?.length || 0,
+        timestamp: new Date().toISOString()
+      });
+
+      if (response.data.errcode !== 0) {
+        throw new Error(`获取Sheet列表失败 (errcode: ${response.data.errcode}): ${response.data.errmsg}`);
+      }
+
+      const sheets: DocumentSheet[] = [];
+      
+      if (response.data.sheet_list && response.data.sheet_list.length > 0) {
+        for (const sheet of response.data.sheet_list) {
+          if (sheet.is_visible === true && sheet.type === 'smartsheet') {
+            sheets.push({
+              id: sheet.sheet_id,
+              name: sheet.title,
+              fields: []
+            });
+          }
+        }
+      }
+
+      console.log(`[WeComService] 筛选后的Sheet列表`, {
+        totalSheets: response.data.sheet_list?.length || 0,
+        filteredSheets: sheets.length,
+        timestamp: new Date().toISOString()
+      });
+
+      return sheets;
+    } catch (error) {
+      if ((error as any).response) {
+        console.error(`[WeComService] Sheet列表API请求失败`, {
+          status: (error as any).response.status,
+          statusText: (error as any).response.statusText,
+          data: (error as any).response.data,
+          timestamp: new Date().toISOString()
+        });
+      }
+      Logger.error('获取文档Sheet列表失败', { error: (error as Error).message });
       throw error;
     }
   }

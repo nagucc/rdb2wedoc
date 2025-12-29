@@ -77,6 +77,7 @@ export interface IntelligentDocument {
   status: 'active' | 'inactive' | 'syncing';
   lastSyncTime?: string;
   sheetCount: number;
+  sheets?: DocumentSheet[];
   createdAt: string;
   accountId: string;
 }

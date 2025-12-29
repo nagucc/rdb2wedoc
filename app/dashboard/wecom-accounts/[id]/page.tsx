@@ -40,6 +40,7 @@ export default function WeComAccountDetailPage() {
   const [newDocumentId, setNewDocumentId] = useState('');
   const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
   const [documentToDelete, setDocumentToDelete] = useState<IntelligentDocument | null>(null);
+  const [isProcessingDocument, setIsProcessingDocument] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -117,6 +118,7 @@ export default function WeComAccountDetailPage() {
     }
 
     try {
+      setIsProcessingDocument(true);
       const response = await fetch(`/api/wecom-accounts/${accountId}/documents`, {
         method: 'POST',
         headers: {
@@ -137,6 +139,8 @@ export default function WeComAccountDetailPage() {
     } catch (err) {
       alert('网络错误，请检查连接后重试');
       console.error('Error adding document:', err);
+    } finally {
+      setIsProcessingDocument(false);
     }
   };
 
@@ -236,7 +240,8 @@ export default function WeComAccountDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+    <>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
       <header className="border-b border-gray-200 bg-white/80 backdrop-blur-sm dark:border-gray-700 dark:bg-gray-800/80">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
@@ -522,5 +527,20 @@ export default function WeComAccountDetailPage() {
         </div>
       )}
     </div>
+
+    {isProcessingDocument && (
+      <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+        <div className="flex flex-col items-center gap-4 rounded-2xl bg-white p-8 shadow-2xl dark:bg-gray-800">
+          <RefreshCw className="h-12 w-12 animate-spin text-blue-600" />
+          <p className="text-lg font-medium text-gray-900 dark:text-white">
+            数据处理中
+          </p>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            正在获取文档信息，请稍候...
+          </p>
+        </div>
+      </div>
+    )}
+  </>
   );
 }
