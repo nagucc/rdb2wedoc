@@ -219,19 +219,42 @@ export class WeComDocumentService {
 
   async getDocumentInfo(accessToken: string, documentId: string): Promise<any> {
     try {
-      const response = await this.client.get('/cgi-bin/wedoc/smartsheet/get_doc_info', {
+      console.log(`[WeComService] 调用文档信息API`, {
+        endpoint: '/cgi-bin/wedoc/get_doc_base_info',
+        documentId,
+        timestamp: new Date().toISOString()
+      });
+
+      const response = await this.client.post('/cgi-bin/wedoc/get_doc_base_info', {
+        docid: documentId
+      }, {
         params: {
-          access_token: accessToken,
-          docid: documentId
+          access_token: accessToken
         }
       });
 
+      console.log(`[WeComService] 文档信息API响应`, {
+        status: response.status,
+        errcode: response.data.errcode,
+        errmsg: response.data.errmsg,
+        hasDocBaseInfo: !!response.data.doc_base_info,
+        timestamp: new Date().toISOString()
+      });
+
       if (response.data.errcode !== 0) {
-        throw new Error(`获取文档信息失败: ${response.data.errmsg}`);
+        throw new Error(`获取文档信息失败 (errcode: ${response.data.errcode}): ${response.data.errmsg}`);
       }
 
       return response.data;
     } catch (error) {
+      if ((error as any).response) {
+        console.error(`[WeComService] 文档信息API请求失败`, {
+          status: (error as any).response.status,
+          statusText: (error as any).response.statusText,
+          data: (error as any).response.data,
+          timestamp: new Date().toISOString()
+        });
+      }
       Logger.error('获取文档信息失败', { error: (error as Error).message });
       throw error;
     }

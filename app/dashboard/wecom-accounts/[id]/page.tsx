@@ -128,7 +128,14 @@ export default function WeComAccountDetailPage() {
       if (data.success) {
         setShowAddDocumentModal(false);
         setNewDocumentId('');
-        fetchDocuments();
+        
+        if (data.message && data.message.includes('获取文档名称失败')) {
+          alert('文档添加成功，但获取文档名称失败，已使用默认名称');
+        } else {
+          alert('文档添加成功');
+        }
+        
+        await fetchDocuments();
       } else {
         alert(data.error || '添加文档失败');
       }
