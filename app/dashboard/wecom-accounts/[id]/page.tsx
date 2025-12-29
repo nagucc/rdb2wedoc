@@ -42,6 +42,7 @@ export default function WeComAccountDetailPage() {
   const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
   const [documentToDelete, setDocumentToDelete] = useState<IntelligentDocument | null>(null);
   const [isProcessingDocument, setIsProcessingDocument] = useState(false);
+  const [refreshingDocumentId, setRefreshingDocumentId] = useState<string | null>(null);
 
   const handleLogout = async () => {
     try {
@@ -87,18 +88,33 @@ export default function WeComAccountDetailPage() {
     }
   };
 
-  const fetchDocumentName = async (documentId: string): Promise<string> => {
+  const handleRefreshDocument = async (documentId: string) => {
     try {
+      setRefreshingDocumentId(documentId);
+
       const response = await fetch(`/api/wecom-accounts/${accountId}/documents/${documentId}/name`);
       const data = await response.json();
 
       if (data.success && data.data) {
-        return data.data.name;
+        setDocuments(prevDocs => 
+          prevDocs.map(doc => 
+            doc.id === documentId 
+              ? { 
+                  ...doc, 
+                  name: data.data.name,
+                  lastSyncTime: data.data.lastSyncTime
+                }
+              : doc
+          )
+        );
+      } else {
+        throw new Error(data.error || '刷新文档失败');
       }
-      return `文档 ${documentId}`;
     } catch (err) {
-      console.error('Error fetching document name:', err);
-      return `文档 ${documentId}`;
+      console.error('Error refreshing document:', err);
+      alert('刷新文档失败，请重试');
+    } finally {
+      setRefreshingDocumentId(null);
     }
   };
 
@@ -423,6 +439,15 @@ export default function WeComAccountDetailPage() {
                       <span className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusColor(doc.status)}`}>
                         {getStatusText(doc.status)}
                       </span>
+                      <button
+                        onClick={() => handleRefreshDocument(doc.id)}
+                        disabled={refreshingDocumentId === doc.id}
+                        className="flex items-center gap-1 rounded-lg border border-blue-300 bg-white px-3 py-2 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-blue-800 dark:bg-gray-800 dark:text-blue-400 dark:hover:bg-blue-900/20"
+                        title="刷新此文档"
+                      >
+                        <RefreshCw className={`h-4 w-4 ${refreshingDocumentId === doc.id ? 'animate-spin' : ''}`} />
+                        {refreshingDocumentId === doc.id ? '刷新中...' : '刷新'}
+                      </button>
                       <button
                         onClick={() => handleDeleteDocument(doc)}
                         className="flex items-center gap-1 rounded-lg border border-red-300 bg-white px-3 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 dark:border-red-800 dark:bg-gray-800 dark:text-red-400 dark:hover:bg-red-900/20"

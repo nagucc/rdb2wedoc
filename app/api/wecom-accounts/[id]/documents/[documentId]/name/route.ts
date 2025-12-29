@@ -18,6 +18,76 @@ async function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+async function updateDocumentWithTransaction(
+  accountId: string,
+  documentId: string,
+  updates: { name: string; lastSyncTime: string }
+): Promise<{ success: boolean; error?: string; oldTimestamp?: string; newTimestamp?: string }> {
+  const oldDocument = getIntelligentDocumentById(documentId);
+  
+  if (!oldDocument) {
+    return { success: false, error: '文档不存在' };
+  }
+
+  const oldTimestamp = oldDocument.lastSyncTime;
+  const newTimestamp = updates.lastSyncTime;
+
+  try {
+    const updatedDocument = {
+      ...oldDocument,
+      ...updates
+    };
+
+    const saveSuccess = saveIntelligentDocument(updatedDocument);
+
+    if (!saveSuccess) {
+      throw new Error('保存文档失败');
+    }
+
+    console.log(`[API] 文档更新成功 - 事务完成`, {
+      accountId,
+      documentId,
+      oldTimestamp,
+      newTimestamp,
+      timestamp: new Date().toISOString()
+    });
+
+    return {
+      success: true,
+      oldTimestamp,
+      newTimestamp
+    };
+  } catch (error) {
+    console.error(`[API] 文档更新失败 - 回滚事务`, {
+      accountId,
+      documentId,
+      error: (error as Error).message,
+      timestamp: new Date().toISOString()
+    });
+
+    try {
+      saveIntelligentDocument(oldDocument);
+      console.log(`[API] 事务回滚成功`, {
+        accountId,
+        documentId,
+        timestamp: new Date().toISOString()
+      });
+    } catch (rollbackError) {
+      console.error(`[API] 事务回滚失败`, {
+        accountId,
+        documentId,
+        error: (rollbackError as Error).message,
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    return {
+      success: false,
+      error: (error as Error).message
+    };
+  }
+}
+
 async function fetchDocumentNameWithRetry(
   corpId: string,
   corpSecret: string,
@@ -113,15 +183,47 @@ export async function GET(
         error: result.error,
         timestamp: new Date().toISOString()
       });
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          id: documentId,
+          name: result.name
+        },
+        message: '获取文档名称失败，使用默认名称'
+      });
+    }
+
+    const lastSyncTime = new Date().toISOString();
+    
+    const updateResult = await updateDocumentWithTransaction(id, documentId, {
+      name: result.name,
+      lastSyncTime: lastSyncTime
+    });
+
+    if (!updateResult.success) {
+      console.error(`[API] 更新文档时间戳失败`, {
+        accountId: id,
+        documentId,
+        error: updateResult.error,
+        timestamp: new Date().toISOString()
+      });
     }
 
     return NextResponse.json({
       success: true,
       data: {
         id: documentId,
-        name: result.name
+        name: result.name,
+        lastSyncTime: lastSyncTime
       },
-      message: result.success ? '获取文档名称成功' : '获取文档名称失败，使用默认名称'
+      auditLog: updateResult.success ? {
+        oldTimestamp: updateResult.oldTimestamp,
+        newTimestamp: updateResult.newTimestamp,
+        operation: 'refresh_document',
+        timestamp: new Date().toISOString()
+      } : undefined,
+      message: '获取文档名称成功'
     });
   } catch (error) {
     console.error('[API] 获取文档名称异常', {
