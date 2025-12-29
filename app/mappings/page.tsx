@@ -235,7 +235,7 @@ export default function MappingsPage() {
       <header className="border-b border-gray-200 bg-white/80 backdrop-blur-sm dark:border-gray-700 dark:bg-gray-800/80">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+            <Link href="/dashboard" className="flex items-center gap-3 transition-transform hover:scale-105 active:scale-95">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600">
                 <RefreshCw className="h-6 w-6 text-white" />
               </div>
@@ -247,7 +247,7 @@ export default function MappingsPage() {
                   数据库到企业微信文档同步系统
                 </p>
               </div>
-            </div>
+            </Link>
             <nav className="flex items-center gap-4">
               <div className="flex items-center gap-2 rounded-lg bg-blue-100 px-3 py-2 dark:bg-blue-900/20">
                 <span className="text-sm font-medium text-blue-700 dark:text-blue-400">
