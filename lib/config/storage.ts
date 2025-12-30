@@ -563,7 +563,7 @@ export function updateMappingStatus(mappingId: string, status: 'active' | 'inact
 
 // 智能文档管理
 export function getIntelligentDocumentFilePath(docId: string): string {
-  return path.join(DATA_DIR, 'documents', `intelligent_${docId}.json`);
+  return path.join(DATA_DIR, 'documents', `${docId}.json`);
 }
 
 export function getIntelligentDocuments(): any[] {
@@ -571,11 +571,9 @@ export function getIntelligentDocuments(): any[] {
   const documents: any[] = [];
   
   files.forEach(file => {
-    if (file.startsWith('intelligent_')) {
-      const doc = readJsonFile<any>(path.join(DATA_DIR, 'documents', file));
-      if (doc) {
-        documents.push(doc);
-      }
+    const doc = readJsonFile<any>(path.join(DATA_DIR, 'documents', file));
+    if (doc && doc.accountId) {
+      documents.push(doc);
     }
   });
   

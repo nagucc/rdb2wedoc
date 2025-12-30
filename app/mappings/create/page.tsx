@@ -49,6 +49,19 @@ interface Sheet {
   title: string;
 }
 
+interface DatabaseField {
+  name: string;
+  type: string;
+  nullable: boolean;
+  default?: string;
+}
+
+interface DocumentField {
+  field_id: string;
+  title: string;
+  type: string;
+}
+
 interface MappingFormData {
   name: string;
   sourceName: string;
@@ -82,6 +95,11 @@ export default function CreateMappingPage() {
   const [loadingDatabases, setLoadingDatabases] = useState(false);
   const [loadingTables, setLoadingTables] = useState(false);
   const [refreshingTables, setRefreshingTables] = useState(false);
+
+  const [databaseFields, setDatabaseFields] = useState<DatabaseField[]>([]);
+  const [documentFields, setDocumentFields] = useState<DocumentField[]>([]);
+  const [loadingDatabaseFields, setLoadingDatabaseFields] = useState(false);
+  const [loadingDocumentFields, setLoadingDocumentFields] = useState(false);
 
   const [wecomAccounts, setWeComAccounts] = useState<WeComAccount[]>([]);
   const [documents, setDocuments] = useState<IntelligentDocument[]>([]);
@@ -243,6 +261,56 @@ export default function CreateMappingPage() {
 
     fetchSheets();
   }, [selectedDocument]);
+
+  useEffect(() => {
+    if (!selectedDatabase || !selectedTable) {
+      setDatabaseFields([]);
+      return;
+    }
+
+    const fetchDatabaseFields = async () => {
+      try {
+        setLoadingDatabaseFields(true);
+        const response = await fetch(`/api/field-mapping/database-fields?databaseId=${selectedDatabase}&tableName=${selectedTable}`);
+        const result = await response.json();
+        if (result.success) {
+          setDatabaseFields(result.data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch database fields:', error);
+        setDatabaseFields([]);
+      } finally {
+        setLoadingDatabaseFields(false);
+      }
+    };
+
+    fetchDatabaseFields();
+  }, [selectedDatabase, selectedTable]);
+
+  useEffect(() => {
+    if (!selectedDocument || !selectedSheet) {
+      setDocumentFields([]);
+      return;
+    }
+
+    const fetchDocumentFields = async () => {
+      try {
+        setLoadingDocumentFields(true);
+        const response = await fetch(`/api/field-mapping/document-fields?documentId=${selectedDocument}&sheetId=${selectedSheet}`);
+        const result = await response.json();
+        if (result.success) {
+          setDocumentFields(result.data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch document fields:', error);
+        setDocumentFields([]);
+      } finally {
+        setLoadingDocumentFields(false);
+      }
+    };
+
+    fetchDocumentFields();
+  }, [selectedDocument, selectedSheet]);
 
   const handleLogout = async () => {
     try {
@@ -677,28 +745,50 @@ export default function CreateMappingPage() {
                           <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">
                             源字段 <span className="text-red-500">*</span>
                           </label>
-                          <input
-                            type="text"
+                          <select
                             value={mapping.sourceField}
                             onChange={(e) => updateFieldMapping(index, 'sourceField', e.target.value)}
                             className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:focus:border-indigo-500 dark:focus:ring-indigo-500"
-                            placeholder="例如: user_name"
                             required
-                          />
+                          >
+                            <option value="">请选择源字段</option>
+                            {loadingDatabaseFields ? (
+                              <option disabled>加载中...</option>
+                            ) : databaseFields.length === 0 ? (
+                              <option disabled>暂无可用字段</option>
+                            ) : (
+                              databaseFields.map((field) => (
+                                <option key={field.name} value={field.name}>
+                                  {field.name} ({field.type})
+                                </option>
+                              ))
+                            )}
+                          </select>
                         </div>
 
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">
                             目标字段 <span className="text-red-500">*</span>
                           </label>
-                          <input
-                            type="text"
+                          <select
                             value={mapping.targetField}
                             onChange={(e) => updateFieldMapping(index, 'targetField', e.target.value)}
                             className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:focus:border-indigo-500 dark:focus:ring-indigo-500"
-                            placeholder="例如: 姓名"
                             required
-                          />
+                          >
+                            <option value="">请选择目标字段</option>
+                            {loadingDocumentFields ? (
+                              <option disabled>加载中...</option>
+                            ) : documentFields.length === 0 ? (
+                              <option disabled>暂无可用字段</option>
+                            ) : (
+                              documentFields.map((field) => (
+                                <option key={field.field_id} value={field.field_id}>
+                                  {field.title} ({field.type})
+                                </option>
+                              ))
+                            )}
+                          </select>
                         </div>
 
                         <div>
