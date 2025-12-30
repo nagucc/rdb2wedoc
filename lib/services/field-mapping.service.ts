@@ -98,15 +98,19 @@ export class FieldMappingService {
         throw new Error('文档不存在');
       }
 
-      // TODO: 获取与当前document相关的企微账号信息
+      // 获取与当前document相关的企微账号信息
+      const wecomAccount = getWeComAccountById(document.accountId);
+      if (!wecomAccount) {
+        throw new Error('未找到关联的企微账号信息');
+      }
 
       // 获取访问令牌
-      const accessToken = await weComDocumentService.getAccessToken(document.id, document.accessToken);
+      const accessToken = await weComDocumentService.getAccessToken(wecomAccount.corpId, wecomAccount.corpSecret);
 
       // 获取Sheet字段
       const fields = await weComDocumentService.getSheetFields(
         accessToken,
-        document.documentId,
+        document.id,
         sheetId
       );
 

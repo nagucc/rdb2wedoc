@@ -39,11 +39,30 @@ export class WeComDocumentService {
 
   async getSheetFields(accessToken: string, documentId: string, sheetId: string): Promise<DocumentField[]> {
     try {
-      // 获取Sheet的字段信息
-      const response = await this.client.post('/cgi-bin/wedoc/smartsheet/get_sheet_property', {
-        access_token: accessToken,
+      console.log(`[WeComService] 调用Sheet字段API`, {
+        endpoint: '/cgi-bin/wedoc/smartsheet/get_fields',
+        documentId,
+        sheetId,
+        timestamp: new Date().toISOString()
+      });
+
+      const response = await this.client.post('/cgi-bin/wedoc/smartsheet/get_fields', {
         docid: documentId,
-        sheet_id: sheetId
+        sheet_id: sheetId,
+        offset: 0,
+        limit: 1000
+      }, {
+        params: {
+          access_token: accessToken
+        }
+      });
+
+      console.log(`[WeComService] Sheet字段API响应`, {
+        status: response.status,
+        errcode: response.data.errcode,
+        errmsg: response.data.errmsg,
+        fieldCount: response.data.fields?.length || 0,
+        timestamp: new Date().toISOString()
       });
 
       if (response.data.errcode !== 0) {
@@ -52,11 +71,11 @@ export class WeComDocumentService {
 
       let fields: DocumentField[] = [];
       
-      if (response.data.property && response.data.property.columns) {
-        fields = response.data.property.columns.map((col: any) => ({
-          id: col.column_id,
-          name: col.title,
-          type: this.mapFieldType(col.type)
+      if (response.data.fields && response.data.fields.length > 0) {
+        fields = response.data.fields.map((field: any) => ({
+          id: field.field_id,
+          name: field.field_title,
+          type: this.mapFieldType(field.field_type)
         }));
       }
 
@@ -67,21 +86,36 @@ export class WeComDocumentService {
     }
   }
 
-  private mapFieldType(type: number): string {
-    const typeMap: Record<number, string> = {
-      1: 'text',
-      2: 'number',
-      3: 'date',
-      4: 'datetime',
-      5: 'boolean',
-      6: 'select',
-      7: 'multi_select',
-      8: 'url',
-      9: 'email',
-      10: 'phone'
+  private mapFieldType(fieldType: string): string {
+    const typeMap: Record<string, string> = {
+      'FIELD_TYPE_TEXT': 'text',
+      'FIELD_TYPE_NUMBER': 'number',
+      'FIELD_TYPE_CHECKBOX': 'boolean',
+      'FIELD_TYPE_DATE_TIME': 'datetime',
+      'FIELD_TYPE_IMAGE': 'image',
+      'FIELD_TYPE_ATTACHMENT': 'file',
+      'FIELD_TYPE_USER': 'user',
+      'FIELD_TYPE_URL': 'url',
+      'FIELD_TYPE_SELECT': 'multi_select',
+      'FIELD_TYPE_CREATED_USER': 'user',
+      'FIELD_TYPE_MODIFIED_USER': 'user',
+      'FIELD_TYPE_CREATED_TIME': 'datetime',
+      'FIELD_TYPE_MODIFIED_TIME': 'datetime',
+      'FIELD_TYPE_PROGRESS': 'number',
+      'FIELD_TYPE_PHONE_NUMBER': 'phone',
+      'FIELD_TYPE_EMAIL': 'email',
+      'FIELD_TYPE_SINGLE_SELECT': 'select',
+      'FIELD_TYPE_REFERENCE': 'reference',
+      'FIELD_TYPE_LOCATION': 'location',
+      'FIELD_TYPE_FORMULA': 'formula',
+      'FIELD_TYPE_CURRENCY': 'currency',
+      'FIELD_TYPE_WWGROUP': 'group',
+      'FIELD_TYPE_AUTONUMBER': 'number',
+      'FIELD_TYPE_PERCENTAGE': 'number',
+      'FIELD_TYPE_BARCODE': 'text'
     };
     
-    return typeMap[type] || 'text';
+    return typeMap[fieldType] || 'text';
   }
 
   async readSheetData(accessToken: string, documentId: string, sheetId: string): Promise<any[]> {
