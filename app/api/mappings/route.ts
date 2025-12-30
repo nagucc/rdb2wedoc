@@ -54,6 +54,111 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    if (typeof name !== 'string' || name.trim().length === 0) {
+      return NextResponse.json(
+        { success: false, error: '映射名称不能为空' },
+        { status: 400 }
+      );
+    }
+
+    const validSourceTypes = ['database', 'api', 'file'];
+    if (!validSourceTypes.includes(sourceType)) {
+      return NextResponse.json(
+        { success: false, error: `无效的源类型：${sourceType}，必须是 ${validSourceTypes.join(', ')} 之一` },
+        { status: 400 }
+      );
+    }
+
+    const validTargetTypes = ['wecom_doc', 'database', 'api'];
+    if (!validTargetTypes.includes(targetType)) {
+      return NextResponse.json(
+        { success: false, error: `无效的目标类型：${targetType}，必须是 ${validTargetTypes.join(', ')} 之一` },
+        { status: 400 }
+      );
+    }
+
+    if (!Array.isArray(fieldMappings) || fieldMappings.length === 0) {
+      return NextResponse.json(
+        { success: false, error: '字段映射必须是非空数组' },
+        { status: 400 }
+      );
+    }
+
+    const validStatuses = ['draft', 'active', 'inactive'];
+    if (status && !validStatuses.includes(status)) {
+      return NextResponse.json(
+        { success: false, error: `无效的状态：${status}，必须是 ${validStatuses.join(', ')} 之一` },
+        { status: 400 }
+      );
+    }
+
+    const sourceFieldSet = new Set<string>();
+    const targetFieldSet = new Set<string>();
+
+    for (let i = 0; i < fieldMappings.length; i++) {
+      const mapping = fieldMappings[i];
+
+      if (!mapping.sourceField || typeof mapping.sourceField !== 'string' || mapping.sourceField.trim().length === 0) {
+        return NextResponse.json(
+          { success: false, error: `第 ${i + 1} 个字段映射的源字段不能为空` },
+          { status: 400 }
+        );
+      }
+
+      if (!mapping.targetField || typeof mapping.targetField !== 'string' || mapping.targetField.trim().length === 0) {
+        return NextResponse.json(
+          { success: false, error: `第 ${i + 1} 个字段映射的目标字段不能为空` },
+          { status: 400 }
+        );
+      }
+
+      const sourceField = mapping.sourceField.trim();
+      const targetField = mapping.targetField.trim();
+
+      if (sourceFieldSet.has(sourceField)) {
+        return NextResponse.json(
+          { success: false, error: `源字段 "${sourceField}" 被重复映射` },
+          { status: 400 }
+        );
+      }
+      sourceFieldSet.add(sourceField);
+
+      if (targetFieldSet.has(targetField)) {
+        return NextResponse.json(
+          { success: false, error: `目标字段 "${targetField}" 被重复映射` },
+          { status: 400 }
+        );
+      }
+      targetFieldSet.add(targetField);
+
+      const validDataTypes = ['string', 'number', 'date', 'boolean', 'json'];
+      if (!mapping.dataType || !validDataTypes.includes(mapping.dataType)) {
+        return NextResponse.json(
+          { success: false, error: `第 ${i + 1} 个字段映射的数据类型无效，必须是 ${validDataTypes.join(', ')} 之一` },
+          { status: 400 }
+        );
+      }
+
+      if (mapping.transformRule) {
+        const validTransforms = ['trim', 'toUpperCase', 'toLowerCase', 'toDate', 'toNumber', 'toString', 'toBoolean'];
+        if (!validTransforms.includes(mapping.transformRule)) {
+          return NextResponse.json(
+            { success: false, error: `第 ${i + 1} 个字段映射的转换规则 "${mapping.transformRule}" 无效` },
+            { status: 400 }
+          );
+        }
+      }
+
+      if (mapping.defaultValue) {
+        if (!validateDefaultValue(mapping.defaultValue, mapping.dataType)) {
+          return NextResponse.json(
+            { success: false, error: `第 ${i + 1} 个字段映射的默认值 "${mapping.defaultValue}" 不符合数据类型 ${mapping.dataType} 的要求` },
+            { status: 400 }
+          );
+        }
+      }
+    }
     
     const newMapping = {
       id: `mapping_${Date.now()}`,
@@ -88,6 +193,33 @@ export async function POST(request: NextRequest) {
       { success: false, error: '创建映射配置失败' },
       { status: 500 }
     );
+  }
+}
+
+function validateDefaultValue(value: string, dataType: string): boolean {
+  if (!value) return true;
+
+  try {
+    switch (dataType) {
+      case 'number':
+        return !isNaN(Number(value));
+      case 'boolean':
+        return ['true', 'false', '1', '0'].includes(value.toLowerCase());
+      case 'date':
+        return !isNaN(Date.parse(value));
+      case 'json':
+        try {
+          JSON.parse(value);
+          return true;
+        } catch {
+          return false;
+        }
+      case 'string':
+      default:
+        return true;
+    }
+  } catch {
+    return false;
   }
 }
 

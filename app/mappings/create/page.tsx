@@ -64,7 +64,9 @@ interface DocumentField {
 
 interface MappingFormData {
   name: string;
+  sourceType: string;
   sourceName: string;
+  targetType: string;
   targetName: string;
   status: 'active' | 'inactive' | 'draft';
   fieldMappings: FieldMapping[];
@@ -80,7 +82,9 @@ export default function CreateMappingPage() {
 
   const [formData, setFormData] = useState<MappingFormData>({
     name: '',
+    sourceType: 'database',
     sourceName: '',
+    targetType: 'wecom_doc',
     targetName: '',
     status: 'draft',
     fieldMappings: []
@@ -356,51 +360,138 @@ export default function CreateMappingPage() {
   };
 
   const validateForm = (): boolean => {
-    if (!formData.name.trim()) {
+    const trimmedName = formData.name.trim();
+    if (!trimmedName) {
       setError('映射名称不能为空');
       return false;
     }
 
     if (!selectedDatabase) {
-      setError('请选择数据库');
+      setError('请选择数据库（当前选择：无）');
       return false;
     }
     if (!selectedTable) {
-      setError('请选择表');
+      setError('请选择表（当前选择：无）');
       return false;
     }
 
     if (!selectedWeComAccount) {
-      setError('请选择企业微信账户');
+      setError('请选择企业微信账户（当前选择：无）');
       return false;
     }
     if (!selectedDocument) {
-      setError('请选择智能文档');
+      setError('请选择智能文档（当前选择：无）');
       return false;
     }
     if (!selectedSheet) {
-      setError('请选择子表');
+      setError('请选择子表（当前选择：无）');
       return false;
     }
 
     if (fieldMappings.length === 0) {
-      setError('至少需要添加一个字段映射');
+      setError('至少需要添加一个字段映射（当前映射数量：0）');
       return false;
     }
 
+    const sourceFieldSet = new Set<string>();
+    const targetFieldSet = new Set<string>();
+
     for (let i = 0; i < fieldMappings.length; i++) {
       const mapping = fieldMappings[i];
-      if (!mapping.sourceField.trim()) {
-        setError(`第 ${i + 1} 个字段映射的源字段不能为空`);
+      const trimmedSourceField = mapping.sourceField.trim();
+      const trimmedTargetField = mapping.targetField.trim();
+
+      if (!trimmedSourceField) {
+        setError(`第 ${i + 1} 个字段映射的源字段不能为空（当前值："${mapping.sourceField}"）`);
         return false;
       }
-      if (!mapping.targetField.trim()) {
-        setError(`第 ${i + 1} 个字段映射的目标字段不能为空`);
+      if (!trimmedTargetField) {
+        setError(`第 ${i + 1} 个字段映射的目标字段不能为空（当前值："${mapping.targetField}"）`);
         return false;
+      }
+
+      const sourceField = trimmedSourceField;
+      const targetField = trimmedTargetField;
+
+      if (sourceFieldSet.has(sourceField)) {
+        setError(`源字段 "${sourceField}" 被重复映射（第 ${sourceFieldSet.size + 1} 次映射）`);
+        return false;
+      }
+      sourceFieldSet.add(sourceField);
+
+      if (targetFieldSet.has(targetField)) {
+        setError(`目标字段 "${targetField}" 被重复映射（第 ${targetFieldSet.size + 1} 次映射）`);
+        return false;
+      }
+      targetFieldSet.add(targetField);
+
+      const dbField = databaseFields.find(f => f.name === sourceField);
+      if (!dbField) {
+        setError(`源字段 "${sourceField}" 在数据库表中不存在（可用字段：${databaseFields.map(f => f.name).join(', ')}）`);
+        return false;
+      }
+
+      const docField = documentFields.find(f => f.id === targetField);
+      if (!docField) {
+        setError(`目标字段 "${targetField}" 在文档中不存在（可用字段：${documentFields.map(f => f.name).join(', ')}）`);
+        return false;
+      }
+
+      const validDataTypes = ['string', 'number', 'date', 'boolean', 'json'];
+      if (!validDataTypes.includes(mapping.dataType)) {
+        setError(`第 ${i + 1} 个字段映射的数据类型 "${mapping.dataType}" 无效（有效类型：${validDataTypes.join(', ')}）`);
+        return false;
+      }
+
+      if (mapping.required && !dbField.nullable && !mapping.defaultValue) {
+        setError(`第 ${i + 1} 个字段映射标记为必填，但源字段 "${sourceField}" 不可为空且未设置默认值`);
+        return false;
+      }
+
+      if (mapping.transformRule) {
+        const validTransforms = ['trim', 'toUpperCase', 'toLowerCase', 'toDate', 'toNumber', 'toString', 'toBoolean'];
+        if (!validTransforms.includes(mapping.transformRule)) {
+          setError(`第 ${i + 1} 个字段映射的转换规则 "${mapping.transformRule}" 无效（有效规则：${validTransforms.join(', ')}）`);
+          return false;
+        }
+      }
+
+      if (mapping.defaultValue) {
+        if (!validateDefaultValue(mapping.defaultValue, mapping.dataType)) {
+          setError(`第 ${i + 1} 个字段映射的默认值 "${mapping.defaultValue}" 不符合数据类型 ${mapping.dataType} 的要求`);
+          return false;
+        }
       }
     }
 
     return true;
+  };
+
+  const validateDefaultValue = (value: string, dataType: string): boolean => {
+    if (!value) return true;
+
+    try {
+      switch (dataType) {
+        case 'number':
+          return !isNaN(Number(value));
+        case 'boolean':
+          return ['true', 'false', '1', '0'].includes(value.toLowerCase());
+        case 'date':
+          return !isNaN(Date.parse(value));
+        case 'json':
+          try {
+            JSON.parse(value);
+            return true;
+          } catch {
+            return false;
+          }
+        case 'string':
+        default:
+          return true;
+      }
+    } catch {
+      return false;
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -416,7 +507,9 @@ export default function CreateMappingPage() {
     try {
       const submissionData = {
         ...formData,
+        sourceType: 'database',
         sourceName: `${selectedDatabase}.${selectedTable}`,
+        targetType: 'wecom_doc',
         targetName: `${selectedWeComAccount}:${selectedDocument}:${selectedSheet}`,
         fieldMappings: fieldMappings
       };
