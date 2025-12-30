@@ -12,6 +12,7 @@ export interface DatabaseField {
 }
 
 export interface DocumentField {
+  id: string;
   name: string;
   type: string;
   description?: string;
@@ -115,6 +116,7 @@ export class FieldMappingService {
       );
 
       return fields.map((field: any) => ({
+        id: field.id,
         name: field.name,
         type: field.type,
         description: field.description

@@ -57,8 +57,8 @@ interface DatabaseField {
 }
 
 interface DocumentField {
-  field_id: string;
-  title: string;
+  id: string;
+  name: string;
   type: string;
 }
 
@@ -783,8 +783,8 @@ export default function CreateMappingPage() {
                               <option disabled>暂无可用字段</option>
                             ) : (
                               documentFields.map((field) => (
-                                <option key={field.field_id} value={field.field_id}>
-                                  {field.title} ({field.type})
+                                <option key={field.id} value={field.id}>
+                                  {field.name} ({field.type})
                                 </option>
                               ))
                             )}
