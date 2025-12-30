@@ -81,6 +81,7 @@ export default function CreateMappingPage() {
   const [selectedTable, setSelectedTable] = useState<string>('');
   const [loadingDatabases, setLoadingDatabases] = useState(false);
   const [loadingTables, setLoadingTables] = useState(false);
+  const [refreshingTables, setRefreshingTables] = useState(false);
 
   const [wecomAccounts, setWeComAccounts] = useState<WeComAccount[]>([]);
   const [documents, setDocuments] = useState<IntelligentDocument[]>([]);
@@ -147,6 +148,24 @@ export default function CreateMappingPage() {
 
     fetchTables();
   }, [selectedDatabase]);
+
+  const handleRefreshTables = async () => {
+    if (!selectedDatabase) return;
+    
+    try {
+      setRefreshingTables(true);
+      const response = await fetch(`/api/databases/${selectedDatabase}/tables`);
+      const result = await response.json();
+      if (result.success) {
+        setTables(result.data);
+      }
+    } catch (error) {
+      console.error('Failed to refresh tables:', error);
+      setError('刷新表格数据失败');
+    } finally {
+      setRefreshingTables(false);
+    }
+  };
 
   useEffect(() => {
     const fetchWeComAccounts = async () => {
@@ -509,26 +528,39 @@ export default function CreateMappingPage() {
                       )}
                     </select>
                     {selectedDatabase && (
-                      <select
-                        id="sourceTable"
-                        value={selectedTable}
-                        onChange={(e) => setSelectedTable(e.target.value)}
-                        className="mt-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:border-indigo-500 dark:focus:ring-indigo-500"
-                        required
-                      >
-                        <option value="">请选择表</option>
-                        {loadingTables ? (
-                          <option disabled>加载中...</option>
-                        ) : tables.length === 0 ? (
-                          <option disabled>暂无可用表</option>
-                        ) : (
-                          tables.map((table) => (
-                            <option key={table.name} value={table.name}>
-                              {table.name} ({table.type})
-                            </option>
-                          ))
-                        )}
-                      </select>
+                      <div className="flex gap-2">
+                        <select
+                          id="sourceTable"
+                          value={selectedTable}
+                          onChange={(e) => setSelectedTable(e.target.value)}
+                          className="mt-2 flex-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:border-indigo-500 dark:focus:ring-indigo-500"
+                          required
+                        >
+                          <option value="">请选择表</option>
+                          {loadingTables || refreshingTables ? (
+                            <option disabled>加载中...</option>
+                          ) : tables.length === 0 ? (
+                            <option disabled>暂无可用表</option>
+                          ) : (
+                            tables.map((table) => (
+                              <option key={table.name} value={table.name}>
+                                {table.name} ({table.type})
+                              </option>
+                            ))
+                          )}
+                        </select>
+                        <button
+                          type="button"
+                          onClick={handleRefreshTables}
+                          disabled={refreshingTables || !selectedDatabase}
+                          className="mt-2 flex items-center justify-center w-10 h-10 rounded-md border border-gray-300 bg-white text-gray-600 hover:bg-gray-50 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white dark:focus:ring-offset-gray-800"
+                          aria-label="刷新表格数据"
+                        >
+                          <RefreshCw 
+                            className={`w-6 h-6 ${refreshingTables ? 'animate-spin' : ''}`} 
+                          />
+                        </button>
+                      </div>
                     )}
                   </div>
 
