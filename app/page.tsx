@@ -163,30 +163,6 @@ export default function Home() {
             支持多种数据库类型，灵活的同步策略，实时监控和告警通知，
             让数据管理变得简单高效
           </p>
-          <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-            <Link
-              href="/databases"
-              onClick={(e) => handleFeatureClick(e, '/databases')}
-              className={`flex h-12 items-center justify-center rounded-lg px-8 text-base font-medium transition-all ${
-                currentUser
-                  ? 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-lg'
-                  : 'cursor-not-allowed bg-gray-300 text-gray-500 dark:bg-gray-700 dark:text-gray-500'
-              }`}
-            >
-              添加数据源
-            </Link>
-            <Link
-              href="/jobs"
-              onClick={(e) => handleFeatureClick(e, '/jobs')}
-              className={`flex h-12 items-center justify-center rounded-lg border-2 px-8 text-base font-medium transition-all ${
-                currentUser
-                  ? 'border-gray-300 text-gray-700 hover:border-gray-400 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:border-gray-500 dark:hover:bg-gray-800'
-                  : 'cursor-not-allowed border-gray-200 bg-gray-50 text-gray-400 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-600'
-              }`}
-            >
-              创建同步任务
-            </Link>
-          </div>
         </div>
       </section>
 
