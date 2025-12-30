@@ -1,6 +1,6 @@
 import { databaseService } from './database.service';
 import { weComDocumentService } from './wecom-document.service';
-import { getDatabaseById, getDocumentById } from '@/lib/config/storage';
+import { getDatabaseById, getDocumentById, getWeComAccountById } from '@/lib/config/storage';
 import { Logger } from '@/lib/utils/helpers';
 
 export interface DatabaseField {
@@ -97,6 +97,8 @@ export class FieldMappingService {
       if (!document) {
         throw new Error('文档不存在');
       }
+
+      // TODO: 获取与当前document相关的企微账号信息
 
       // 获取访问令牌
       const accessToken = await weComDocumentService.getAccessToken(document.id, document.accessToken);

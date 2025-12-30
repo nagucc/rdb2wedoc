@@ -67,6 +67,7 @@ export interface WeComDocument {
   name: string;
   accessToken: string;
   documentId: string;
+  accountId: string;
   createdAt: string;
   updatedAt: string;
 }

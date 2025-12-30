@@ -26,10 +26,10 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, accessToken, documentId } = body;
+    const { name, accessToken, documentId, accountId } = body;
 
     // 验证必填字段
-    if (!name || !accessToken || !documentId) {
+    if (!name || !accessToken || !documentId || !accountId) {
       return NextResponse.json(
         { success: false, error: '所有字段都必须填写' },
         { status: 400 }
@@ -42,6 +42,7 @@ export async function POST(request: NextRequest) {
       name,
       accessToken,
       documentId,
+      accountId,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
