@@ -69,6 +69,10 @@ export default function MappingsPage() {
   const [previewMode, setPreviewMode] = useState(false);
   const [showFieldMapping, setShowFieldMapping] = useState(false);
   const [selectedMapping, setSelectedMapping] = useState<MappingConfigUI | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [mappingToDelete, setMappingToDelete] = useState<MappingConfigUI | null>(null);
+  const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -190,7 +194,7 @@ export default function MappingsPage() {
     }
 
     try {
-      const response = await fetch(`/api/mappings/${id}`, {
+      const response = await fetch(`/api/mappings?id=${id}`, {
         method: 'DELETE'
       });
 
@@ -468,47 +472,41 @@ export default function MappingsPage() {
                           <span className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusColor(mapping.status)}`}>
                             {getStatusText(mapping.status)}
                           </span>
+                          <div className="flex items-center gap-2 ml-2">
+                            <button
+                              onClick={() => router.push(`/mappings/edit/${mapping.id}`)}
+                              className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition-colors dark:text-blue-400 dark:hover:bg-blue-900/20"
+                              title="编辑"
+                            >
+                              <Edit className="h-4 w-4" />
+                              编辑
+                            </button>
+                            <button
+                              onClick={() => handleDeleteMapping(mapping.id)}
+                              className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors dark:text-red-400 dark:hover:bg-red-900/20"
+                              title="删除"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              删除
+                            </button>
+                          </div>
                         </div>
                         <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
                           <span className="flex items-center gap-1">
                             <Database className="h-4 w-4" />
                             {resolveSourceName(mapping.sourceDatabaseId, mapping.sourceTableName)} <ArrowRight className="h-4 w-4" /> {resolveTargetName(mapping.targetDocId, mapping.targetSheetId)}
                           </span>
-                          <span className="flex items-center gap-1">
+                          <span 
+                            onClick={() => {
+                              setSelectedMapping(mapping);
+                              setShowFieldMapping(true);
+                            }}
+                            className="flex items-center gap-1 cursor-pointer hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
+                          >
                             <FileText className="h-4 w-4" />
                             {mapping.fieldMappings.length} 个字段映射
                           </span>
                         </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {!previewMode && (
-                          <>
-                            <Link
-                              href={`/mappings/edit/${mapping.id}`}
-                              className="flex items-center gap-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-                            >
-                              <Edit className="h-4 w-4" />
-                              编辑
-                            </Link>
-                            <button
-                              onClick={() => handleDeleteMapping(mapping.id)}
-                              className="flex items-center gap-1 rounded-lg border border-red-300 bg-white px-3 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 dark:border-red-800 dark:bg-gray-800 dark:text-red-400 dark:hover:bg-red-900/20"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                              删除
-                            </button>
-                          </>
-                        )}
-                        <button
-                          onClick={() => {
-                            setSelectedMapping(mapping);
-                            setShowFieldMapping(true);
-                          }}
-                          className="flex items-center gap-1 rounded-lg border border-purple-300 bg-white px-3 py-2 text-sm font-medium text-purple-600 transition-colors hover:bg-purple-50 dark:border-purple-800 dark:bg-gray-800 dark:text-purple-400 dark:hover:bg-purple-900/20"
-                        >
-                          <Settings className="h-4 w-4" />
-                          字段映射
-                        </button>
                       </div>
                     </div>
 

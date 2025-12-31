@@ -378,7 +378,13 @@ export default function DataMappingModule() {
                       <Database className="h-4 w-4" />
                       {mapping.sourceDatabaseId}:{mapping.sourceTableName} <ArrowRight className="h-4 w-4" /> {mapping.targetDocId}:{mapping.targetSheetId}
                     </span>
-                    <span className="flex items-center gap-1">
+                    <span 
+                      onClick={() => {
+                        setSelectedMapping(mapping);
+                        setShowFieldMapping(true);
+                      }}
+                      className="flex items-center gap-1 cursor-pointer hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
+                    >
                       <FileText className="h-4 w-4" />
                       {mapping.fieldMappings.length} 个字段映射
                     </span>
@@ -406,16 +412,6 @@ export default function DataMappingModule() {
                       </button>
                     </>
                   )}
-                  <button
-                    onClick={() => {
-                      setSelectedMapping(mapping);
-                      setShowFieldMapping(true);
-                    }}
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-purple-100 text-purple-700 hover:bg-purple-200 dark:bg-purple-900/30 dark:text-purple-400 dark:hover:bg-purple-900/50 transition-colors text-sm"
-                  >
-                    <Settings className="h-4 w-4" />
-                    字段映射
-                  </button>
                 </div>
               </div>
 

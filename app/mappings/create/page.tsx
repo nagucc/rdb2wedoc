@@ -341,6 +341,15 @@ export default function CreateMappingPage() {
     setFieldMappings(prev => {
       const updated = [...prev];
       updated[index] = { ...updated[index], [field]: value };
+      
+      if (field === 'documentField') {
+        const selectedField = documentFields.find(f => f.id === value);
+        if (selectedField) {
+          updated[index].documentField = selectedField.name;
+          updated[index].documentFieldId = selectedField.id;
+        }
+      }
+      
       return updated;
     });
   };
@@ -421,7 +430,7 @@ export default function CreateMappingPage() {
         return false;
       }
 
-      const docField = documentFields.find(f => f.id === targetField);
+      const docField = documentFields.find(f => f.id === mapping.documentFieldId);
       if (!docField) {
         setError(`目标字段 "${targetField}" 在文档中不存在（可用字段：${documentFields.map(f => f.name).join(', ')}）`);
         return false;
@@ -855,7 +864,7 @@ export default function CreateMappingPage() {
                             目标字段 <span className="text-red-500">*</span>
                           </label>
                           <select
-                            value={mapping.documentField}
+                            value={mapping.documentFieldId || mapping.documentField}
                             onChange={(e) => updateFieldMapping(index, 'documentField', e.target.value)}
                             className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:focus:border-indigo-500 dark:focus:ring-indigo-500"
                             required

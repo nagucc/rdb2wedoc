@@ -137,6 +137,7 @@ export interface SyncJob {
 export interface FieldMapping {
   databaseColumn: string;
   documentField: string;
+  documentFieldId?: string;
   transform?: string;
   required?: boolean;
 }
