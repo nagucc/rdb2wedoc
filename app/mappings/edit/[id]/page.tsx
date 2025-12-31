@@ -541,6 +541,10 @@ export default function EditMappingPage() {
     setLoading(true);
 
     try {
+      const selectedWeComAccountData = wecomAccounts.find(acc => acc.id === selectedWeComAccount);
+      const selectedDocumentData = documents.find(doc => doc.id === selectedDocument);
+      const selectedSheetData = sheets.find(sheet => sheet.sheet_id === selectedSheet);
+
       const submissionData = {
         id: mappingId,
         name: formData.name,
@@ -549,7 +553,11 @@ export default function EditMappingPage() {
         targetDocId: selectedDocument,
         targetSheetId: selectedSheet,
         status: formData.status,
-        fieldMappings: fieldMappings
+        fieldMappings: fieldMappings,
+        corpId: selectedWeComAccountData?.corpId,
+        targetName: selectedWeComAccountData?.name,
+        documentName: selectedDocumentData?.name,
+        sheetName: selectedSheetData?.title
       };
 
       const response = await fetch('/api/mappings', {

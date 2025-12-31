@@ -213,6 +213,10 @@ export interface MappingConfig {
   createdAt: string;
   updatedAt: string;
   lastSyncTime?: string;
+  corpId?: string;
+  targetName?: string;
+  documentName?: string;
+  sheetName?: string;
 }
 
 export interface MappingConfigUI extends Omit<MappingConfig, 'fieldMappings'> {

@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, sourceDatabaseId, sourceTableName, targetDocId, targetSheetId, fieldMappings, status } = body;
+    const { name, sourceDatabaseId, sourceTableName, targetDocId, targetSheetId, fieldMappings, status, corpId, targetName, documentName, sheetName } = body;
     
     if (!name || !sourceDatabaseId || !sourceTableName || !targetDocId || !targetSheetId || !fieldMappings) {
       return NextResponse.json(
@@ -182,7 +182,11 @@ export async function POST(request: NextRequest) {
       fieldMappings,
       status: status || 'draft',
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
+      corpId,
+      targetName,
+      documentName,
+      sheetName
     };
     
     const saved = saveMapping(newMapping);
@@ -238,7 +242,7 @@ function validateDefaultValue(value: string, dataType: string): boolean {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    const { id, name, sourceDatabaseId, sourceTableName, targetDocId, targetSheetId, fieldMappings, status } = body;
+    const { id, name, sourceDatabaseId, sourceTableName, targetDocId, targetSheetId, fieldMappings, status, corpId, targetName, documentName, sheetName } = body;
     
     if (!id) {
       return NextResponse.json(
@@ -265,7 +269,11 @@ export async function PUT(request: NextRequest) {
       targetSheetId: targetSheetId || existingMapping.targetSheetId,
       fieldMappings: fieldMappings || existingMapping.fieldMappings,
       status: status !== undefined ? status : existingMapping.status,
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
+      corpId: corpId !== undefined ? corpId : existingMapping.corpId,
+      targetName: targetName !== undefined ? targetName : existingMapping.targetName,
+      documentName: documentName !== undefined ? documentName : existingMapping.documentName,
+      sheetName: sheetName !== undefined ? sheetName : existingMapping.sheetName
     };
     
     const saved = saveMapping(updatedMapping);

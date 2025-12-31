@@ -496,6 +496,18 @@ export default function MappingsPage() {
                             <Database className="h-4 w-4" />
                             {resolveSourceName(mapping.sourceDatabaseId, mapping.sourceTableName)} <ArrowRight className="h-4 w-4" /> {resolveTargetName(mapping.targetDocId, mapping.targetSheetId)}
                           </span>
+                          {mapping.targetName && (
+                            <span className="flex items-center gap-1">
+                              <span className="text-gray-500">目标:</span>
+                              {mapping.targetName}
+                            </span>
+                          )}
+                          {mapping.documentName && mapping.sheetName && (
+                            <span className="flex items-center gap-1">
+                              <span className="text-gray-500">文档:</span>
+                              {mapping.documentName} / {mapping.sheetName}
+                            </span>
+                          )}
                           <span 
                             onClick={() => {
                               setSelectedMapping(mapping);
