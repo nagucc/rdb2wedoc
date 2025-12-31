@@ -5,17 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { RefreshCw, User, LogOut } from 'lucide-react';
 import { authService } from '@/lib/services/authService';
-
-interface FieldMapping {
-  id: string;
-  sourceField: string;
-  targetField: string;
-  dataType: 'string' | 'number' | 'date' | 'boolean' | 'json';
-  transformRule?: string;
-  defaultValue?: string;
-  required: boolean;
-  description?: string;
-}
+import { FieldMappingUI } from '@/types';
 
 interface DatabaseConnection {
   id: string;
@@ -69,7 +59,7 @@ interface MappingFormData {
   targetDocId: string;
   targetSheetId: string;
   status: 'active' | 'inactive' | 'draft';
-  fieldMappings: FieldMapping[];
+  fieldMappings: FieldMappingUI[];
 }
 
 export default function CreateMappingPage() {
@@ -90,7 +80,7 @@ export default function CreateMappingPage() {
     fieldMappings: []
   });
 
-  const [fieldMappings, setFieldMappings] = useState<FieldMapping[]>([]);
+  const [fieldMappings, setFieldMappings] = useState<FieldMappingUI[]>([]);
 
   const [databases, setDatabases] = useState<DatabaseConnection[]>([]);
   const [tables, setTables] = useState<Table[]>([]);
@@ -334,12 +324,12 @@ export default function CreateMappingPage() {
   };
 
   const addFieldMapping = () => {
-    const newMapping: FieldMapping = {
+    const newMapping: FieldMappingUI = {
       id: `field_${Date.now()}`,
-      sourceField: '',
-      targetField: '',
+      databaseColumn: '',
+      documentField: '',
       dataType: 'string',
-      transformRule: '',
+      transform: '',
       defaultValue: '',
       required: false,
       description: ''
@@ -398,15 +388,15 @@ export default function CreateMappingPage() {
 
     for (let i = 0; i < fieldMappings.length; i++) {
       const mapping = fieldMappings[i];
-      const trimmedSourceField = mapping.sourceField.trim();
-      const trimmedTargetField = mapping.targetField.trim();
+      const trimmedSourceField = mapping.databaseColumn.trim();
+      const trimmedTargetField = mapping.documentField.trim();
 
       if (!trimmedSourceField) {
-        setError(`第 ${i + 1} 个字段映射的源字段不能为空（当前值："${mapping.sourceField}"）`);
+        setError(`第 ${i + 1} 个字段映射的源字段不能为空（当前值："${mapping.databaseColumn}"）`);
         return false;
       }
       if (!trimmedTargetField) {
-        setError(`第 ${i + 1} 个字段映射的目标字段不能为空（当前值："${mapping.targetField}"）`);
+        setError(`第 ${i + 1} 个字段映射的目标字段不能为空（当前值："${mapping.documentField}"）`);
         return false;
       }
 
@@ -448,10 +438,10 @@ export default function CreateMappingPage() {
         return false;
       }
 
-      if (mapping.transformRule) {
+      if (mapping.transform) {
         const validTransforms = ['trim', 'toUpperCase', 'toLowerCase', 'toDate', 'toNumber', 'toString', 'toBoolean'];
-        if (!validTransforms.includes(mapping.transformRule)) {
-          setError(`第 ${i + 1} 个字段映射的转换规则 "${mapping.transformRule}" 无效（有效规则：${validTransforms.join(', ')}）`);
+        if (!validTransforms.includes(mapping.transform)) {
+          setError(`第 ${i + 1} 个字段映射的转换规则 "${mapping.transform}" 无效（有效规则：${validTransforms.join(', ')}）`);
           return false;
         }
       }
@@ -840,8 +830,8 @@ export default function CreateMappingPage() {
                             源字段 <span className="text-red-500">*</span>
                           </label>
                           <select
-                            value={mapping.sourceField}
-                            onChange={(e) => updateFieldMapping(index, 'sourceField', e.target.value)}
+                            value={mapping.databaseColumn}
+                            onChange={(e) => updateFieldMapping(index, 'databaseColumn', e.target.value)}
                             className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:focus:border-indigo-500 dark:focus:ring-indigo-500"
                             required
                           >
@@ -865,8 +855,8 @@ export default function CreateMappingPage() {
                             目标字段 <span className="text-red-500">*</span>
                           </label>
                           <select
-                            value={mapping.targetField}
-                            onChange={(e) => updateFieldMapping(index, 'targetField', e.target.value)}
+                            value={mapping.documentField}
+                            onChange={(e) => updateFieldMapping(index, 'documentField', e.target.value)}
                             className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:focus:border-indigo-500 dark:focus:ring-indigo-500"
                             required
                           >
@@ -921,8 +911,8 @@ export default function CreateMappingPage() {
                           </label>
                           <input
                             type="text"
-                            value={mapping.transformRule}
-                            onChange={(e) => updateFieldMapping(index, 'transformRule', e.target.value)}
+                            value={mapping.transform}
+                            onChange={(e) => updateFieldMapping(index, 'transform', e.target.value)}
                             className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:focus:border-indigo-500 dark:focus:ring-indigo-500"
                             placeholder="例如: toUpperCase()"
                           />

@@ -2,6 +2,7 @@ import { databaseService } from './database.service';
 import { weComDocumentService } from './wecom-document.service';
 import { getDatabaseById, getDocumentById, getWeComAccountById } from '@/lib/config/storage';
 import { Logger } from '@/lib/utils/helpers';
+import { FieldMapping } from '@/types';
 
 export interface DatabaseField {
   name: string;
@@ -16,13 +17,6 @@ export interface DocumentField {
   name: string;
   type: string;
   description?: string;
-}
-
-export interface FieldMapping {
-  databaseField: string;
-  documentField: string;
-  transform?: string;
-  required?: boolean;
 }
 
 export interface MappingPreview {
@@ -147,7 +141,7 @@ export class FieldMappingService {
 
       if (matchedDocField) {
         mappings.push({
-          databaseField: dbField.name,
+          databaseColumn: dbField.name,
           documentField: matchedDocField.name,
           required: dbField.primaryKey || !dbField.nullable
         });
@@ -256,7 +250,7 @@ export class FieldMappingService {
     // 检查必填字段是否都有映射
     for (const dbField of databaseFields) {
       if (dbField.primaryKey || !dbField.nullable) {
-        const hasMapping = mappings.some(m => m.databaseField === dbField.name);
+        const hasMapping = mappings.some(m => m.databaseColumn === dbField.name);
         if (!hasMapping) {
           errors.push(`必填字段 ${dbField.name} 未映射`);
         }
@@ -265,11 +259,11 @@ export class FieldMappingService {
 
     // 检查映射的字段是否存在
     for (const mapping of mappings) {
-      const dbFieldExists = databaseFields.some(f => f.name === mapping.databaseField);
+      const dbFieldExists = databaseFields.some(f => f.name === mapping.databaseColumn);
       const docFieldExists = documentFields.some(f => f.name === mapping.documentField);
 
       if (!dbFieldExists) {
-        errors.push(`数据库字段 ${mapping.databaseField} 不存在`);
+        errors.push(`数据库字段 ${mapping.databaseColumn} 不存在`);
       }
       if (!docFieldExists) {
         errors.push(`文档字段 ${mapping.documentField} 不存在`);
@@ -327,7 +321,7 @@ export class FieldMappingService {
       const transformedData = sampleData.map(row => {
         const transformed: any = {};
         for (const mapping of mappings) {
-          transformed[mapping.documentField] = row[mapping.databaseField];
+          transformed[mapping.documentField] = row[mapping.databaseColumn];
         }
         return transformed;
       });

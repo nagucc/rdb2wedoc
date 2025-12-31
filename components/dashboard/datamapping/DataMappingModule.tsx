@@ -22,31 +22,7 @@ import {
   Eye,
   EyeOff
 } from 'lucide-react';
-
-interface FieldMapping {
-  id: string;
-  sourceField: string;
-  targetField: string;
-  dataType: 'string' | 'number' | 'date' | 'boolean' | 'json';
-  transformRule?: string;
-  defaultValue?: string;
-  required: boolean;
-  description?: string;
-}
-
-interface MappingConfig {
-  id: string;
-  name: string;
-  sourceDatabaseId: string;
-  sourceTableName: string;
-  targetDocId: string;
-  targetSheetId: string;
-  status: 'active' | 'inactive' | 'draft';
-  fieldMappings: FieldMapping[];
-  createdAt: string;
-  updatedAt: string;
-  lastSyncTime?: string;
-}
+import { MappingConfigUI, FieldMappingUI } from '@/types';
 
 interface ApiResponse<T> {
   success: boolean;
@@ -56,14 +32,14 @@ interface ApiResponse<T> {
 }
 
 export default function DataMappingModule() {
-  const [mappings, setMappings] = useState<MappingConfig[]>([]);
+  const [mappings, setMappings] = useState<MappingConfigUI[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive' | 'draft'>('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedMapping, setSelectedMapping] = useState<MappingConfig | null>(null);
+  const [selectedMapping, setSelectedMapping] = useState<MappingConfigUI | null>(null);
   const [showFieldMapping, setShowFieldMapping] = useState(false);
   const [previewMode, setPreviewMode] = useState(false);
 
@@ -83,7 +59,7 @@ export default function DataMappingModule() {
         throw new Error('响应格式错误：期望JSON格式');
       }
 
-      const data: ApiResponse<MappingConfig[]> = await response.json();
+      const data: ApiResponse<MappingConfigUI[]> = await response.json();
 
       if (data.success && data.data) {
         setMappings(data.data);
@@ -103,7 +79,7 @@ export default function DataMappingModule() {
     fetchMappings();
   }, []);
 
-  const handleCreateMapping = async (mappingData: Partial<MappingConfig>) => {
+  const handleCreateMapping = async (mappingData: Partial<MappingConfigUI>) => {
     try {
       const response = await fetch('/api/mappings', {
         method: 'POST',
@@ -122,7 +98,7 @@ export default function DataMappingModule() {
         throw new Error('响应格式错误：期望JSON格式');
       }
 
-      const data: ApiResponse<MappingConfig> = await response.json();
+      const data: ApiResponse<MappingConfigUI> = await response.json();
 
       if (data.success) {
         setShowCreateModal(false);
@@ -136,7 +112,7 @@ export default function DataMappingModule() {
     }
   };
 
-  const handleUpdateMapping = async (id: string, mappingData: Partial<MappingConfig>) => {
+  const handleUpdateMapping = async (id: string, mappingData: Partial<MappingConfigUI>) => {
     try {
       const response = await fetch(`/api/mappings/${id}`, {
         method: 'PATCH',
@@ -489,11 +465,11 @@ export default function DataMappingModule() {
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
                         <span className="text-sm font-medium text-gray-900 dark:text-white">
-                          {fieldMapping.sourceField}
+                          {fieldMapping.databaseColumn}
                         </span>
                         <ArrowRight className="h-4 w-4 text-gray-400" />
                         <span className="text-sm font-medium text-gray-900 dark:text-white">
-                          {fieldMapping.targetField}
+                          {fieldMapping.documentField}
                         </span>
                         {fieldMapping.required && (
                           <span className="text-xs text-red-600 dark:text-red-400">必填</span>
@@ -504,8 +480,8 @@ export default function DataMappingModule() {
                           {getDataTypeIcon(fieldMapping.dataType)}
                           {fieldMapping.dataType}
                         </span>
-                        {fieldMapping.transformRule && (
-                          <span>规则: {fieldMapping.transformRule}</span>
+                        {fieldMapping.transform && (
+                          <span>规则: {fieldMapping.transform}</span>
                         )}
                         {fieldMapping.defaultValue && (
                           <span>默认值: {fieldMapping.defaultValue}</span>

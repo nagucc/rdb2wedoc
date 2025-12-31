@@ -23,31 +23,7 @@ import {
   LogOut
 } from 'lucide-react';
 import { authService } from '@/lib/services/authService';
-
-interface FieldMapping {
-  id: string;
-  sourceField: string;
-  targetField: string;
-  dataType: 'string' | 'number' | 'date' | 'boolean' | 'json';
-  transformRule?: string;
-  defaultValue?: string;
-  required: boolean;
-  description?: string;
-}
-
-interface MappingConfig {
-  id: string;
-  name: string;
-  sourceDatabaseId: string;
-  sourceTableName: string;
-  targetDocId: string;
-  targetSheetId: string;
-  status: 'active' | 'inactive' | 'draft';
-  fieldMappings: FieldMapping[];
-  createdAt: string;
-  updatedAt: string;
-  lastSyncTime?: string;
-}
+import { MappingConfigUI, FieldMappingUI } from '@/types';
 
 interface DatabaseConnection {
   id: string;
@@ -83,7 +59,7 @@ interface ApiResponse<T> {
 export default function MappingsPage() {
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState<{ username: string } | null>(null);
-  const [mappings, setMappings] = useState<MappingConfig[]>([]);
+  const [mappings, setMappings] = useState<MappingConfigUI[]>([]);
   const [databases, setDatabases] = useState<DatabaseConnection[]>([]);
   const [documents, setDocuments] = useState<IntelligentDocument[]>([]);
   const [loading, setLoading] = useState(true);
@@ -92,7 +68,7 @@ export default function MappingsPage() {
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive' | 'draft'>('all');
   const [previewMode, setPreviewMode] = useState(false);
   const [showFieldMapping, setShowFieldMapping] = useState(false);
-  const [selectedMapping, setSelectedMapping] = useState<MappingConfig | null>(null);
+  const [selectedMapping, setSelectedMapping] = useState<MappingConfigUI | null>(null);
 
   const handleLogout = async () => {
     try {
@@ -583,11 +559,11 @@ export default function MappingsPage() {
                     <div className="flex-1">
                       <div className="mb-2 flex items-center gap-2">
                         <span className="text-sm font-medium text-gray-900 dark:text-white">
-                          {fieldMapping.sourceField}
+                          {fieldMapping.databaseColumn}
                         </span>
                         <ArrowRight className="h-4 w-4 text-gray-400" />
                         <span className="text-sm font-medium text-gray-900 dark:text-white">
-                          {fieldMapping.targetField}
+                          {fieldMapping.documentField}
                         </span>
                         {fieldMapping.required && (
                           <span className="text-xs text-red-600 dark:text-red-400">必填</span>
@@ -598,8 +574,8 @@ export default function MappingsPage() {
                           {getDataTypeIcon(fieldMapping.dataType)}
                           {fieldMapping.dataType}
                         </span>
-                        {fieldMapping.transformRule && (
-                          <span>规则: {fieldMapping.transformRule}</span>
+                        {fieldMapping.transform && (
+                          <span>规则: {fieldMapping.transform}</span>
                         )}
                         {fieldMapping.defaultValue && (
                           <span>默认值: {fieldMapping.defaultValue}</span>

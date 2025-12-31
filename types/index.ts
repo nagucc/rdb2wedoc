@@ -124,6 +124,14 @@ export interface FieldMapping {
   databaseColumn: string;
   documentField: string;
   transform?: string;
+  required?: boolean;
+}
+
+export interface FieldMappingUI extends FieldMapping {
+  id: string;
+  dataType: 'string' | 'number' | 'date' | 'boolean' | 'json';
+  defaultValue?: string;
+  description?: string;
 }
 
 // 执行日志相关类型
@@ -190,6 +198,10 @@ export interface MappingConfig {
   createdAt: string;
   updatedAt: string;
   lastSyncTime?: string;
+}
+
+export interface MappingConfigUI extends Omit<MappingConfig, 'fieldMappings'> {
+  fieldMappings: FieldMappingUI[];
 }
 
 // API响应类型

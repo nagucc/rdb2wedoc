@@ -111,22 +111,22 @@ export async function POST(request: NextRequest) {
     for (let i = 0; i < fieldMappings.length; i++) {
       const mapping = fieldMappings[i];
 
-      if (!mapping.sourceField || typeof mapping.sourceField !== 'string' || mapping.sourceField.trim().length === 0) {
+      if (!mapping.databaseColumn || typeof mapping.databaseColumn !== 'string' || mapping.databaseColumn.trim().length === 0) {
         return NextResponse.json(
           { success: false, error: `第 ${i + 1} 个字段映射的源字段不能为空` },
           { status: 400 }
         );
       }
 
-      if (!mapping.targetField || typeof mapping.targetField !== 'string' || mapping.targetField.trim().length === 0) {
+      if (!mapping.documentField || typeof mapping.documentField !== 'string' || mapping.documentField.trim().length === 0) {
         return NextResponse.json(
           { success: false, error: `第 ${i + 1} 个字段映射的目标字段不能为空` },
           { status: 400 }
         );
       }
 
-      const sourceField = mapping.sourceField.trim();
-      const targetField = mapping.targetField.trim();
+      const sourceField = mapping.databaseColumn.trim();
+      const targetField = mapping.documentField.trim();
 
       if (sourceFieldSet.has(sourceField)) {
         return NextResponse.json(
@@ -152,11 +152,11 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      if (mapping.transformRule) {
+      if (mapping.transform) {
         const validTransforms = ['trim', 'toUpperCase', 'toLowerCase', 'toDate', 'toNumber', 'toString', 'toBoolean'];
-        if (!validTransforms.includes(mapping.transformRule)) {
+        if (!validTransforms.includes(mapping.transform)) {
           return NextResponse.json(
-            { success: false, error: `第 ${i + 1} 个字段映射的转换规则 "${mapping.transformRule}" 无效` },
+            { success: false, error: `第 ${i + 1} 个字段映射的转换规则 "${mapping.transform}" 无效` },
             { status: 400 }
           );
         }

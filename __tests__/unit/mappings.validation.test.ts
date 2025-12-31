@@ -991,13 +991,13 @@ describe('Mapping Validation Logic', () => {
           targetSheetId: 'sheet1',
           fieldMappings: [
             {
-              sourceField: 'field1',
-              targetField: 'target1',
+              databaseColumn: 'field1',
+              documentField: 'target1',
               dataType: 'string'
             },
             {
-              sourceField: 'field1',
-              targetField: 'target2',
+              databaseColumn: 'field1',
+              documentField: 'target2',
               dataType: 'string'
             }
           ]
@@ -1023,13 +1023,13 @@ describe('Mapping Validation Logic', () => {
           targetSheetId: 'sheet1',
           fieldMappings: [
             {
-              sourceField: 'field1',
-              targetField: 'target1',
+              databaseColumn: 'field1',
+              documentField: 'target1',
               dataType: 'string'
             },
             {
-              sourceField: 'field2',
-              targetField: 'target1',
+              databaseColumn: 'field2',
+              documentField: 'target1',
               dataType: 'string'
             }
           ]
@@ -1055,8 +1055,8 @@ describe('Mapping Validation Logic', () => {
           targetSheetId: 'sheet1',
           fieldMappings: [
             {
-              sourceField: 'field1',
-              targetField: 'target1',
+              databaseColumn: 'field1',
+              documentField: 'target1',
               dataType: 'invalid'
             }
           ]
@@ -1082,10 +1082,10 @@ describe('Mapping Validation Logic', () => {
           targetSheetId: 'sheet1',
           fieldMappings: [
             {
-              sourceField: 'field1',
-              targetField: 'target1',
+              databaseColumn: 'field1',
+              documentField: 'target1',
               dataType: 'string',
-              transformRule: 'invalid'
+              transform: 'invalid'
             }
           ]
         })
@@ -1110,8 +1110,8 @@ describe('Mapping Validation Logic', () => {
           targetSheetId: 'sheet1',
           fieldMappings: [
             {
-              sourceField: 'field1',
-              targetField: 'target1',
+              databaseColumn: 'field1',
+              documentField: 'target1',
               dataType: 'number',
               defaultValue: 'not_a_number'
             }
