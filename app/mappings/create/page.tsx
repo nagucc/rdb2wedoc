@@ -337,7 +337,7 @@ export default function CreateMappingPage() {
     setFieldMappings(prev => [...prev, newMapping]);
   };
 
-  const updateFieldMapping = (index: number, field: keyof FieldMapping, value: any) => {
+  const updateFieldMapping = (index: number, field: keyof FieldMappingUI, value: any) => {
     setFieldMappings(prev => {
       const updated = [...prev];
       updated[index] = { ...updated[index], [field]: value };

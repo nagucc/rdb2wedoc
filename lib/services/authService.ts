@@ -3,24 +3,7 @@
  * 负责用户登录、登出、会话管理等认证相关功能
  */
 
-export interface User {
-  id: string;
-  username: string;
-  email: string;
-  role: 'admin' | 'user';
-  createdAt: string;
-}
-
-export interface LoginCredentials {
-  username: string;
-  password: string;
-}
-
-export interface AuthSession {
-  user: User;
-  token: string;
-  expiresAt: number;
-}
+import { User, LoginCredentials, AuthSession } from '../../types';
 
 class AuthService {
   private static instance: AuthService;
@@ -177,8 +160,10 @@ class AuthService {
       id: `user_${Date.now()}`,
       username: testUser.username,
       email: `${testUser.username}@example.com`,
+      passwordHash: 'test_hash',
       role: testUser.role,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     };
   }
 

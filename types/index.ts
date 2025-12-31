@@ -20,6 +20,17 @@ export interface UserRegister {
   password: string;
 }
 
+export interface LoginCredentials {
+  username: string;
+  password: string;
+}
+
+export interface AuthSession {
+  user: User;
+  token: string;
+  expiresAt: number;
+}
+
 // 数据库相关类型
 export type DatabaseType = 'mysql' | 'postgresql' | 'sqlserver' | 'oracle';
 
@@ -50,6 +61,8 @@ export interface DatabaseColumn {
   primaryKey: boolean;
   defaultValue?: any;
 }
+
+export type DatabaseField = DatabaseColumn;
 
 // 企业微信文档相关类型
 export interface WeComAccount {
@@ -93,6 +106,7 @@ export interface DocumentField {
   id: string;
   name: string;
   type: string;
+  description?: string;
 }
 
 // 同步作业相关类型

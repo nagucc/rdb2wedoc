@@ -1,13 +1,4 @@
 // 用户相关类型
-export interface User {
-  id: string;
-  username: string;
-  email: string;
-  passwordHash: string;
-  role: 'admin' | 'user';
-  createdAt: string;
-  updatedAt: string;
-}
 
 export interface UserLogin {
   username: string;
@@ -21,57 +12,8 @@ export interface UserRegister {
 }
 
 // 数据库相关类型
-export type DatabaseType = 'mysql' | 'postgresql' | 'sqlserver' | 'oracle';
-
-export interface DatabaseConnection {
-  id: string;
-  name: string;
-  type: DatabaseType;
-  host: string;
-  port: number;
-  username: string;
-  password: string;
-  database: string;
-  options?: Record<string, any>;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface DatabaseTable {
-  name: string;
-  schema?: string;
-  columns: DatabaseColumn[];
-}
-
-export interface DatabaseColumn {
-  name: string;
-  type: string;
-  nullable: boolean;
-  primaryKey: boolean;
-  defaultValue?: any;
-}
 
 // 企业微信文档相关类型
-export interface WeComDocument {
-  id: string;
-  name: string;
-  accessToken: string;
-  documentId: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface DocumentSheet {
-  id: string;
-  name: string;
-  fields: DocumentField[];
-}
-
-export interface DocumentField {
-  id: string;
-  name: string;
-  type: string;
-}
 
 // 同步作业相关类型
 export type SyncStatus = 'idle' | 'running' | 'success' | 'failed' | 'paused';

@@ -95,7 +95,7 @@ export default function MappingsPage() {
         throw new Error('响应格式错误：期望JSON格式');
       }
 
-      const data: ApiResponse<MappingConfig[]> = await response.json();
+      const data: ApiResponse<MappingConfigUI[]> = await response.json();
 
       if (data.success && data.data) {
         setMappings(data.data);

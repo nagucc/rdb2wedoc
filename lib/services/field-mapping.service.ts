@@ -2,22 +2,7 @@ import { databaseService } from './database.service';
 import { weComDocumentService } from './wecom-document.service';
 import { getDatabaseById, getDocumentById, getWeComAccountById } from '@/lib/config/storage';
 import { Logger } from '@/lib/utils/helpers';
-import { FieldMapping } from '@/types';
-
-export interface DatabaseField {
-  name: string;
-  type: string;
-  nullable: boolean;
-  primaryKey: boolean;
-  defaultValue?: any;
-}
-
-export interface DocumentField {
-  id: string;
-  name: string;
-  type: string;
-  description?: string;
-}
+import { FieldMapping, DatabaseField, DocumentField } from '@/types';
 
 export interface MappingPreview {
   databaseFields: DatabaseField[];
