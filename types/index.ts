@@ -181,10 +181,10 @@ export type MappingStatus = 'active' | 'inactive' | 'draft';
 export interface MappingConfig {
   id: string;
   name: string;
-  sourceType: 'database' | 'api' | 'file';
-  sourceName: string;
-  targetType: 'wecom_doc' | 'database' | 'api';
-  targetName: string;
+  sourceDatabaseId: string;
+  sourceTableName: string;
+  targetDocId: string;
+  targetSheetId: string;
   status: MappingStatus;
   fieldMappings: FieldMapping[];
   createdAt: string;

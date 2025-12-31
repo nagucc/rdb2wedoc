@@ -37,10 +37,10 @@ interface FieldMapping {
 interface MappingConfig {
   id: string;
   name: string;
-  sourceType: 'database' | 'api' | 'file';
-  sourceName: string;
-  targetType: 'wecom_doc' | 'database' | 'api';
-  targetName: string;
+  sourceDatabaseId: string;
+  sourceTableName: string;
+  targetDocId: string;
+  targetSheetId: string;
   status: 'active' | 'inactive' | 'draft';
   fieldMappings: FieldMapping[];
   createdAt: string;
@@ -238,8 +238,10 @@ export default function DataMappingModule() {
 
   const filteredMappings = mappings.filter(mapping => {
     const matchesSearch = mapping.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         mapping.sourceName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         mapping.targetName.toLowerCase().includes(searchQuery.toLowerCase());
+                         mapping.sourceDatabaseId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         mapping.sourceTableName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         mapping.targetDocId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         mapping.targetSheetId.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === 'all' || mapping.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -398,7 +400,7 @@ export default function DataMappingModule() {
                   <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
                     <span className="flex items-center gap-1">
                       <Database className="h-4 w-4" />
-                      {mapping.sourceName} <ArrowRight className="h-4 w-4" /> {mapping.targetName}
+                      {mapping.sourceDatabaseId}:{mapping.sourceTableName} <ArrowRight className="h-4 w-4" /> {mapping.targetDocId}:{mapping.targetSheetId}
                     </span>
                     <span className="flex items-center gap-1">
                       <FileText className="h-4 w-4" />

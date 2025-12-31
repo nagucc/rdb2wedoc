@@ -523,16 +523,6 @@ export function getMappingById(mappingId: string): MappingConfig | null {
   return readJsonFile<MappingConfig>(getMappingFilePath(mappingId));
 }
 
-export function getMappingsBySourceType(sourceType: 'database' | 'api' | 'file'): MappingConfig[] {
-  const mappings = getMappings();
-  return mappings.filter(mapping => mapping.sourceType === sourceType);
-}
-
-export function getMappingsByTargetType(targetType: 'wecom_doc' | 'database' | 'api'): MappingConfig[] {
-  const mappings = getMappings();
-  return mappings.filter(mapping => mapping.targetType === targetType);
-}
-
 export function getActiveMappings(): MappingConfig[] {
   const mappings = getMappings();
   return mappings.filter(mapping => mapping.status === 'active');

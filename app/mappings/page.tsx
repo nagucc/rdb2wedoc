@@ -38,14 +38,38 @@ interface FieldMapping {
 interface MappingConfig {
   id: string;
   name: string;
-  sourceType: 'database' | 'api' | 'file';
-  sourceName: string;
-  targetType: 'wecom_doc' | 'database' | 'api';
-  targetName: string;
+  sourceDatabaseId: string;
+  sourceTableName: string;
+  targetDocId: string;
+  targetSheetId: string;
   status: 'active' | 'inactive' | 'draft';
   fieldMappings: FieldMapping[];
   createdAt: string;
   updatedAt: string;
+  lastSyncTime?: string;
+}
+
+interface DatabaseConnection {
+  id: string;
+  name: string;
+  type: string;
+  host: string;
+  port: number;
+  username: string;
+  database: string;
+}
+
+interface IntelligentDocument {
+  id: string;
+  name: string;
+  accountId: string;
+  status: string;
+  sheetCount: number;
+  sheets?: {
+    id: string;
+    name: string;
+  }[];
+  createdAt: string;
   lastSyncTime?: string;
 }
 
@@ -60,6 +84,8 @@ export default function MappingsPage() {
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState<{ username: string } | null>(null);
   const [mappings, setMappings] = useState<MappingConfig[]>([]);
+  const [databases, setDatabases] = useState<DatabaseConnection[]>([]);
+  const [documents, setDocuments] = useState<IntelligentDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -109,6 +135,67 @@ export default function MappingsPage() {
     }
   };
 
+  const fetchDatabases = async () => {
+    try {
+      const response = await fetch('/api/databases');
+      const data: ApiResponse<DatabaseConnection[]> = await response.json();
+      if (data.success && data.data) {
+        setDatabases(data.data);
+      }
+    } catch (err) {
+      console.error('Error fetching databases:', err);
+    }
+  };
+
+  const fetchDocuments = async () => {
+    try {
+      const accountsResponse = await fetch('/api/wecom-accounts');
+      const accountsData = await accountsResponse.json();
+      
+      if (accountsData.success && accountsData.data) {
+        const allDocuments: IntelligentDocument[] = [];
+        for (const account of accountsData.data) {
+          const docsResponse = await fetch(`/api/wecom-accounts/${account.id}/documents`);
+          const docsData = await docsResponse.json();
+          if (docsData.success && docsData.data) {
+            allDocuments.push(...docsData.data);
+          }
+        }
+        setDocuments(allDocuments);
+      }
+    } catch (err) {
+      console.error('Error fetching documents:', err);
+    }
+  };
+
+  const resolveSourceName = (sourceDatabaseId: string, sourceTableName: string): string => {
+    try {
+      const db = databases.find(d => d.id === sourceDatabaseId);
+      if (db) {
+        return `${db.name}.${sourceTableName}`;
+      }
+      return `${sourceDatabaseId}.${sourceTableName}`;
+    } catch (error) {
+      console.error('Error resolving source name:', error);
+      return `${sourceDatabaseId}.${sourceTableName}`;
+    }
+  };
+
+  const resolveTargetName = (targetDocId: string, targetSheetId: string): string => {
+    try {
+      const doc = documents.find(d => d.id === targetDocId);
+      if (doc) {
+        const sheet = doc.sheets?.find((s) => s.id === targetSheetId);
+        const sheetName = sheet ? sheet.name : targetSheetId;
+        return `${doc.name}:${sheetName}`;
+      }
+      return `${targetDocId}:${targetSheetId}`;
+    } catch (error) {
+      console.error('Error resolving target name:', error);
+      return `${targetDocId}:${targetSheetId}`;
+    }
+  };
+
   useEffect(() => {
     const user = authService.getCurrentUser();
     if (!user) {
@@ -117,6 +204,8 @@ export default function MappingsPage() {
     }
     setCurrentUser(user);
     fetchMappings();
+    fetchDatabases();
+    fetchDocuments();
   }, [router]);
 
   const handleDeleteMapping = async (id: string) => {
@@ -187,9 +276,11 @@ export default function MappingsPage() {
   };
 
   const filteredMappings = mappings.filter(mapping => {
+    const resolvedSourceName = resolveSourceName(mapping.sourceDatabaseId, mapping.sourceTableName);
+    const resolvedTargetName = resolveTargetName(mapping.targetDocId, mapping.targetSheetId);
     const matchesSearch = mapping.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         mapping.sourceName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         mapping.targetName.toLowerCase().includes(searchQuery.toLowerCase());
+                         resolvedSourceName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         resolvedTargetName.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === 'all' || mapping.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -365,7 +456,7 @@ export default function MappingsPage() {
               <Filter className="h-4 w-4 text-gray-600 dark:text-gray-400" />
               <select
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as any)}
+                onChange={(e) => setStatusFilter(e.target.value as 'all' | 'active' | 'inactive' | 'draft')}
                 className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
               >
                 <option value="all">全部状态</option>
@@ -405,7 +496,7 @@ export default function MappingsPage() {
                         <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
                           <span className="flex items-center gap-1">
                             <Database className="h-4 w-4" />
-                            {mapping.sourceName} <ArrowRight className="h-4 w-4" /> {mapping.targetName}
+                            {resolveSourceName(mapping.sourceDatabaseId, mapping.sourceTableName)} <ArrowRight className="h-4 w-4" /> {resolveTargetName(mapping.targetDocId, mapping.targetSheetId)}
                           </span>
                           <span className="flex items-center gap-1">
                             <FileText className="h-4 w-4" />
@@ -484,7 +575,7 @@ export default function MappingsPage() {
 
             <div className="max-h-[60vh] overflow-y-auto">
               <div className="space-y-4">
-                {selectedMapping.fieldMappings.map((fieldMapping, index) => (
+                {selectedMapping.fieldMappings.map((fieldMapping) => (
                   <div
                     key={fieldMapping.id}
                     className="flex items-center gap-4 rounded-lg bg-gray-50 p-4 dark:bg-gray-700/50"

@@ -889,10 +889,10 @@ describe('Mapping Validation Logic', () => {
         method: 'POST',
         body: JSON.stringify({
           name: 'test',
-          sourceType: 'database',
-          sourceName: 'db1',
-          targetType: 'wecom_doc',
-          targetName: 'doc1'
+          sourceDatabaseId: 'db1',
+          sourceTableName: 'table1',
+          targetDocId: 'doc1',
+          targetSheetId: 'sheet1'
         })
       });
 
@@ -909,10 +909,10 @@ describe('Mapping Validation Logic', () => {
         method: 'POST',
         body: JSON.stringify({
           name: '   ',
-          sourceType: 'database',
-          sourceName: 'db1',
-          targetType: 'wecom_doc',
-          targetName: 'doc1',
+          sourceDatabaseId: 'db1',
+          sourceTableName: 'table1',
+          targetDocId: 'doc1',
+          targetSheetId: 'sheet1',
           fieldMappings: [
             {
               sourceField: 'field1',
@@ -931,57 +931,15 @@ describe('Mapping Validation Logic', () => {
       expect(data.error).toBe('映射名称不能为空');
     });
 
-    it('应该拒绝无效的源类型', async () => {
-      const request = new NextRequest('http://localhost:3000/api/mappings', {
-        method: 'POST',
-        body: JSON.stringify({
-          name: 'test',
-          sourceType: 'invalid',
-          sourceName: 'db1',
-          targetType: 'wecom_doc',
-          targetName: 'doc1',
-          fieldMappings: []
-        })
-      });
-
-      const response = await POST(request);
-      const data = await response.json();
-
-      expect(response.status).toBe(400);
-      expect(data.success).toBe(false);
-      expect(data.error).toContain('无效的源类型');
-    });
-
-    it('应该拒绝无效的目标类型', async () => {
-      const request = new NextRequest('http://localhost:3000/api/mappings', {
-        method: 'POST',
-        body: JSON.stringify({
-          name: 'test',
-          sourceType: 'database',
-          sourceName: 'db1',
-          targetType: 'invalid',
-          targetName: 'doc1',
-          fieldMappings: []
-        })
-      });
-
-      const response = await POST(request);
-      const data = await response.json();
-
-      expect(response.status).toBe(400);
-      expect(data.success).toBe(false);
-      expect(data.error).toContain('无效的目标类型');
-    });
-
     it('应该拒绝空的字段映射数组', async () => {
       const request = new NextRequest('http://localhost:3000/api/mappings', {
         method: 'POST',
         body: JSON.stringify({
           name: 'test',
-          sourceType: 'database',
-          sourceName: 'db1',
-          targetType: 'wecom_doc',
-          targetName: 'doc1',
+          sourceDatabaseId: 'db1',
+          sourceTableName: 'table1',
+          targetDocId: 'doc1',
+          targetSheetId: 'sheet1',
           fieldMappings: []
         })
       });
@@ -999,10 +957,10 @@ describe('Mapping Validation Logic', () => {
         method: 'POST',
         body: JSON.stringify({
           name: 'test',
-          sourceType: 'database',
-          sourceName: 'db1',
-          targetType: 'wecom_doc',
-          targetName: 'doc1',
+          sourceDatabaseId: 'db1',
+          sourceTableName: 'table1',
+          targetDocId: 'doc1',
+          targetSheetId: 'sheet1',
           fieldMappings: [
             {
               sourceField: 'field1',
@@ -1027,10 +985,10 @@ describe('Mapping Validation Logic', () => {
         method: 'POST',
         body: JSON.stringify({
           name: 'test',
-          sourceType: 'database',
-          sourceName: 'db1',
-          targetType: 'wecom_doc',
-          targetName: 'doc1',
+          sourceDatabaseId: 'db1',
+          sourceTableName: 'table1',
+          targetDocId: 'doc1',
+          targetSheetId: 'sheet1',
           fieldMappings: [
             {
               sourceField: 'field1',
@@ -1059,10 +1017,10 @@ describe('Mapping Validation Logic', () => {
         method: 'POST',
         body: JSON.stringify({
           name: 'test',
-          sourceType: 'database',
-          sourceName: 'db1',
-          targetType: 'wecom_doc',
-          targetName: 'doc1',
+          sourceDatabaseId: 'db1',
+          sourceTableName: 'table1',
+          targetDocId: 'doc1',
+          targetSheetId: 'sheet1',
           fieldMappings: [
             {
               sourceField: 'field1',
@@ -1091,10 +1049,10 @@ describe('Mapping Validation Logic', () => {
         method: 'POST',
         body: JSON.stringify({
           name: 'test',
-          sourceType: 'database',
-          sourceName: 'db1',
-          targetType: 'wecom_doc',
-          targetName: 'doc1',
+          sourceDatabaseId: 'db1',
+          sourceTableName: 'table1',
+          targetDocId: 'doc1',
+          targetSheetId: 'sheet1',
           fieldMappings: [
             {
               sourceField: 'field1',
@@ -1118,10 +1076,10 @@ describe('Mapping Validation Logic', () => {
         method: 'POST',
         body: JSON.stringify({
           name: 'test',
-          sourceType: 'database',
-          sourceName: 'db1',
-          targetType: 'wecom_doc',
-          targetName: 'doc1',
+          sourceDatabaseId: 'db1',
+          sourceTableName: 'table1',
+          targetDocId: 'doc1',
+          targetSheetId: 'sheet1',
           fieldMappings: [
             {
               sourceField: 'field1',
@@ -1146,10 +1104,10 @@ describe('Mapping Validation Logic', () => {
         method: 'POST',
         body: JSON.stringify({
           name: 'test',
-          sourceType: 'database',
-          sourceName: 'db1',
-          targetType: 'wecom_doc',
-          targetName: 'doc1',
+          sourceDatabaseId: 'db1',
+          sourceTableName: 'table1',
+          targetDocId: 'doc1',
+          targetSheetId: 'sheet1',
           fieldMappings: [
             {
               sourceField: 'field1',

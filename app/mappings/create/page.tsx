@@ -64,10 +64,10 @@ interface DocumentField {
 
 interface MappingFormData {
   name: string;
-  sourceType: string;
-  sourceName: string;
-  targetType: string;
-  targetName: string;
+  sourceDatabaseId: string;
+  sourceTableName: string;
+  targetDocId: string;
+  targetSheetId: string;
   status: 'active' | 'inactive' | 'draft';
   fieldMappings: FieldMapping[];
 }
@@ -82,10 +82,10 @@ export default function CreateMappingPage() {
 
   const [formData, setFormData] = useState<MappingFormData>({
     name: '',
-    sourceType: 'database',
-    sourceName: '',
-    targetType: 'wecom_doc',
-    targetName: '',
+    sourceDatabaseId: '',
+    sourceTableName: '',
+    targetDocId: '',
+    targetSheetId: '',
     status: 'draft',
     fieldMappings: []
   });
@@ -506,11 +506,12 @@ export default function CreateMappingPage() {
 
     try {
       const submissionData = {
-        ...formData,
-        sourceType: 'database',
-        sourceName: `${selectedDatabase}.${selectedTable}`,
-        targetType: 'wecom_doc',
-        targetName: `${selectedWeComAccount}:${selectedDocument}:${selectedSheet}`,
+        name: formData.name,
+        sourceDatabaseId: selectedDatabase,
+        sourceTableName: selectedTable,
+        targetDocId: selectedDocument,
+        targetSheetId: selectedSheet,
+        status: formData.status,
         fieldMappings: fieldMappings
       };
 

@@ -46,11 +46,11 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, sourceType, sourceName, targetType, targetName, fieldMappings, status } = body;
+    const { name, sourceDatabaseId, sourceTableName, targetDocId, targetSheetId, fieldMappings, status } = body;
     
-    if (!name || !sourceType || !sourceName || !targetType || !targetName || !fieldMappings) {
+    if (!name || !sourceDatabaseId || !sourceTableName || !targetDocId || !targetSheetId || !fieldMappings) {
       return NextResponse.json(
-        { success: false, error: '缺少必要参数：名称、源类型、源名称、目标类型、目标名称和字段映射' },
+        { success: false, error: '缺少必要参数：名称、源数据库ID、源表名、目标文档ID、目标工作表ID和字段映射' },
         { status: 400 }
       );
     }
@@ -62,18 +62,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const validSourceTypes = ['database', 'api', 'file'];
-    if (!validSourceTypes.includes(sourceType)) {
+    if (typeof sourceDatabaseId !== 'string' || sourceDatabaseId.trim().length === 0) {
       return NextResponse.json(
-        { success: false, error: `无效的源类型：${sourceType}，必须是 ${validSourceTypes.join(', ')} 之一` },
+        { success: false, error: '源数据库ID不能为空' },
         { status: 400 }
       );
     }
 
-    const validTargetTypes = ['wecom_doc', 'database', 'api'];
-    if (!validTargetTypes.includes(targetType)) {
+    if (typeof sourceTableName !== 'string' || sourceTableName.trim().length === 0) {
       return NextResponse.json(
-        { success: false, error: `无效的目标类型：${targetType}，必须是 ${validTargetTypes.join(', ')} 之一` },
+        { success: false, error: '源表名不能为空' },
+        { status: 400 }
+      );
+    }
+
+    if (typeof targetDocId !== 'string' || targetDocId.trim().length === 0) {
+      return NextResponse.json(
+        { success: false, error: '目标文档ID不能为空' },
+        { status: 400 }
+      );
+    }
+
+    if (typeof targetSheetId !== 'string' || targetSheetId.trim().length === 0) {
+      return NextResponse.json(
+        { success: false, error: '目标工作表ID不能为空' },
         { status: 400 }
       );
     }
@@ -163,10 +175,10 @@ export async function POST(request: NextRequest) {
     const newMapping = {
       id: `mapping_${Date.now()}`,
       name,
-      sourceType,
-      sourceName,
-      targetType,
-      targetName,
+      sourceDatabaseId,
+      sourceTableName,
+      targetDocId,
+      targetSheetId,
       fieldMappings,
       status: status || 'draft',
       createdAt: new Date().toISOString(),
@@ -226,7 +238,7 @@ function validateDefaultValue(value: string, dataType: string): boolean {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    const { id, name, sourceType, sourceName, targetType, targetName, fieldMappings, status } = body;
+    const { id, name, sourceDatabaseId, sourceTableName, targetDocId, targetSheetId, fieldMappings, status } = body;
     
     if (!id) {
       return NextResponse.json(
@@ -247,10 +259,10 @@ export async function PUT(request: NextRequest) {
     const updatedMapping = {
       ...existingMapping,
       name: name || existingMapping.name,
-      sourceType: sourceType || existingMapping.sourceType,
-      sourceName: sourceName || existingMapping.sourceName,
-      targetType: targetType || existingMapping.targetType,
-      targetName: targetName || existingMapping.targetName,
+      sourceDatabaseId: sourceDatabaseId || existingMapping.sourceDatabaseId,
+      sourceTableName: sourceTableName || existingMapping.sourceTableName,
+      targetDocId: targetDocId || existingMapping.targetDocId,
+      targetSheetId: targetSheetId || existingMapping.targetSheetId,
       fieldMappings: fieldMappings || existingMapping.fieldMappings,
       status: status !== undefined ? status : existingMapping.status,
       updatedAt: new Date().toISOString()
