@@ -125,17 +125,6 @@ export default function LoginPage() {
               )}
             </button>
           </form>
-
-          {/* 测试账号提示 */}
-          <div className="mt-6 rounded-lg bg-blue-50 p-4 dark:bg-blue-900/20">
-            <p className="mb-2 text-sm font-medium text-blue-900 dark:text-blue-200">
-              测试账号：
-            </p>
-            <div className="space-y-1 text-sm text-blue-700 dark:text-blue-300">
-              <p>管理员: admin / admin123</p>
-              <p>普通用户: user / user123</p>
-            </div>
-          </div>
         </div>
 
         {/* 返回首页链接 */}
