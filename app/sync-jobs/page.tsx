@@ -66,6 +66,9 @@ export default function SyncJobsPage() {
   const [selectedJobLogs, setSelectedJobLogs] = useState<ExecutionLog[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
   const [expandedJobs, setExpandedJobs] = useState<Set<string>>(new Set());
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [jobToDelete, setJobToDelete] = useState<SyncJob | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -217,25 +220,58 @@ export default function SyncJobsPage() {
   };
 
   const handleDelete = async (jobId: string) => {
-    if (!confirm('确定要删除这个同步作业吗？删除后无法恢复。')) {
-      return;
-    }
+    const job = jobs.find(j => j.id === jobId);
+    if (!job) return;
+
+    setJobToDelete(job);
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!jobToDelete) return;
 
     try {
-      const response = await fetch(`/api/jobs?id=${jobId}`, {
+      setIsDeleting(true);
+
+      const response = await fetch(`/api/jobs?id=${jobToDelete.id}`, {
         method: 'DELETE'
       });
-      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('响应格式错误：期望JSON格式');
+      }
+
+      const text = await response.text();
+      if (!text) {
+        throw new Error('服务器返回空响应');
+      }
+
+      const data = JSON.parse(text);
 
       if (data.success) {
         fetchJobs();
+        setShowDeleteDialog(false);
+        setJobToDelete(null);
       } else {
         alert(data.error || '删除失败');
       }
     } catch (err) {
-      alert('网络错误，请检查连接后重试');
+      const errorMessage = err instanceof Error ? err.message : '网络错误，请检查连接后重试';
+      alert(errorMessage);
       console.error('Error deleting job:', err);
+    } finally {
+      setIsDeleting(false);
     }
+  };
+
+  const cancelDelete = () => {
+    setShowDeleteDialog(false);
+    setJobToDelete(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -949,6 +985,67 @@ export default function SyncJobsPage() {
                 </div>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {showDeleteDialog && jobToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="mx-4 w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-800">
+            <div className="mb-4 flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/20">
+                <AlertCircle className="h-6 w-6 text-red-600 dark:text-red-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  确认删除
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  是否确认删除？此操作不可撤销
+                </p>
+              </div>
+            </div>
+
+            <div className="mb-6 rounded-lg bg-gray-50 p-4 dark:bg-gray-700/50">
+              <div className="mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                作业名称
+              </div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                {jobToDelete.name}
+              </div>
+              {jobToDelete.description && (
+                <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                  {jobToDelete.description}
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-end gap-3">
+              <button
+                onClick={cancelDelete}
+                disabled={isDeleting}
+                className="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                取消
+              </button>
+              <button
+                onClick={confirmDelete}
+                disabled={isDeleting}
+                className="flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isDeleting ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                    删除中...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-4 w-4" />
+                    确认删除
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}

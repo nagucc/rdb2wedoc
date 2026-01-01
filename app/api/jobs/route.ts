@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { SyncJob } from '@/types';
-import { getJobs, saveJob, saveHistory } from '@/lib/config/storage';
+import { getJobs, getJobById, saveJob, deleteJob, saveHistory } from '@/lib/config/storage';
 import { generateId, validateCronExpression, Logger } from '@/lib/utils/helpers';
 
 // 获取所有同步作业
@@ -98,6 +98,56 @@ export async function POST(request: NextRequest) {
     Logger.error('创建同步作业失败', { error: (error as Error).message });
     return NextResponse.json(
       { success: false, error: '创建作业失败' },
+      { status: 500 }
+    );
+  }
+}
+
+// 删除同步作业
+export async function DELETE(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json(
+        { success: false, error: '缺少作业ID' },
+        { status: 400 }
+      );
+    }
+
+    const job = await getJobById(id);
+
+    if (!job) {
+      return NextResponse.json(
+        { success: false, error: '作业不存在' },
+        { status: 404 }
+      );
+    }
+
+    await deleteJob(id);
+
+    // 记录历史
+    await saveHistory({
+      id: generateId(),
+      entityType: 'job',
+      entityId: job.id,
+      action: 'delete',
+      oldConfig: { name: job.name },
+      userId: 'system',
+      timestamp: new Date().toISOString()
+    });
+
+    Logger.info(`同步作业删除成功: ${job.name}`, { jobId: job.id });
+
+    return NextResponse.json({
+      success: true,
+      message: '作业删除成功'
+    });
+  } catch (error) {
+    Logger.error('删除同步作业失败', { error: (error as Error).message });
+    return NextResponse.json(
+      { success: false, error: '删除作业失败' },
       { status: 500 }
     );
   }
