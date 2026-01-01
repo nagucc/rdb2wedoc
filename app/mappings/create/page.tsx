@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { RefreshCw, User, LogOut } from 'lucide-react';
+import { RefreshCw, User, LogOut, AlertCircle, XCircle, CheckCircle } from 'lucide-react';
 import { authService } from '@/lib/services/authService';
 import { FieldMappingUI } from '@/types';
 
@@ -69,6 +69,13 @@ export default function CreateMappingPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+
+  const [showConnectionErrorDialog, setShowConnectionErrorDialog] = useState(false);
+  const [connectionErrorDetails, setConnectionErrorDetails] = useState<{
+    errorType: string;
+    errorMessage: string;
+    solution: string;
+  } | null>(null);
 
   const [formData, setFormData] = useState<MappingFormData>({
     name: '',
@@ -149,9 +156,12 @@ export default function CreateMappingPage() {
         if (result.success) {
           setTables(result.data);
           setSelectedTable('');
+        } else {
+          throw new Error(result.error || '获取表格数据失败');
         }
       } catch (error) {
         console.error('Failed to fetch tables:', error);
+        handleConnectionError(error);
         setTables([]);
       } finally {
         setLoadingTables(false);
@@ -170,9 +180,12 @@ export default function CreateMappingPage() {
       const result = await response.json();
       if (result.success) {
         setTables(result.data);
+      } else {
+        throw new Error(result.error || '刷新表格数据失败');
       }
     } catch (error) {
       console.error('Failed to refresh tables:', error);
+      handleConnectionError(error);
       setError('刷新表格数据失败');
     } finally {
       setRefreshingTables(false);
@@ -549,6 +562,31 @@ export default function CreateMappingPage() {
 
   const handleCancel = () => {
     router.back();
+  };
+
+  const handleConnectionError = (error: any) => {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    
+    let errorType = '连接错误';
+    let solution = '请检查网络连接和数据库配置后重试';
+
+    if (errorMessage.includes('ETIMEDOUT') || errorMessage.includes('timeout')) {
+      errorType = '连接超时';
+      solution = '数据库连接超时，请检查：\n1. 数据库服务器是否正常运行\n2. 网络连接是否稳定\n3. 防火墙设置是否允许连接\n4. 数据库地址和端口是否正确';
+    } else if (errorMessage.includes('ECONNREFUSED')) {
+      errorType = '连接被拒绝';
+      solution = '无法连接到数据库，请检查：\n1. 数据库服务是否已启动\n2. 数据库地址和端口是否正确\n3. 是否有足够的权限访问数据库';
+    } else if (errorMessage.includes('ENOTFOUND')) {
+      errorType = '主机未找到';
+      solution = '无法找到数据库主机，请检查：\n1. 数据库地址是否正确\n2. DNS解析是否正常\n3. 网络连接是否正常';
+    }
+
+    setConnectionErrorDetails({
+      errorType,
+      errorMessage: errorMessage.substring(0, 200),
+      solution
+    });
+    setShowConnectionErrorDialog(true);
   };
 
   if (!mounted || !currentUser) {
@@ -986,6 +1024,69 @@ export default function CreateMappingPage() {
         </div>
       </div>
       </main>
+
+      {showConnectionErrorDialog && connectionErrorDetails && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="mx-4 w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-800">
+            <div className="mb-4 flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/20">
+                <AlertCircle className="h-6 w-6 text-red-600 dark:text-red-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  {connectionErrorDetails.errorType}
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  数据库连接失败
+                </p>
+              </div>
+            </div>
+
+            <div className="mb-6 space-y-4">
+              <div className="rounded-lg bg-gray-50 p-4 dark:bg-gray-700/50">
+                <div className="mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                  错误信息
+                </div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  {connectionErrorDetails.errorMessage}
+                </div>
+              </div>
+
+              <div className="rounded-lg bg-blue-50 p-4 dark:bg-blue-900/20">
+                <div className="mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                  解决建议
+                </div>
+                <div className="whitespace-pre-line text-sm text-gray-600 dark:text-gray-400">
+                  {connectionErrorDetails.solution}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3">
+              <button
+                onClick={() => {
+                  setShowConnectionErrorDialog(false);
+                  setConnectionErrorDetails(null);
+                }}
+                className="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+              >
+                关闭
+              </button>
+              <button
+                onClick={() => {
+                  setShowConnectionErrorDialog(false);
+                  setConnectionErrorDetails(null);
+                  handleRefreshTables();
+                }}
+                className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+              >
+                <RefreshCw className="h-4 w-4" />
+                重试
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
