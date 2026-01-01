@@ -22,13 +22,13 @@ export default function ScheduleConfig({
   disabled = false,
   error
 }: ScheduleConfigProps) {
-  const [customExpression, setCustomExpression] = useState(value);
+  const [customExpression, setCustomExpression] = useState(value || '');
   const [nextRunTime, setNextRunTime] = useState<string>('');
   const [isValid, setIsValid] = useState(true);
 
   useEffect(() => {
-    setCustomExpression(value);
-    calculateNextRun(value);
+    setCustomExpression(value || '');
+    calculateNextRun(value || '');
   }, [value]);
 
   const calculateNextRun = (cronExpression: string) => {
