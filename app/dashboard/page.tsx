@@ -194,11 +194,23 @@ function DashboardContent() {
               </div>
             </Link>
             <nav className="flex items-center gap-4">
-              <div className="flex items-center gap-2 rounded-lg bg-blue-100 px-3 py-2 dark:bg-blue-900/20">
+              <Link
+                href="/dashboard"
+                className="flex items-center gap-2 rounded-lg bg-blue-100 px-3 py-2 dark:bg-blue-900/20 hover:bg-blue-200 dark:hover:bg-blue-900/30 transition-colors"
+              >
                 <span className="text-sm font-medium text-blue-700 dark:text-blue-400">
                   控制台
                 </span>
-              </div>
+              </Link>
+              <Link
+                href="/sync-jobs"
+                className="flex items-center gap-2 rounded-lg bg-gray-100 px-3 py-2 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              >
+                <RefreshCw className="h-4 w-4 text-gray-600 dark:text-gray-300" />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  同步作业
+                </span>
+              </Link>
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2 rounded-lg bg-gray-100 px-3 py-2 dark:bg-gray-700">
                   <User className="h-4 w-4 text-gray-600 dark:text-gray-300" />
@@ -328,7 +340,7 @@ function DashboardContent() {
 
         {activeTab === 'overview' && metrics && (
           <>
-            <div className="mb-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-5">
+            <div className="mb-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-6">
               <MetricsCard
                 title="数据源总数"
                 value={metrics.totalDataSources}
@@ -339,12 +351,13 @@ function DashboardContent() {
                 href="/databases"
               />
               <MetricsCard
-                title="总作业数"
+                title="同步作业"
                 value={metrics.totalJobs}
-                icon={Database}
+                icon={RefreshCw}
                 color="blue"
-                trend="+2"
+                trend={metrics.runningJobs > 0 ? `${metrics.runningJobs}运行中` : '无运行'}
                 description="所有配置的同步作业"
+                href="/sync-jobs"
               />
               <MetricsCard
                 title="运行中"
@@ -369,6 +382,15 @@ function DashboardContent() {
                 color="purple"
                 trend={metrics.successRate >= 90 ? '优秀' : metrics.successRate >= 70 ? '良好' : '需改进'}
                 description="作业执行成功率"
+              />
+              <MetricsCard
+                title="活跃作业"
+                value={metrics.activeJobs}
+                icon={PlayCircle}
+                color="green"
+                trend={metrics.activeJobs > 0 ? '活跃' : '空闲'}
+                description="最近执行的作业数量"
+                href="/sync-jobs"
               />
             </div>
 
