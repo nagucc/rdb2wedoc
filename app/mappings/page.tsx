@@ -20,10 +20,11 @@ import {
   Eye,
   EyeOff,
   User,
-  LogOut
+  LogOut,
+  Clock
 } from 'lucide-react';
 import { authService } from '@/lib/services/authService';
-import { MappingConfigUI, FieldMappingUI } from '@/types';
+import { MappingConfigUI, FieldMappingUI, SyncJob } from '@/types';
 
 interface DatabaseConnection {
   id: string;
@@ -62,17 +63,21 @@ export default function MappingsPage() {
   const [mappings, setMappings] = useState<MappingConfigUI[]>([]);
   const [databases, setDatabases] = useState<DatabaseConnection[]>([]);
   const [documents, setDocuments] = useState<IntelligentDocument[]>([]);
+  const [jobs, setJobs] = useState<SyncJob[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive' | 'draft'>('all');
   const [previewMode, setPreviewMode] = useState(false);
   const [showFieldMapping, setShowFieldMapping] = useState(false);
+  const [showJobsDialog, setShowJobsDialog] = useState(false);
   const [selectedMapping, setSelectedMapping] = useState<MappingConfigUI | null>(null);
+  const [selectedMappingForJobs, setSelectedMappingForJobs] = useState<MappingConfigUI | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [mappingToDelete, setMappingToDelete] = useState<MappingConfigUI | null>(null);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [expandedMappingId, setExpandedMappingId] = useState<string | null>(null);
 
   const handleLogout = async () => {
     try {
@@ -148,6 +153,18 @@ export default function MappingsPage() {
     }
   };
 
+  const fetchJobs = async () => {
+    try {
+      const response = await fetch('/api/jobs');
+      const data: ApiResponse<SyncJob[]> = await response.json();
+      if (data.success && data.data) {
+        setJobs(data.data);
+      }
+    } catch (err) {
+      console.error('Error fetching jobs:', err);
+    }
+  };
+
   const resolveSourceName = (sourceDatabaseId: string, sourceTableName: string): string => {
     try {
       const db = databases.find(d => d.id === sourceDatabaseId);
@@ -186,6 +203,7 @@ export default function MappingsPage() {
     fetchMappings();
     fetchDatabases();
     fetchDocuments();
+    fetchJobs();
   }, [router]);
 
   const handleDeleteMapping = async (id: string) => {
@@ -253,6 +271,71 @@ export default function MappingsPage() {
       default:
         return <FileText className="h-4 w-4" />;
     }
+  };
+
+  const getJobStatusColor = (status: string) => {
+    switch (status) {
+      case 'success':
+        return 'bg-green-100 text-green-600 dark:bg-green-900/20 dark:text-green-400';
+      case 'failed':
+        return 'bg-red-100 text-red-600 dark:bg-red-900/20 dark:text-red-400';
+      case 'running':
+        return 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900/20 dark:text-yellow-400';
+      case 'pending':
+        return 'bg-blue-100 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400';
+      default:
+        return 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400';
+    }
+  };
+
+  const getJobStatusText = (status: string) => {
+    switch (status) {
+      case 'success':
+        return '成功';
+      case 'failed':
+        return '失败';
+      case 'running':
+        return '运行中';
+      case 'pending':
+        return '等待中';
+      default:
+        return status;
+    }
+  };
+
+  const getJobStatusIcon = (status: string) => {
+    switch (status) {
+      case 'success':
+        return <CheckCircle className="h-4 w-4" />;
+      case 'failed':
+        return <XCircle className="h-4 w-4" />;
+      case 'running':
+        return <RefreshCw className="h-4 w-4 animate-spin" />;
+      case 'pending':
+        return <Clock className="h-4 w-4" />;
+      default:
+        return <AlertCircle className="h-4 w-4" />;
+    }
+  };
+
+  const formatDate = (dateString: string): string => {
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return '刚刚';
+    if (diffMins < 60) return `${diffMins}分钟前`;
+    if (diffHours < 24) return `${diffHours}小时前`;
+    if (diffDays < 7) return `${diffDays}天前`;
+    return date.toLocaleDateString('zh-CN');
+  };
+
+  const getJobsForMapping = (mappingId: string) => {
+    return jobs.filter(job => job.mappingConfigId === mappingId);
   };
 
   const filteredMappings = mappings.filter(mapping => {
@@ -496,18 +579,6 @@ export default function MappingsPage() {
                             <Database className="h-4 w-4" />
                             {resolveSourceName(mapping.sourceDatabaseId, mapping.sourceTableName)} <ArrowRight className="h-4 w-4" /> {resolveTargetName(mapping.targetDocId, mapping.targetSheetId)}
                           </span>
-                          {mapping.targetName && (
-                            <span className="flex items-center gap-1">
-                              <span className="text-gray-500">目标:</span>
-                              {mapping.targetName}
-                            </span>
-                          )}
-                          {mapping.documentName && mapping.sheetName && (
-                            <span className="flex items-center gap-1">
-                              <span className="text-gray-500">文档:</span>
-                              {mapping.documentName} / {mapping.sheetName}
-                            </span>
-                          )}
                           <span 
                             onClick={() => {
                               setSelectedMapping(mapping);
@@ -518,7 +589,68 @@ export default function MappingsPage() {
                             <FileText className="h-4 w-4" />
                             {mapping.fieldMappings.length} 个字段映射
                           </span>
+                          {(() => {
+                            const mappingJobs = getJobsForMapping(mapping.id);
+                            if (mappingJobs.length === 0) return null;
+                            return (
+                              <span 
+                                onClick={() => {
+                                  setSelectedMappingForJobs(mapping);
+                                  setShowJobsDialog(true);
+                                }}
+                                className="flex items-center gap-1 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                              >
+                                <RefreshCw className="h-4 w-4" />
+                                {mappingJobs.length} 个同步作业
+                              </span>
+                            );
+                          })()}
                         </div>
+                        {expandedMappingId === mapping.id && (() => {
+                          const mappingJobs = getJobsForMapping(mapping.id);
+                          if (mappingJobs.length === 0) return null;
+                          return (
+                            <div className="mt-4 ml-6 space-y-2">
+                              {mappingJobs.map((job) => (
+                                <div
+                                  key={job.id}
+                                  className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 p-3 hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800/50 dark:hover:bg-gray-800"
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <span className={`rounded-full px-2 py-1 text-xs font-medium ${getJobStatusColor(job.status)}`}>
+                                      {getJobStatusText(job.status)}
+                                    </span>
+                                    <span className="font-medium text-gray-900 dark:text-white">{job.name}</span>
+                                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                                      {job.schedule}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-4 text-xs text-gray-600 dark:text-gray-400">
+                                    {job.lastRun && (
+                                      <span className="flex items-center gap-1">
+                                        <Clock className="h-3 w-3" />
+                                        {formatDate(job.lastRun)}
+                                      </span>
+                                    )}
+                                    {job.nextRun && (
+                                      <span className="flex items-center gap-1">
+                                        <CheckCircle className="h-3 w-3" />
+                                        下次: {formatDate(job.nextRun)}
+                                      </span>
+                                    )}
+                                    <button
+                                      onClick={() => router.push(`/sync-jobs`)}
+                                      className="flex items-center gap-1 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                                    >
+                                      <Eye className="h-3 w-3" />
+                                      查看详情
+                                    </button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          );
+                        })()}
                       </div>
                     </div>
 
@@ -599,6 +731,122 @@ export default function MappingsPage() {
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showJobsDialog && selectedMappingForJobs && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="mx-4 w-full max-w-4xl rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-800">
+            <div className="mb-6 flex items-center justify-between border-b border-gray-200 pb-4 dark:border-gray-700">
+              <div>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+                  同步作业
+                </h3>
+                <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                  {selectedMappingForJobs.name}
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setShowJobsDialog(false);
+                  setSelectedMappingForJobs(null);
+                }}
+                className="rounded-lg p-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              >
+                <XCircle className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+              </button>
+            </div>
+
+            <div className="max-h-[60vh] overflow-y-auto">
+              <div className="space-y-4">
+                {(() => {
+                  const mappingJobs = getJobsForMapping(selectedMappingForJobs.id);
+                  if (mappingJobs.length === 0) {
+                    return (
+                      <div className="flex flex-col items-center justify-center py-12 text-gray-500 dark:text-gray-400">
+                        <RefreshCw className="mb-4 h-12 w-12 text-gray-300 dark:text-gray-600" />
+                        <p className="text-sm">暂无同步作业</p>
+                      </div>
+                    );
+                  }
+                  return mappingJobs.map((job) => (
+                    <div
+                      key={job.id}
+                      className="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-700/50"
+                    >
+                      <div className="mb-3 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <span className={`rounded-full px-3 py-1 text-xs font-medium ${getJobStatusColor(job.status)}`}>
+                            {getJobStatusIcon(job.status)}
+                            <span className="ml-1">{getJobStatusText(job.status)}</span>
+                          </span>
+                          <span className="font-medium text-gray-900 dark:text-white">{job.name}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => router.push(`/sync-jobs`)}
+                            className="flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-blue-700"
+                          >
+                            <Eye className="h-3 w-3" />
+                            查看详情
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="mb-3 grid grid-cols-2 gap-4 text-sm">
+                        <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                          <Clock className="h-4 w-4" />
+                          <span>调度: {job.schedule}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                          <RefreshCw className="h-4 w-4" />
+                          <span>模式: {job.syncMode}</span>
+                        </div>
+                      </div>
+
+                      <div className="mb-3 flex items-center gap-4 text-xs text-gray-600 dark:text-gray-400">
+                        {job.lastRun && (
+                          <span className="flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            上次运行: {formatDate(job.lastRun)}
+                          </span>
+                        )}
+                        {job.nextRun && (
+                          <span className="flex items-center gap-1">
+                            <CheckCircle className="h-3 w-3" />
+                            下次运行: {formatDate(job.nextRun)}
+                          </span>
+                        )}
+                      </div>
+
+                      {job.description && (
+                        <p className="mt-2 text-xs text-gray-500 dark:text-gray-500">
+                          {job.description}
+                        </p>
+                      )}
+
+                      <div className="mt-3 flex items-center gap-2 border-t border-gray-200 pt-3 dark:border-gray-600">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-gray-500 dark:text-gray-400">冲突策略:</span>
+                          <span className="rounded bg-gray-200 px-2 py-0.5 text-xs font-medium text-gray-700 dark:bg-gray-600 dark:text-gray-300">
+                            {job.conflictStrategy}
+                          </span>
+                        </div>
+                        {job.enableDataValidation && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-gray-500 dark:text-gray-400">数据验证:</span>
+                            <span className="rounded bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/20 dark:text-green-400">
+                              已启用
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ));
+                })()}
               </div>
             </div>
           </div>
