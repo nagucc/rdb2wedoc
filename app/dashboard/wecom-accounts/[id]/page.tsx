@@ -43,6 +43,11 @@ export default function WeComAccountDetailPage() {
   const [documentToDelete, setDocumentToDelete] = useState<IntelligentDocument | null>(null);
   const [isProcessingDocument, setIsProcessingDocument] = useState(false);
   const [refreshingDocumentId, setRefreshingDocumentId] = useState<string | null>(null);
+  const [showCreateSheetModal, setShowCreateSheetModal] = useState(false);
+  const [sheetTitle, setSheetTitle] = useState('');
+  const [adminUserIds, setAdminUserIds] = useState('');
+  const [isCreatingSheet, setIsCreatingSheet] = useState(false);
+  const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   const handleLogout = async () => {
     try {
@@ -158,6 +163,62 @@ export default function WeComAccountDetailPage() {
       console.error('Error adding document:', err);
     } finally {
       setIsProcessingDocument(false);
+    }
+  };
+
+  const handleCreateSheet = async () => {
+    if (!sheetTitle.trim()) {
+      setNotification({ type: 'error', message: '请输入表格标题' });
+      return;
+    }
+
+    if (!adminUserIds.trim()) {
+      setNotification({ type: 'error', message: '请输入管理员ID' });
+      return;
+    }
+
+    const adminIds = adminUserIds.split(',').map(id => id.trim()).filter(id => id.length > 0);
+    if (adminIds.length === 0) {
+      setNotification({ type: 'error', message: '管理员ID格式不正确' });
+      return;
+    }
+
+    try {
+      setIsCreatingSheet(true);
+      setNotification(null);
+
+      const response = await fetch(`/api/wecom-accounts/${accountId}/create-sheet`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          docName: sheetTitle.trim(),
+          adminUsers: adminIds,
+          docType: 10
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setNotification({ type: 'success', message: '智能表格创建成功！' });
+        setShowCreateSheetModal(false);
+        setSheetTitle('');
+        setAdminUserIds('');
+        
+        setTimeout(async () => {
+          await fetchDocuments();
+          setNotification(null);
+        }, 2000);
+      } else {
+        setNotification({ type: 'error', message: data.error || '创建智能表格失败' });
+      }
+    } catch (err) {
+      setNotification({ type: 'error', message: '网络错误，请检查连接后重试' });
+      console.error('Error creating sheet:', err);
+    } finally {
+      setIsCreatingSheet(false);
     }
   };
 
@@ -357,13 +418,22 @@ export default function WeComAccountDetailPage() {
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                 智能表格管理
               </h3>
-              <button
-                onClick={() => setShowAddDocumentModal(true)}
-                className="flex items-center gap-2 rounded-lg bg-green-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-600"
-              >
-                <Plus className="h-4 w-4" />
-                添加文档
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setShowCreateSheetModal(true)}
+                  className="flex items-center gap-2 rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-600"
+                >
+                  <Plus className="h-4 w-4" />
+                  新建智能表格
+                </button>
+                <button
+                  onClick={() => setShowAddDocumentModal(true)}
+                  className="flex items-center gap-2 rounded-lg bg-green-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-600"
+                >
+                  <Plus className="h-4 w-4" />
+                  添加文档
+                </button>
+              </div>
             </div>
 
             <div className="border-b border-gray-200 p-4 dark:border-gray-700">
@@ -501,6 +571,98 @@ export default function WeComAccountDetailPage() {
                   className="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
                 >
                   添加
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showCreateSheetModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="mx-4 w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-800">
+            <h3 className="mb-6 text-xl font-semibold text-gray-900 dark:text-white">
+              新建智能表格
+            </h3>
+            
+            {notification && (
+              <div className={`mb-4 rounded-lg p-3 ${
+                notification.type === 'success' 
+                  ? 'bg-green-50 border border-green-200 dark:bg-green-900/10 dark:border-green-800' 
+                  : 'bg-red-50 border border-red-200 dark:bg-red-900/10 dark:border-red-800'
+              }`}>
+                <p className={`text-sm ${
+                  notification.type === 'success' 
+                    ? 'text-green-800 dark:text-green-200' 
+                    : 'text-red-800 dark:text-red-200'
+                }`}>
+                  {notification.message}
+                </p>
+              </div>
+            )}
+
+            <div className="space-y-4">
+              <div>
+                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  表格标题 <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={sheetTitle}
+                  onChange={(e) => setSheetTitle(e.target.value)}
+                  disabled={isCreatingSheet}
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                  placeholder="输入智能表格标题"
+                  maxLength={255}
+                />
+                <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                  最多255个字符
+                </p>
+              </div>
+              
+              <div>
+                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  管理员ID <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={adminUserIds}
+                  onChange={(e) => setAdminUserIds(e.target.value)}
+                  disabled={isCreatingSheet}
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                  placeholder="输入企业微信用户ID，多个ID用英文逗号分隔"
+                />
+                <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                  例如：USERID1,USERID2,USERID3
+                </p>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={() => {
+                    setShowCreateSheetModal(false);
+                    setSheetTitle('');
+                    setAdminUserIds('');
+                    setNotification(null);
+                  }}
+                  disabled={isCreatingSheet}
+                  className="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                >
+                  取消
+                </button>
+                <button
+                  onClick={handleCreateSheet}
+                  disabled={isCreatingSheet}
+                  className="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {isCreatingSheet ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                      创建中...
+                    </>
+                  ) : (
+                    '创建'
+                  )}
                 </button>
               </div>
             </div>
