@@ -113,11 +113,11 @@ export default function WeComAccountDetailPage() {
           )
         );
       } else {
-        throw new Error(data.error || '刷新文档失败');
+        throw new Error(data.error || '刷新智能表格失败');
       }
     } catch (err) {
       console.error('Error refreshing document:', err);
-      alert('刷新文档失败，请重试');
+      alert('刷新智能表格失败，请重试');
     } finally {
       setRefreshingDocumentId(null);
     }
@@ -135,7 +135,7 @@ export default function WeComAccountDetailPage() {
 
   const handleAddDocument = async () => {
     if (!newDocumentId.trim()) {
-      alert('请输入文档ID');
+      alert('请输入智能表格ID');
       return;
     }
 
@@ -156,7 +156,7 @@ export default function WeComAccountDetailPage() {
         setNewDocumentId('');
         await fetchDocuments();
       } else {
-        alert(data.error || '添加文档失败，请检查文档ID是否正确');
+        alert(data.error || '添加智能表格失败，请检查智能表格ID是否正确');
       }
     } catch (err) {
       alert('网络错误，请检查连接后重试');
@@ -242,7 +242,7 @@ export default function WeComAccountDetailPage() {
         setDocumentToDelete(null);
         await fetchDocuments();
       } else {
-        alert(data.error || '删除文档失败');
+        alert(data.error || '删除智能表格失败');
       }
     } catch (err) {
       alert('网络错误，请检查连接后重试');
@@ -332,7 +332,7 @@ export default function WeComAccountDetailPage() {
                   RDB2WeDoc
                 </h1>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  数据库到企业微信文档同步系统
+                  数据库到企业微信智能表格同步系统
                 </p>
               </div>
             </Link>
@@ -389,14 +389,14 @@ export default function WeComAccountDetailPage() {
             <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
               <div className="flex items-center gap-3 mb-2">
                 <FileText className="h-5 w-5 text-blue-600" />
-                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">总文档数</span>
+                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">总智能表格数</span>
               </div>
               <p className="text-3xl font-bold text-gray-900 dark:text-white">{documents.length}</p>
             </div>
             <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
               <div className="flex items-center gap-3 mb-2">
                 <CheckCircle className="h-5 w-5 text-green-600" />
-                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">活跃文档</span>
+                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">活跃智能表格</span>
               </div>
               <p className="text-3xl font-bold text-green-600 dark:text-green-400">
                 {documents.filter(d => d.status === 'active').length}
@@ -431,7 +431,7 @@ export default function WeComAccountDetailPage() {
                   className="flex items-center gap-2 rounded-lg bg-green-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-600"
                 >
                   <Plus className="h-4 w-4" />
-                  添加文档
+                  添加智能表格
                 </button>
               </div>
             </div>
@@ -442,7 +442,7 @@ export default function WeComAccountDetailPage() {
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                   <input
                     type="text"
-                    placeholder="搜索文档名称或ID..."
+                    placeholder="搜索智能表格名称或ID..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-4 py-2 text-sm text-gray-900 transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
@@ -468,7 +468,7 @@ export default function WeComAccountDetailPage() {
               <div className="flex flex-col items-center justify-center p-12">
                 <FileText className="mb-4 h-16 w-16 text-gray-400" />
                 <h4 className="mb-2 text-lg font-semibold text-gray-900 dark:text-white">
-                  {documents.length === 0 ? '暂无智能表格' : '未找到匹配的文档'}
+                  {documents.length === 0 ? '暂无智能表格' : '未找到匹配的智能表格'}
                 </h4>
                 <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">
                   {documents.length === 0 ? '点击上方按钮添加第一个智能表格' : '尝试调整搜索条件'}
@@ -513,7 +513,7 @@ export default function WeComAccountDetailPage() {
                         onClick={() => handleRefreshDocument(doc.id)}
                         disabled={refreshingDocumentId === doc.id}
                         className="flex items-center gap-1 rounded-lg border border-blue-300 bg-white px-3 py-2 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-blue-800 dark:bg-gray-800 dark:text-blue-400 dark:hover:bg-blue-900/20"
-                        title="刷新此文档"
+                        title="刷新此智能表格"
                       >
                         <RefreshCw className={`h-4 w-4 ${refreshingDocumentId === doc.id ? 'animate-spin' : ''}`} />
                         {refreshingDocumentId === doc.id ? '刷新中...' : '刷新'}
@@ -543,17 +543,17 @@ export default function WeComAccountDetailPage() {
             <div className="space-y-4">
               <div>
                 <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  文档ID
+                  智能表格ID
                 </label>
                 <input
                   type="text"
                   value={newDocumentId}
                   onChange={(e) => setNewDocumentId(e.target.value)}
                   className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-                  placeholder="输入企业微信文档ID"
+                  placeholder="输入企业微信智能表格ID"
                 />
                 <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                  系统将自动根据文档ID从企业微信平台获取文档名称
+                  系统将自动根据智能表格ID从企业微信平台获取智能表格名称
                 </p>
               </div>
               <div className="flex gap-3 pt-4">
@@ -679,7 +679,7 @@ export default function WeComAccountDetailPage() {
               </div>
             </div>
             <h3 className="mb-3 text-center text-xl font-semibold text-gray-900 dark:text-white">
-              确认删除文档
+              确认删除智能表格
             </h3>
             <p className="mb-2 text-center text-sm text-gray-600 dark:text-gray-400">
               您即将删除以下智能表格：
@@ -689,12 +689,12 @@ export default function WeComAccountDetailPage() {
                 {documentToDelete.name}
               </p>
               <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                文档ID: {documentToDelete.id}
+                智能表格ID: {documentToDelete.id}
               </p>
             </div>
             <div className="mb-4 rounded-lg bg-yellow-50 border border-yellow-200 p-3 dark:bg-yellow-900/10 dark:border-yellow-800">
               <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                ⚠️ 警告：此操作不可撤销，删除后文档将无法恢复
+                ⚠️ 警告：此操作不可撤销，删除后智能表格将无法恢复
               </p>
             </div>
             <div className="flex gap-3 pt-2">
@@ -724,7 +724,7 @@ export default function WeComAccountDetailPage() {
             数据处理中
           </p>
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            正在获取文档信息，请稍候...
+            正在获取智能表格信息，请稍候...
           </p>
         </div>
       </div>
