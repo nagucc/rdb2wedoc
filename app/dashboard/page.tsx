@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { 
   RefreshCw,
@@ -31,7 +31,6 @@ import JobList from '@/components/dashboard/JobList';
 import SystemStatus from '@/components/dashboard/SystemStatus';
 import FilterPanel from '@/components/dashboard/FilterPanel';
 import DataSourceModule from '@/components/dashboard/datasource/DataSourceModule';
-import SyncJobsModule from '@/components/dashboard/syncjobs/SyncJobsModule';
 
 interface SystemMetrics {
   timestamp: string;
@@ -71,7 +70,6 @@ interface User {
 
 function DashboardContent() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [mounted, setMounted] = useState(false);
   const [metrics, setMetrics] = useState<SystemMetrics | null>(null);
@@ -82,7 +80,6 @@ function DashboardContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'success' | 'failed' | 'running'>('all');
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
-  const [activeTab, setActiveTab] = useState<'overview' | 'syncjobs'>('overview');
 
   useEffect(() => {
     setMounted(true);
@@ -94,13 +91,6 @@ function DashboardContent() {
     setCurrentUser(user);
     fetchDashboardData();
   }, [router]);
-
-  useEffect(() => {
-    const tabParam = searchParams.get('tab');
-    if (tabParam && ['overview', 'syncjobs'].includes(tabParam)) {
-      setActiveTab(tabParam as any);
-    }
-  }, [searchParams]);
 
   useEffect(() => {
     if (!autoRefresh) return;
@@ -305,31 +295,6 @@ function DashboardContent() {
           </button>
         </div>
 
-        <div className="mb-8 border-b border-gray-200 dark:border-gray-700">
-          <nav className="flex gap-8">
-            <button
-              onClick={() => setActiveTab('overview')}
-              className={`pb-4 text-sm font-medium transition-colors ${
-                activeTab === 'overview'
-                  ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
-                  : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
-              }`}
-            >
-              系统概览
-            </button>
-            <button
-              onClick={() => setActiveTab('syncjobs')}
-              className={`pb-4 text-sm font-medium transition-colors ${
-                activeTab === 'syncjobs'
-                  ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
-                  : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
-              }`}
-            >
-              同步作业
-            </button>
-          </nav>
-        </div>
-
         {showFilterPanel && (
           <FilterPanel
             statusFilter={statusFilter}
@@ -338,7 +303,7 @@ function DashboardContent() {
           />
         )}
 
-        {activeTab === 'overview' && metrics && (
+        {metrics && (
           <>
             <div className="mb-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-6">
               <MetricsCard
@@ -349,6 +314,24 @@ function DashboardContent() {
                 trend={metrics.connectedDataSources > 0 ? `${metrics.connectedDataSources}已连接` : '无数据源'}
                 description="系统配置的所有数据源"
                 href="/databases"
+              />
+              <MetricsCard
+                title="企业微信账号"
+                value={metrics.totalWeComAccounts}
+                icon={Users}
+                color="green"
+                trend={metrics.totalWeComAccounts > 0 ? '已配置' : '未配置'}
+                description="系统配置的企业微信账号"
+                href="/dashboard/wecom-accounts"
+              />
+              <MetricsCard
+                title="数据映射"
+                value={metrics.totalMappings}
+                icon={FileText}
+                color="purple"
+                trend={metrics.totalMappings > 0 ? `${metrics.totalMappings}个映射` : '无映射'}
+                description="数据源与目标的映射配置"
+                href="/mappings"
               />
               <MetricsCard
                 title="同步作业"
@@ -392,27 +375,8 @@ function DashboardContent() {
                 description="最近执行的作业数量"
                 href="/sync-jobs"
               />
-            </div>
 
-            <div className="mb-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-2">
-              <MetricsCard
-                title="企业微信账号"
-                value={metrics.totalWeComAccounts}
-                icon={Users}
-                color="green"
-                trend={metrics.totalWeComAccounts > 0 ? '已配置' : '未配置'}
-                description="系统配置的企业微信账号"
-                href="/dashboard/wecom-accounts"
-              />
-              <MetricsCard
-                title="数据映射"
-                value={metrics.totalMappings}
-                icon={FileText}
-                color="purple"
-                trend={metrics.totalMappings > 0 ? `${metrics.totalMappings}个映射` : '无映射'}
-                description="数据源与目标的映射配置"
-                href="/mappings"
-              />
+              
             </div>
 
             <div className="mb-8 grid gap-6 lg:grid-cols-2">
@@ -476,11 +440,7 @@ function DashboardContent() {
           </>
         )}
 
-        {activeTab === 'syncjobs' && (
-          <SyncJobsModule />
-        )}
-
-        {!metrics && !loading && activeTab === 'overview' && (
+        {!metrics && !loading && (
           <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-300 bg-white p-12 dark:border-gray-700 dark:bg-gray-800">
             <AlertTriangle className="mb-4 h-16 w-16 text-gray-400" />
             <h3 className="mb-2 text-xl font-semibold text-gray-900 dark:text-white">
