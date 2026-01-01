@@ -10,26 +10,32 @@ import {
 import { ScheduleTemplate } from '@/types';
 
 interface ScheduleConfigProps {
-  value: string;
-  onChange: (schedule: string, templateName?: string) => void;
+  schedule: string;
+  scheduleTemplate?: string;
+  onScheduleChange: (schedule: string, templateName?: string) => void;
   disabled?: boolean;
   error?: string;
 }
 
 export default function ScheduleConfig({
-  value,
-  onChange,
+  schedule,
+  scheduleTemplate,
+  onScheduleChange,
   disabled = false,
   error
 }: ScheduleConfigProps) {
-  const [customExpression, setCustomExpression] = useState(value || '');
+  if (typeof onScheduleChange !== 'function') {
+    console.error('ScheduleConfig: onScheduleChange prop is not a function');
+  }
+
+  const [customExpression, setCustomExpression] = useState(schedule || '');
   const [nextRunTime, setNextRunTime] = useState<string>('');
   const [isValid, setIsValid] = useState(true);
 
   useEffect(() => {
-    setCustomExpression(value || '');
-    calculateNextRun(value || '');
-  }, [value]);
+    setCustomExpression(schedule || '');
+    calculateNextRun(schedule || '');
+  }, [schedule]);
 
   const calculateNextRun = (cronExpression: string) => {
     try {
@@ -89,7 +95,7 @@ export default function ScheduleConfig({
 
   const handleCustomExpressionChange = (expression: string) => {
     setCustomExpression(expression);
-    onChange(expression);
+    onScheduleChange(expression);
     calculateNextRun(expression);
   };
 
