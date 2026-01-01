@@ -27,18 +27,16 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { 
       name, 
-      databaseId, 
-      documentId, 
-      table,
-      sheetId,
+      mappingConfigId,
       fieldMappings, 
       schedule,
       conflictStrategy,
+      syncMode,
       enabled 
     } = body;
 
     // 验证必填字段
-    if (!name || !databaseId || !documentId || !table || !sheetId || !fieldMappings) {
+    if (!name || !mappingConfigId || !fieldMappings) {
       return NextResponse.json(
         { success: false, error: '所有必填字段都必须填写' },
         { status: 400 }
@@ -57,13 +55,11 @@ export async function POST(request: NextRequest) {
     const job: SyncJob = {
       id: generateId(),
       name,
-      databaseId,
-      documentId,
-      table,
-      sheetId,
+      mappingConfigId,
       fieldMappings,
       schedule: schedule || '0 0 * * *',
       conflictStrategy: conflictStrategy || 'overwrite',
+      syncMode: syncMode || 'full',
       status: 'idle',
       enabled: enabled !== undefined ? enabled : true,
       retryCount: 0,
@@ -81,7 +77,7 @@ export async function POST(request: NextRequest) {
       entityType: 'job',
       entityId: job.id,
       action: 'create',
-      newConfig: { name, databaseId, documentId },
+      newConfig: { name, mappingConfigId },
       userId: 'system',
       timestamp: new Date().toISOString()
     });

@@ -2,7 +2,7 @@ import * as cron from 'node-cron';
 import { databaseService } from './database.service';
 import { weComDocumentService } from './wecom-document.service';
 import { SyncJob, FieldMapping, ConflictStrategy, ExecutionLog } from '@/types';
-import { getDatabaseById, getDocumentById, saveJob, saveLog, getJobById } from '../config/storage';
+import { getDatabaseById, getDocumentById, saveJob, saveLog, getJobById, getMappingById } from '../config/storage';
 import { Logger, generateId, formatDate, retry } from '../utils/helpers';
 
 export class SyncService {
@@ -38,16 +38,22 @@ export class SyncService {
       job.lastRun = log.startTime;
       await saveJob(job);
 
+      // 获取映射配置
+      const mappingConfig = getMappingById(job.mappingConfigId);
+      if (!mappingConfig) {
+        throw new Error('映射配置不存在');
+      }
+
       // 获取数据源和文档配置
-      const database = await getDatabaseById(job.databaseId);
-      const document = await getDocumentById(job.documentId);
+      const database = await getDatabaseById(mappingConfig.sourceDatabaseId);
+      const document = await getDocumentById(mappingConfig.targetDocId);
 
       if (!database || !document) {
         throw new Error('数据源或文档配置不存在');
       }
 
       // 从数据库读取数据
-      const dbData = await this.readFromDatabase(database, job.table);
+      const dbData = await this.readFromDatabase(database, mappingConfig.sourceTableName);
       log.recordsProcessed = dbData.length;
 
       // 转换数据格式
@@ -55,11 +61,11 @@ export class SyncService {
 
       // 根据冲突策略写入文档
       if (job.conflictStrategy === 'overwrite') {
-        await this.overwriteToDocument(document, job.sheetId, transformedData);
+        await this.overwriteToDocument(document, mappingConfig.targetSheetId, transformedData);
       } else if (job.conflictStrategy === 'append') {
-        await this.appendToDocument(document, job.sheetId, transformedData);
+        await this.appendToDocument(document, mappingConfig.targetSheetId, transformedData);
       } else {
-        await this.mergeToDocument(document, job.sheetId, transformedData);
+        await this.mergeToDocument(document, mappingConfig.targetSheetId, transformedData);
       }
 
       log.recordsSucceeded = transformedData.length;
@@ -238,12 +244,17 @@ export class SyncService {
 
   async previewData(job: SyncJob, limit: number = 10): Promise<any[]> {
     try {
-      const database = await getDatabaseById(job.databaseId);
+      const mappingConfig = getMappingById(job.mappingConfigId);
+      if (!mappingConfig) {
+        throw new Error('映射配置不存在');
+      }
+
+      const database = await getDatabaseById(mappingConfig.sourceDatabaseId);
       if (!database) {
         throw new Error('数据源配置不存在');
       }
 
-      const sql = `SELECT * FROM ${job.table} LIMIT ${limit}`;
+      const sql = `SELECT * FROM ${mappingConfig.sourceTableName} LIMIT ${limit}`;
       const dbData = await databaseService.query(database, sql);
       
       return this.transformData(dbData, job.fieldMappings);

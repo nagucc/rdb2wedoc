@@ -3,32 +3,13 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Plus, Edit, Trash2, RefreshCw, AlertCircle, PlayCircle, PauseCircle, CheckCircle, XCircle, Clock, User, LogOut, Database, FileText, Settings } from 'lucide-react';
+import { Plus, Edit, Trash2, RefreshCw, AlertCircle, PlayCircle, PauseCircle, CheckCircle, XCircle, Clock, User, LogOut, Database, FileText, Settings, FileText as FileIcon, ChevronRight, ChevronDown, Info, History } from 'lucide-react';
 import { authService } from '@/lib/services/authService';
-
-interface SyncJob {
-  id: string;
-  name: string;
-  databaseId: string;
-  documentId: string;
-  table: string;
-  sheetId: string;
-  fieldMappings: Array<{
-    sourceField: string;
-    targetField: string;
-    documentFieldId?: string;
-  }>;
-  schedule: string;
-  conflictStrategy: 'overwrite' | 'skip' | 'merge';
-  status: 'idle' | 'running' | 'success' | 'failed' | 'paused';
-  enabled: boolean;
-  retryCount: number;
-  maxRetries: number;
-  lastExecutionTime?: string;
-  nextExecutionTime?: string;
-  createdAt: string;
-  updatedAt: string;
-}
+import { SyncJob, SyncStatus, ConflictStrategy, SyncMode, IncrementalType, FieldConflictStrategy, MappingConfig, FieldMapping, ExecutionLog } from '@/types';
+import MappingSelector from '@/components/sync-jobs/MappingSelector';
+import ScheduleConfig from '@/components/sync-jobs/ScheduleConfig';
+import ConflictStrategyConfig from '@/components/sync-jobs/ConflictStrategyConfig';
+import PaginationConfig from '@/components/sync-jobs/PaginationConfig';
 
 interface DatabaseConfig {
   id: string;
@@ -55,22 +36,37 @@ export default function SyncJobsPage() {
   const [jobs, setJobs] = useState<SyncJob[]>([]);
   const [databases, setDatabases] = useState<DatabaseConfig[]>([]);
   const [documents, setDocuments] = useState<DocumentConfig[]>([]);
+  const [mappingConfigs, setMappingConfigs] = useState<MappingConfig[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [editingJob, setEditingJob] = useState<SyncJob | null>(null);
+  const [selectedMappingConfig, setSelectedMappingConfig] = useState<MappingConfig | null>(null);
   const [formData, setFormData] = useState({
     name: '',
-    databaseId: '',
-    documentId: '',
-    table: '',
-    sheetId: '',
+    description: '',
+    mappingConfigId: '',
+    fieldMappings: [] as FieldMapping[],
     schedule: '0 0 * * *',
-    conflictStrategy: 'overwrite' as 'overwrite' | 'skip' | 'merge',
-    enabled: true,
-    fieldMappings: [] as Array<{ sourceField: string; targetField: string }>
+    scheduleTemplate: '',
+    conflictStrategy: 'overwrite' as ConflictStrategy,
+    syncMode: 'full' as SyncMode,
+    incrementalType: 'timestamp' as IncrementalType,
+    incrementalField: '',
+    pageSize: 1000,
+    enableResume: true,
+    lastSyncPosition: '',
+    fieldConflictStrategies: [] as Array<{ fieldName: string; strategy: FieldConflictStrategy }>,
+    syncTimeout: 300,
+    maxRecordsPerSync: 10000,
+    enableDataValidation: true,
+    enabled: true
   });
   const [processing, setProcessing] = useState(false);
+  const [showLogsModal, setShowLogsModal] = useState(false);
+  const [selectedJobLogs, setSelectedJobLogs] = useState<ExecutionLog[]>([]);
+  const [loadingLogs, setLoadingLogs] = useState(false);
+  const [expandedJobs, setExpandedJobs] = useState<Set<string>>(new Set());
 
   const handleLogout = async () => {
     try {
@@ -127,6 +123,19 @@ export default function SyncJobsPage() {
     }
   };
 
+  const fetchMappingConfigs = async () => {
+    try {
+      const response = await fetch('/api/mappings');
+      const data = await response.json();
+
+      if (data.success) {
+        setMappingConfigs(data.data || []);
+      }
+    } catch (err) {
+      console.error('Error fetching mapping configs:', err);
+    }
+  };
+
   useEffect(() => {
     const user = authService.getCurrentUser();
     if (!user) {
@@ -137,36 +146,77 @@ export default function SyncJobsPage() {
     fetchJobs();
     fetchDatabases();
     fetchDocuments();
+    fetchMappingConfigs();
   }, [router]);
+
+  const handleMappingConfigChange = (mappingConfigId: string) => {
+    const config = mappingConfigs.find(m => m.id === mappingConfigId);
+    if (config) {
+      setSelectedMappingConfig(config);
+      setFormData({
+        ...formData,
+        mappingConfigId: config.id,
+        fieldMappings: config.fieldMappings
+      });
+    } else {
+      setSelectedMappingConfig(null);
+      setFormData({
+        ...formData,
+        mappingConfigId: '',
+        fieldMappings: []
+      });
+    }
+  };
 
   const handleCreate = () => {
     setEditingJob(null);
+    setSelectedMappingConfig(null);
     setFormData({
       name: '',
-      databaseId: '',
-      documentId: '',
-      table: '',
-      sheetId: '',
+      description: '',
+      mappingConfigId: '',
+      fieldMappings: [],
       schedule: '0 0 * * *',
+      scheduleTemplate: '',
       conflictStrategy: 'overwrite',
-      enabled: true,
-      fieldMappings: []
+      syncMode: 'full',
+      incrementalType: 'timestamp',
+      incrementalField: '',
+      pageSize: 1000,
+      enableResume: true,
+      lastSyncPosition: '',
+      fieldConflictStrategies: [],
+      syncTimeout: 300,
+      maxRecordsPerSync: 10000,
+      enableDataValidation: true,
+      enabled: true
     });
     setShowModal(true);
   };
 
   const handleEdit = (job: SyncJob) => {
     setEditingJob(job);
+    const config = mappingConfigs.find(m => m.id === job.mappingConfigId);
+    setSelectedMappingConfig(config || null);
     setFormData({
       name: job.name,
-      databaseId: job.databaseId,
-      documentId: job.documentId,
-      table: job.table,
-      sheetId: job.sheetId,
+      description: job.description || '',
+      mappingConfigId: job.mappingConfigId || '',
+      fieldMappings: job.fieldMappings,
       schedule: job.schedule,
+      scheduleTemplate: job.scheduleTemplate || '',
       conflictStrategy: job.conflictStrategy,
-      enabled: job.enabled,
-      fieldMappings: job.fieldMappings
+      syncMode: job.syncMode || 'full',
+      incrementalType: job.incrementalType || 'timestamp',
+      incrementalField: job.incrementalField || '',
+      pageSize: job.pageSize || 1000,
+      enableResume: job.enableResume ?? true,
+      lastSyncPosition: job.lastSyncPosition || '',
+      fieldConflictStrategies: job.fieldConflictStrategies || [],
+      syncTimeout: job.syncTimeout || 300,
+      maxRecordsPerSync: job.maxRecordsPerSync || 10000,
+      enableDataValidation: job.enableDataValidation ?? true,
+      enabled: job.enabled
     });
     setShowModal(true);
   };
@@ -270,6 +320,36 @@ export default function SyncJobsPage() {
     }
   };
 
+  const handleViewLogs = async (jobId: string) => {
+    try {
+      setLoadingLogs(true);
+      const response = await fetch(`/api/jobs/${jobId}/logs`);
+      const data = await response.json();
+
+      if (data.success) {
+        setSelectedJobLogs(data.data || []);
+        setShowLogsModal(true);
+      } else {
+        alert(data.error || '获取日志失败');
+      }
+    } catch (err) {
+      alert('网络错误，请检查连接后重试');
+      console.error('Error fetching logs:', err);
+    } finally {
+      setLoadingLogs(false);
+    }
+  };
+
+  const toggleJobExpand = (jobId: string) => {
+    const newExpanded = new Set(expandedJobs);
+    if (newExpanded.has(jobId)) {
+      newExpanded.delete(jobId);
+    } else {
+      newExpanded.add(jobId);
+    }
+    setExpandedJobs(newExpanded);
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'running':
@@ -280,6 +360,8 @@ export default function SyncJobsPage() {
         return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
       case 'paused':
         return 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400';
+      case 'resuming':
+        return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400';
       default:
         return 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400';
     }
@@ -295,6 +377,8 @@ export default function SyncJobsPage() {
         return <XCircle className="h-4 w-4" />;
       case 'paused':
         return <PauseCircle className="h-4 w-4" />;
+      case 'resuming':
+        return <RefreshCw className="h-4 w-4" />;
       default:
         return <Clock className="h-4 w-4" />;
     }
@@ -306,7 +390,8 @@ export default function SyncJobsPage() {
       running: '运行中',
       success: '成功',
       failed: '失败',
-      paused: '已暂停'
+      paused: '已暂停',
+      resuming: '恢复中'
     };
     return statusMap[status] || status;
   };
@@ -474,96 +559,172 @@ export default function SyncJobsPage() {
                 {jobs.map((job) => {
                   const database = databases.find(d => d.id === job.databaseId);
                   const document = documents.find(d => d.id === job.documentId);
+                  const isExpanded = expandedJobs.has(job.id);
                   
                   return (
                     <div
                       key={job.id}
-                      className="p-6 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                      className="border-b border-gray-200 dark:border-gray-700 last:border-b-0"
                     >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <h4 className="text-base font-semibold text-gray-900 dark:text-white">
-                              {job.name}
-                            </h4>
-                            <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium ${getStatusColor(job.status)}`}>
-                              {getStatusIcon(job.status)}
-                              {getStatusText(job.status)}
-                            </span>
-                            {!job.enabled && (
-                              <span className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400">
-                                已禁用
+                      <div className="p-6 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <button
+                                onClick={() => toggleJobExpand(job.id)}
+                                className="flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded p-1 transition-colors"
+                              >
+                                {isExpanded ? (
+                                  <ChevronDown className="h-4 w-4 text-gray-500" />
+                                ) : (
+                                  <ChevronRight className="h-4 w-4 text-gray-500" />
+                                )}
+                                <h4 className="text-base font-semibold text-gray-900 dark:text-white">
+                                  {job.name}
+                                </h4>
+                              </button>
+                              <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium ${getStatusColor(job.status)}`}>
+                                {getStatusIcon(job.status)}
+                                {getStatusText(job.status)}
                               </span>
+                              {!job.enabled && (
+                                <span className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400">
+                                  已禁用
+                                </span>
+                              )}
+                              {job.syncMode && job.syncMode !== 'full' && (
+                                <span className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                                  {job.syncMode === 'incremental' ? '增量' : '分页'}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+                              <span className="flex items-center gap-1">
+                                <Database className="h-4 w-4" />
+                                {database?.name || job.databaseId}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <FileIcon className="h-4 w-4" />
+                                {document?.name || job.documentId}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Settings className="h-4 w-4" />
+                                {job.table} → {job.sheetId}
+                              </span>
+                              {job.mappingConfigId && (
+                                <span className="flex items-center gap-1 text-xs bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 px-2 py-0.5 rounded">
+                                  使用映射配置
+                                </span>
+                              )}
+                            </div>
+                            {job.lastRun && (
+                              <div className="mt-2 text-xs text-gray-500 dark:text-gray-500">
+                                最后执行: {new Date(job.lastRun).toLocaleString('zh-CN')}
+                              </div>
                             )}
                           </div>
-                          <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
-                            <span className="flex items-center gap-1">
-                              <Database className="h-4 w-4" />
-                              {database?.name || job.databaseId}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <FileText className="h-4 w-4" />
-                              {document?.name || job.documentId}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Settings className="h-4 w-4" />
-                              {job.table} → {job.sheetId}
-                            </span>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleViewLogs(job.id)}
+                              className="flex items-center gap-1 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                            >
+                              <History className="h-4 w-4" />
+                              日志
+                            </button>
+                            {job.status !== 'running' && (
+                              <button
+                                onClick={() => handleToggleStatus(job.id, job.enabled)}
+                                className={`flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                                  job.enabled
+                                    ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:hover:bg-yellow-900/50'
+                                    : 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50'
+                                }`}
+                              >
+                                {job.enabled ? (
+                                  <>
+                                    <PauseCircle className="h-4 w-4" />
+                                    禁用
+                                  </>
+                                ) : (
+                                  <>
+                                    <PlayCircle className="h-4 w-4" />
+                                    启用
+                                  </>
+                                )}
+                              </button>
+                            )}
+                            {job.enabled && job.status !== 'running' && (
+                              <button
+                                onClick={() => handleExecuteJob(job.id)}
+                                className="flex items-center gap-1 rounded-lg bg-blue-100 px-3 py-1.5 text-sm font-medium text-blue-700 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50 transition-colors"
+                              >
+                                <PlayCircle className="h-4 w-4" />
+                                立即执行
+                              </button>
+                            )}
+                            <button
+                              onClick={() => handleEdit(job)}
+                              className="flex items-center gap-1 rounded-lg border border-blue-300 bg-white px-3 py-1.5 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-50 dark:border-blue-800 dark:bg-gray-800 dark:text-blue-400 dark:hover:bg-blue-900/20"
+                            >
+                              <Edit className="h-4 w-4" />
+                              编辑
+                            </button>
+                            <button
+                              onClick={() => handleDelete(job.id)}
+                              className="flex items-center gap-1 rounded-lg border border-red-300 bg-white px-3 py-1.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 dark:border-red-800 dark:bg-gray-800 dark:text-red-400 dark:hover:bg-red-900/20"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              删除
+                            </button>
                           </div>
-                          {job.lastExecutionTime && (
-                            <div className="mt-2 text-xs text-gray-500 dark:text-gray-500">
-                              最后执行: {new Date(job.lastExecutionTime).toLocaleString('zh-CN')}
+                        </div>
+                      </div>
+                      
+                      {isExpanded && (
+                        <div className="px-6 pb-6 border-t border-gray-200 dark:border-gray-700 pt-4">
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3">
+                              <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">调度规则</div>
+                              <div className="text-sm font-medium text-gray-900 dark:text-white">{job.schedule}</div>
+                              {job.scheduleTemplate && (
+                                <div className="text-xs text-blue-600 dark:text-blue-400 mt-1">{job.scheduleTemplate}</div>
+                              )}
+                            </div>
+                            <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3">
+                              <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">冲突策略</div>
+                              <div className="text-sm font-medium text-gray-900 dark:text-white">{job.conflictStrategy}</div>
+                            </div>
+                            <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3">
+                              <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">同步模式</div>
+                              <div className="text-sm font-medium text-gray-900 dark:text-white">
+                                {job.syncMode === 'full' ? '全量' : job.syncMode === 'incremental' ? '增量' : '分页'}
+                              </div>
+                              {job.syncMode === 'paged' && (
+                                <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                  每页 {job.pageSize} 条
+                                </div>
+                              )}
+                            </div>
+                            <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3">
+                              <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">重试次数</div>
+                              <div className="text-sm font-medium text-gray-900 dark:text-white">
+                                {job.retryCount} / {job.maxRetries}
+                              </div>
+                            </div>
+                          </div>
+                          {job.description && (
+                            <div className="mt-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3">
+                              <div className="flex items-start gap-2">
+                                <Info className="h-4 w-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                                <div>
+                                  <div className="text-xs font-medium text-blue-900 dark:text-blue-100">描述</div>
+                                  <div className="text-sm text-blue-700 dark:text-blue-300 mt-1">{job.description}</div>
+                                </div>
+                              </div>
                             </div>
                           )}
                         </div>
-                        <div className="flex items-center gap-2">
-                          {job.status !== 'running' && (
-                            <button
-                              onClick={() => handleToggleStatus(job.id, job.enabled)}
-                              className={`flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-                                job.enabled
-                                  ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:hover:bg-yellow-900/50'
-                                  : 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50'
-                              }`}
-                            >
-                              {job.enabled ? (
-                                <>
-                                  <PauseCircle className="h-4 w-4" />
-                                  禁用
-                                </>
-                              ) : (
-                                <>
-                                  <PlayCircle className="h-4 w-4" />
-                                  启用
-                                </>
-                              )}
-                            </button>
-                          )}
-                          {job.enabled && job.status !== 'running' && (
-                            <button
-                              onClick={() => handleExecuteJob(job.id)}
-                              className="flex items-center gap-1 rounded-lg bg-blue-100 px-3 py-1.5 text-sm font-medium text-blue-700 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50 transition-colors"
-                            >
-                              <PlayCircle className="h-4 w-4" />
-                              立即执行
-                            </button>
-                          )}
-                          <button
-                            onClick={() => handleEdit(job)}
-                            className="flex items-center gap-1 rounded-lg border border-blue-300 bg-white px-3 py-1.5 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-50 dark:border-blue-800 dark:bg-gray-800 dark:text-blue-400 dark:hover:bg-blue-900/20"
-                          >
-                            <Edit className="h-4 w-4" />
-                            编辑
-                          </button>
-                          <button
-                            onClick={() => handleDelete(job.id)}
-                            className="flex items-center gap-1 rounded-lg border border-red-300 bg-white px-3 py-1.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 dark:border-red-800 dark:bg-gray-800 dark:text-red-400 dark:hover:bg-red-900/20"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                            删除
-                          </button>
-                        </div>
-                      </div>
+                      )}
                     </div>
                   );
                 })}
@@ -574,158 +735,277 @@ export default function SyncJobsPage() {
       </main>
 
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="mx-4 w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-800">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="mx-4 w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-800">
             <h3 className="mb-6 text-xl font-semibold text-gray-900 dark:text-white">
               {editingJob ? '编辑同步作业' : '新建同步作业'}
             </h3>
             
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  作业名称 <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-                  placeholder="输入作业名称"
-                  required
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="border-b border-gray-200 dark:border-gray-700 pb-4">
+                <h4 className="mb-4 text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                  <Database className="h-4 w-4 text-blue-600" />
+                  基本信息
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="md:col-span-2">
+                    <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      作业名称 <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                      placeholder="输入作业名称"
+                      required
+                    />
+                  </div>
+                  
+                  <div className="md:col-span-2">
+                    <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      作业描述
+                    </label>
+                    <textarea
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                      placeholder="输入作业描述"
+                      rows={2}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      数据源 <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={formData.databaseId}
+                      onChange={(e) => setFormData({ ...formData, databaseId: e.target.value })}
+                      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                      required
+                    >
+                      <option value="">选择数据源</option>
+                      {databases.map((db) => (
+                        <option key={db.id} value={db.id}>
+                          {db.name} ({db.type})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      智能表格 <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={formData.documentId}
+                      onChange={(e) => setFormData({ ...formData, documentId: e.target.value })}
+                      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                      required
+                    >
+                      <option value="">选择智能表格</option>
+                      {documents.map((doc) => (
+                        <option key={doc.id} value={doc.id}>
+                          {doc.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      数据表 <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.table}
+                      onChange={(e) => setFormData({ ...formData, table: e.target.value })}
+                      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                      placeholder="输入数据表名称"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      工作表ID <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.sheetId}
+                      onChange={(e) => setFormData({ ...formData, sheetId: e.target.value })}
+                      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                      placeholder="输入工作表ID"
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-b border-gray-200 dark:border-gray-700 pb-4">
+                <h4 className="mb-4 text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-green-600" />
+                  数据映射配置
+                </h4>
+                <div className="space-y-4">
+                  <MappingSelector
+                    selectedMappingId={formData.mappingConfigId}
+                    fieldMappings={formData.fieldMappings}
+                    onMappingChange={(mappingId, fieldMappings) => {
+                      setFormData({
+                        ...formData,
+                        mappingConfigId: mappingId,
+                        fieldMappings
+                      });
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div className="border-b border-gray-200 dark:border-gray-700 pb-4">
+                <h4 className="mb-4 text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-purple-600" />
+                  同步周期配置
+                </h4>
+                <ScheduleConfig
+                  schedule={formData.schedule}
+                  scheduleTemplate={formData.scheduleTemplate}
+                  onScheduleChange={(schedule, template) => {
+                    setFormData({
+                      ...formData,
+                      schedule,
+                      scheduleTemplate: template
+                    });
+                  }}
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    数据源 <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    value={formData.databaseId}
-                    onChange={(e) => setFormData({ ...formData, databaseId: e.target.value })}
-                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-                    required
-                  >
-                    <option value="">选择数据源</option>
-                    {databases.map((db) => (
-                      <option key={db.id} value={db.id}>
-                        {db.name} ({db.type})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    智能表格 <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    value={formData.documentId}
-                    onChange={(e) => setFormData({ ...formData, documentId: e.target.value })}
-                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-                    required
-                  >
-                    <option value="">选择智能表格</option>
-                    {documents.map((doc) => (
-                      <option key={doc.id} value={doc.id}>
-                        {doc.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    数据表 <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.table}
-                    onChange={(e) => setFormData({ ...formData, table: e.target.value })}
-                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-                    placeholder="输入数据表名称"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    工作表ID <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.sheetId}
-                    onChange={(e) => setFormData({ ...formData, sheetId: e.target.value })}
-                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-                    placeholder="输入工作表ID"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    调度规则 (Cron)
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.schedule}
-                    onChange={(e) => setFormData({ ...formData, schedule: e.target.value })}
-                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-                    placeholder="0 0 * * *"
-                  />
-                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                    例如: 0 0 * * * (每天0点执行)
-                  </p>
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    冲突策略
-                  </label>
-                  <select
-                    value={formData.conflictStrategy}
-                    onChange={(e) => setFormData({ ...formData, conflictStrategy: e.target.value as any })}
-                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-                  >
-                    <option value="overwrite">覆盖</option>
-                    <option value="skip">跳过</option>
-                    <option value="merge">合并</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="enabled"
-                  checked={formData.enabled}
-                  onChange={(e) => setFormData({ ...formData, enabled: e.target.checked })}
-                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              <div className="border-b border-gray-200 dark:border-gray-700 pb-4">
+                <h4 className="mb-4 text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                  <Settings className="h-4 w-4 text-orange-600" />
+                  冲突解决策略
+                </h4>
+                <ConflictStrategyConfig
+                  globalStrategy={formData.conflictStrategy}
+                  fieldStrategies={formData.fieldConflictStrategies}
+                  onStrategyChange={(globalStrategy, fieldStrategies) => {
+                    setFormData({
+                      ...formData,
+                      conflictStrategy: globalStrategy,
+                      fieldConflictStrategies: fieldStrategies
+                    });
+                  }}
                 />
-                <label htmlFor="enabled" className="text-sm text-gray-700 dark:text-gray-300">
-                  启用作业
-                </label>
               </div>
 
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-                >
-                  取消
-                </button>
-                <button
-                  type="submit"
-                  disabled={processing}
-                  className="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {processing ? '处理中...' : editingJob ? '更新' : '创建'}
-                </button>
+              <div className="border-b border-gray-200 dark:border-gray-700 pb-4">
+                <h4 className="mb-4 text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                  <RefreshCw className="h-4 w-4 text-cyan-600" />
+                  大数据量处理
+                </h4>
+                <PaginationConfig
+                  syncMode={formData.syncMode}
+                  incrementalType={formData.incrementalType}
+                  incrementalField={formData.incrementalField}
+                  pageSize={formData.pageSize}
+                  enableResume={formData.enableResume}
+                  maxRecordsPerSync={formData.maxRecordsPerSync}
+                  onConfigChange={(config) => {
+                    setFormData({
+                      ...formData,
+                      ...config
+                    });
+                  }}
+                />
+              </div>
+
+              <div className="border-b border-gray-200 dark:border-gray-700 pb-4">
+                <h4 className="mb-4 text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                  <Info className="h-4 w-4 text-indigo-600" />
+                  执行监控配置
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      同步超时时间（秒）
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.syncTimeout}
+                      onChange={(e) => setFormData({ ...formData, syncTimeout: parseInt(e.target.value) || 300 })}
+                      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                      min={60}
+                      max={3600}
+                    />
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      超过此时间将自动取消同步任务
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      单次同步最大记录数
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.maxRecordsPerSync}
+                      onChange={(e) => setFormData({ ...formData, maxRecordsPerSync: parseInt(e.target.value) || 10000 })}
+                      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                      min={100}
+                      max={100000}
+                    />
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      限制单次同步的记录数量
+                    </p>
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="enableDataValidation"
+                        checked={formData.enableDataValidation}
+                        onChange={(e) => setFormData({ ...formData, enableDataValidation: e.target.checked })}
+                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <label htmlFor="enableDataValidation" className="text-sm text-gray-700 dark:text-gray-300">
+                        启用数据验证（同步前验证数据完整性）
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="enabled"
+                    checked={formData.enabled}
+                    onChange={(e) => setFormData({ ...formData, enabled: e.target.checked })}
+                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <label htmlFor="enabled" className="text-sm text-gray-700 dark:text-gray-300">
+                    启用作业
+                  </label>
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowModal(false)}
+                    className="rounded-lg border border-gray-300 bg-white px-6 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                  >
+                    取消
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={processing}
+                    className="rounded-lg bg-blue-600 px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {processing ? '处理中...' : editingJob ? '更新' : '创建'}
+                  </button>
+                </div>
               </div>
             </form>
           </div>

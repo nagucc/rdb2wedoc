@@ -110,21 +110,32 @@ export interface DocumentField {
 }
 
 // 同步作业相关类型
-export type SyncStatus = 'idle' | 'running' | 'success' | 'failed' | 'paused';
-export type ConflictStrategy = 'overwrite' | 'append' | 'ignore';
+export type SyncStatus = 'idle' | 'running' | 'success' | 'failed' | 'paused' | 'resuming';
+export type ConflictStrategy = 'overwrite' | 'append' | 'ignore' | 'merge' | 'skip' | 'error';
+export type SyncMode = 'full' | 'incremental' | 'paged';
+export type IncrementalType = 'timestamp' | 'id' | 'custom';
+export type FieldConflictStrategy = 'overwrite' | 'preserve' | 'merge' | 'skip';
 
 export interface SyncJob {
   id: string;
   name: string;
   description?: string;
-  databaseId: string;
-  documentId: string;
-  table: string;
-  sheetId: string;
+  mappingConfigId: string; // 必填，引用的数据映射配置ID
   fieldMappings: FieldMapping[];
   schedule: string; // cron expression
+  scheduleTemplate?: string; // 调度模板名称
   status: SyncStatus;
   conflictStrategy: ConflictStrategy;
+  syncMode: SyncMode; // 同步模式：全量、增量、分页
+  incrementalType?: IncrementalType; // 增量同步类型
+  incrementalField?: string; // 增量字段名
+  pageSize?: number; // 分页大小
+  enableResume?: boolean; // 是否启用断点续传
+  lastSyncPosition?: string; // 最后同步位置
+  fieldConflictStrategies?: Array<{ fieldName: string; strategy: FieldConflictStrategy }>; // 字段级别的冲突策略
+  syncTimeout?: number; // 同步超时时间（秒）
+  maxRecordsPerSync?: number; // 单次同步最大记录数
+  enableDataValidation?: boolean; // 是否启用数据验证
   lastRun?: string;
   nextRun?: string;
   enabled: boolean;
@@ -140,6 +151,10 @@ export interface FieldMapping {
   documentFieldId?: string;
   transform?: string;
   required?: boolean;
+  conflictStrategy?: FieldConflictStrategy; // 字段级别的冲突策略
+  dataType?: string;
+  defaultValue?: string;
+  validation?: string; // 数据验证规则
 }
 
 export interface FieldMappingUI extends FieldMapping {
@@ -149,18 +164,107 @@ export interface FieldMappingUI extends FieldMapping {
   description?: string;
 }
 
-// 执行日志相关类型
+export interface ValidationError {
+  field: string;
+  value: any;
+  message: string;
+  severity: 'error' | 'warning';
+}
+
+export interface LogEntry {
+  timestamp: string;
+  level: 'info' | 'warn' | 'error' | 'debug';
+  message: string;
+  details?: any;
+}
+
+export interface SyncProgress {
+  jobId: string;
+  status: SyncStatus;
+  progress: number;
+  currentRecord: number;
+  totalRecords: number;
+  currentPage?: number;
+  totalPages?: number;
+  startTime: string;
+  estimatedEndTime?: string;
+}
+
+export interface ScheduleTemplate {
+  name: string;
+  label: string;
+  cronExpression: string;
+  description: string;
+}
+
+export interface FieldConflictConfig {
+  fieldName: string;
+  strategy: FieldConflictStrategy;
+  mergeExpression?: string;
+}
+
+export interface PaginationConfig {
+  enabled: boolean;
+  pageSize: number;
+  enableResume: boolean;
+  lastSyncPosition?: string;
+  maxRecordsPerSync?: number;
+}
+
+export interface IncrementalConfig {
+  enabled: boolean;
+  type: IncrementalType;
+  field?: string;
+  lastSyncValue?: string;
+}
+
+export interface DataValidationConfig {
+  enabled: boolean;
+  rules: ValidationRule[];
+}
+
+export interface ValidationRule {
+  field: string;
+  type: 'required' | 'pattern' | 'range' | 'custom';
+  pattern?: string;
+  min?: number;
+  max?: number;
+  customScript?: string;
+  errorMessage?: string;
+}
+
+export interface SyncJobConfig {
+  syncMode: SyncMode;
+  conflictStrategy: ConflictStrategy;
+  pagination?: PaginationConfig;
+  incremental?: IncrementalConfig;
+  dataValidation?: DataValidationConfig;
+  fieldConflicts?: FieldConflictConfig[];
+  syncTimeout?: number;
+  maxRetries?: number;
+}
+
 export interface ExecutionLog {
   id: string;
   jobId: string;
   status: SyncStatus;
   startTime: string;
   endTime?: string;
+  duration?: number; // 执行时长（毫秒）
   recordsProcessed: number;
   recordsSucceeded: number;
   recordsFailed: number;
+  recordsSkipped?: number;
   errorMessage?: string;
   retryAttempt?: number;
+  syncMode?: SyncMode;
+  pageSize?: number;
+  currentPage?: number;
+  totalPages?: number;
+  conflictCount?: number;
+  validationErrors?: ValidationError[];
+  progress?: number; // 进度百分比
+  logs?: LogEntry[]; // 详细日志条目
 }
 
 // 配置历史记录

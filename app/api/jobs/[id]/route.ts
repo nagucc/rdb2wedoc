@@ -50,10 +50,7 @@ export async function PUT(
     const body = await request.json();
     const { 
       name, 
-      databaseId, 
-      documentId, 
-      table, 
-      sheetId,
+      mappingConfigId,
       fieldMappings, 
       schedule,
       conflictStrategy,
@@ -72,10 +69,7 @@ export async function PUT(
     const updatedJob = {
       ...existingJob,
       name: name || existingJob.name,
-      databaseId: databaseId || existingJob.databaseId,
-      documentId: documentId || existingJob.documentId,
-      table: table || existingJob.table,
-      sheetId: sheetId || existingJob.sheetId,
+      mappingConfigId: mappingConfigId || existingJob.mappingConfigId,
       fieldMappings: fieldMappings || existingJob.fieldMappings,
       schedule: schedule || existingJob.schedule,
       conflictStrategy: conflictStrategy || existingJob.conflictStrategy,
