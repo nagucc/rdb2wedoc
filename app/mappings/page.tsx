@@ -566,8 +566,13 @@ export default function MappingsPage() {
                             </button>
                             <button
                               onClick={() => handleDeleteMapping(mapping.id)}
-                              className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors dark:text-red-400 dark:hover:bg-red-900/20"
-                              title="删除"
+                              disabled={getJobsForMapping(mapping.id).length > 0}
+                              className={`flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+                                getJobsForMapping(mapping.id).length > 0
+                                  ? 'text-gray-400 cursor-not-allowed dark:text-gray-600'
+                                  : 'text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20'
+                              }`}
+                              title={getJobsForMapping(mapping.id).length > 0 ? '该映射被同步作业引用，无法删除' : '删除'}
                             >
                               <Trash2 className="h-4 w-4" />
                               删除
