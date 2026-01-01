@@ -60,10 +60,10 @@ class AuthService {
    */
   public async logout(): Promise<void> {
     try {
-      // 清除本地存储的会话
-      localStorage.removeItem(this.SESSION_KEY);
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem(this.SESSION_KEY);
+      }
       
-      // 实际项目中可能需要调用后端API使token失效
       console.log('用户已登出');
     } catch (error) {
       console.error('登出失败:', error);
@@ -104,6 +104,9 @@ class AuthService {
    */
   public getSession(): AuthSession | null {
     try {
+      if (typeof window === 'undefined') {
+        return null;
+      }
       const sessionStr = localStorage.getItem(this.SESSION_KEY);
       if (!sessionStr) {
         return null;
@@ -121,7 +124,9 @@ class AuthService {
    */
   private saveSession(session: AuthSession): void {
     try {
-      localStorage.setItem(this.SESSION_KEY, JSON.stringify(session));
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(this.SESSION_KEY, JSON.stringify(session));
+      }
     } catch (error) {
       console.error('保存会话失败:', error);
       throw new Error('保存会话失败');

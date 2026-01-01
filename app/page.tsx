@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Database, FileText, RefreshCw, Settings, BarChart3, Shield, LogOut, User, AlertCircle } from 'lucide-react';
@@ -16,10 +16,15 @@ interface User {
 
 export default function Home() {
   const router = useRouter();
-  const [currentUser, setCurrentUser] = useState<User | null>(() => authService.getCurrentUser());
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
-  // 处理登出
+  useEffect(() => {
+    setMounted(true);
+    setCurrentUser(authService.getCurrentUser());
+  }, []);
+
   const handleLogout = async () => {
     try {
       await authService.logout();
@@ -109,7 +114,7 @@ export default function Home() {
               >
                 控制台
               </Link>
-              {currentUser ? (
+              {mounted && currentUser ? (
                 <div className="flex items-center gap-3">
                   <div className="flex items-center gap-2 rounded-lg bg-gray-100 px-3 py-2 dark:bg-gray-700">
                     <User className="h-4 w-4 text-gray-600 dark:text-gray-300" />
@@ -125,14 +130,14 @@ export default function Home() {
                     退出
                   </button>
                 </div>
-              ) : (
+              ) : mounted && !currentUser ? (
                 <Link
                   href="/login"
                   className="flex h-10 w-[120px] items-center justify-center rounded-lg bg-blue-600 text-sm font-medium text-white transition-colors hover:bg-blue-700"
                 >
                   登录
                 </Link>
-              )}
+              ) : null}
             </nav>
           </div>
         </div>
@@ -182,27 +187,27 @@ export default function Home() {
               key={index}
               onClick={(e) => handleFeatureClick(e, feature.link)}
               className={`group rounded-2xl border p-6 transition-all ${
-                currentUser
+                mounted && currentUser
                   ? 'border-gray-200 bg-white hover:border-blue-300 hover:shadow-xl cursor-pointer dark:border-gray-700 dark:bg-gray-800 dark:hover:border-blue-500'
                   : 'border-gray-200 bg-gray-50 cursor-not-allowed dark:border-gray-700 dark:bg-gray-800/50'
               }`}
             >
               <div className={`mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 text-white ${
-                currentUser ? 'group-hover:scale-110 transition-transform' : 'opacity-50'
+                mounted && currentUser ? 'group-hover:scale-110 transition-transform' : 'opacity-50'
               }`}>
                 <feature.icon className="h-6 w-6" />
               </div>
               <h4 className={`mb-2 text-xl font-semibold ${
-                currentUser ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-600'
+                mounted && currentUser ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-600'
               }`}>
                 {feature.title}
               </h4>
               <p className={`${
-                currentUser ? 'text-gray-600 dark:text-gray-400' : 'text-gray-400 dark:text-gray-600'
+                mounted && currentUser ? 'text-gray-600 dark:text-gray-400' : 'text-gray-400 dark:text-gray-600'
               }`}>
                 {feature.description}
               </p>
-              {currentUser && (
+              {mounted && currentUser && (
                 <div className="mt-4 flex items-center text-sm font-medium text-blue-600 dark:text-blue-400">
                   了解更多
                   <svg
