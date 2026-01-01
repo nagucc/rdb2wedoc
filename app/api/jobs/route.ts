@@ -28,7 +28,6 @@ export async function POST(request: NextRequest) {
     const { 
       name, 
       mappingConfigId,
-      fieldMappings, 
       schedule,
       conflictStrategy,
       syncMode,
@@ -50,13 +49,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!fieldMappings || !Array.isArray(fieldMappings) || fieldMappings.length === 0) {
-      return NextResponse.json(
-        { success: false, error: '字段映射不能为空' },
-        { status: 400 }
-      );
-    }
-
     // 验证Cron表达式
     if (schedule && !validateCronExpression(schedule)) {
       return NextResponse.json(
@@ -70,7 +62,6 @@ export async function POST(request: NextRequest) {
       id: generateId(),
       name,
       mappingConfigId,
-      fieldMappings,
       schedule: schedule || '0 0 * * *',
       conflictStrategy: conflictStrategy || 'overwrite',
       syncMode: syncMode || 'full',

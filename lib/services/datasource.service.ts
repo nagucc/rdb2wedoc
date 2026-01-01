@@ -1,4 +1,4 @@
-import { getDatabases, getJobs, getJobLogs } from '@/lib/config/storage';
+import { getDatabases, getJobs, getJobLogs, getMappings } from '@/lib/config/storage';
 import { DatabaseConnection, SyncJob } from '@/types';
 import { Logger } from '@/lib/utils/helpers';
 
@@ -52,7 +52,11 @@ export class DataSourceService {
         throw new Error('数据源不存在');
       }
 
-      const jobs = getJobs().filter(job => job.databaseId === dataSourceId);
+      const mappings = getMappings();
+      const relevantMappingIds = mappings
+        .filter(m => m.sourceDatabaseId === dataSourceId)
+        .map(m => m.id);
+      const jobs = getJobs().filter(job => job.mappingConfigId && relevantMappingIds.includes(job.mappingConfigId));
       
       let connectionSuccessRate = 100;
       let totalQueries = 0;

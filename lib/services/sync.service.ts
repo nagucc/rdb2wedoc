@@ -57,7 +57,7 @@ export class SyncService {
       log.recordsProcessed = dbData.length;
 
       // 转换数据格式
-      const transformedData = this.transformData(dbData, job.fieldMappings);
+      const transformedData = this.transformData(dbData, mappingConfig.fieldMappings);
 
       // 根据冲突策略写入文档
       if (job.conflictStrategy === 'overwrite') {
@@ -257,7 +257,7 @@ export class SyncService {
       const sql = `SELECT * FROM ${mappingConfig.sourceTableName} LIMIT ${limit}`;
       const dbData = await databaseService.query(database, sql);
       
-      return this.transformData(dbData, job.fieldMappings);
+      return this.transformData(dbData, mappingConfig.fieldMappings);
     } catch (error) {
       Logger.error('预览数据失败', { error: (error as Error).message });
       throw error;

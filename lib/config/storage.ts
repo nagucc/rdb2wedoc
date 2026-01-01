@@ -264,12 +264,20 @@ export function getJobById(jobId: string): SyncJob | null {
 
 export function getJobsByDatabase(dbId: string): SyncJob[] {
   const jobs = getJobs();
-  return jobs.filter(job => job.databaseId === dbId);
+  const mappings = getMappings();
+  const relevantMappingIds = mappings
+    .filter(m => m.sourceDatabaseId === dbId)
+    .map(m => m.id);
+  return jobs.filter(job => job.mappingConfigId && relevantMappingIds.includes(job.mappingConfigId));
 }
 
 export function getJobsByDocument(docId: string): SyncJob[] {
   const jobs = getJobs();
-  return jobs.filter(job => job.documentId === docId);
+  const mappings = getMappings();
+  const relevantMappingIds = mappings
+    .filter(m => m.targetDocId === docId)
+    .map(m => m.id);
+  return jobs.filter(job => job.mappingConfigId && relevantMappingIds.includes(job.mappingConfigId));
 }
 
 export function getEnabledJobs(): SyncJob[] {

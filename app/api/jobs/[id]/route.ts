@@ -51,7 +51,6 @@ export async function PUT(
     const { 
       name, 
       mappingConfigId,
-      fieldMappings, 
       schedule,
       conflictStrategy,
       enabled 
@@ -72,13 +71,6 @@ export async function PUT(
       );
     }
 
-    if (fieldMappings !== undefined && (!Array.isArray(fieldMappings) || fieldMappings.length === 0)) {
-      return NextResponse.json(
-        { success: false, error: '字段映射不能为空' },
-        { status: 400 }
-      );
-    }
-
     // 验证Cron表达式
     if (schedule && !validateCronExpression(schedule)) {
       return NextResponse.json(
@@ -92,7 +84,6 @@ export async function PUT(
       ...existingJob,
       name: name || existingJob.name,
       mappingConfigId: mappingConfigId || existingJob.mappingConfigId,
-      fieldMappings: fieldMappings || existingJob.fieldMappings,
       schedule: schedule || existingJob.schedule,
       conflictStrategy: conflictStrategy || existingJob.conflictStrategy,
       enabled: enabled !== undefined ? enabled : existingJob.enabled,

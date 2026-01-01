@@ -46,7 +46,6 @@ export default function SyncJobsPage() {
     name: '',
     description: '',
     mappingConfigId: '',
-    fieldMappings: [] as FieldMapping[],
     schedule: '0 0 * * *',
     scheduleTemplate: '',
     conflictStrategy: 'overwrite' as ConflictStrategy,
@@ -155,15 +154,13 @@ export default function SyncJobsPage() {
       setSelectedMappingConfig(config);
       setFormData({
         ...formData,
-        mappingConfigId: config.id,
-        fieldMappings: config.fieldMappings
+        mappingConfigId: config.id
       });
     } else {
       setSelectedMappingConfig(null);
       setFormData({
         ...formData,
-        mappingConfigId: '',
-        fieldMappings: []
+        mappingConfigId: ''
       });
     }
   };
@@ -175,7 +172,6 @@ export default function SyncJobsPage() {
       name: '',
       description: '',
       mappingConfigId: '',
-      fieldMappings: [],
       schedule: '0 0 * * *',
       scheduleTemplate: '',
       conflictStrategy: 'overwrite',
@@ -202,7 +198,6 @@ export default function SyncJobsPage() {
       name: job.name,
       description: job.description || '',
       mappingConfigId: job.mappingConfigId || '',
-      fieldMappings: job.fieldMappings,
       schedule: job.schedule,
       scheduleTemplate: job.scheduleTemplate || '',
       conflictStrategy: job.conflictStrategy,
@@ -257,11 +252,6 @@ export default function SyncJobsPage() {
 
       if (!formData.mappingConfigId || formData.mappingConfigId.trim() === '') {
         alert('请选择数据映射配置');
-        return;
-      }
-
-      if (!formData.fieldMappings || !Array.isArray(formData.fieldMappings) || formData.fieldMappings.length === 0) {
-        alert('请选择数据映射配置（字段映射不能为空）');
         return;
       }
 
@@ -574,8 +564,9 @@ export default function SyncJobsPage() {
             ) : (
               <div className="divide-y divide-gray-200 dark:divide-gray-700">
                 {jobs.map((job) => {
-                  const database = databases.find(d => d.id === job.databaseId);
-                  const document = documents.find(d => d.id === job.documentId);
+                  const mappingConfig = mappingConfigs.find(m => m.id === job.mappingConfigId);
+                  const database = mappingConfig ? databases.find(d => d.id === mappingConfig.sourceDatabaseId) : null;
+                  const document = mappingConfig ? documents.find(d => d.id === mappingConfig.targetDocId) : null;
                   const isExpanded = expandedJobs.has(job.id);
                   
                   return (
@@ -618,15 +609,15 @@ export default function SyncJobsPage() {
                             <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
                               <span className="flex items-center gap-1">
                                 <Database className="h-4 w-4" />
-                                {database?.name || job.databaseId}
+                                {database?.name || mappingConfig?.sourceDatabaseId || '未知数据源'}
                               </span>
                               <span className="flex items-center gap-1">
                                 <FileIcon className="h-4 w-4" />
-                                {document?.name || job.documentId}
+                                {document?.name || mappingConfig?.targetDocId || '未知文档'}
                               </span>
                               <span className="flex items-center gap-1">
                                 <Settings className="h-4 w-4" />
-                                {job.table} → {job.sheetId}
+                                {mappingConfig?.sourceTableName || '未知'} → {mappingConfig?.sheetName || mappingConfig?.targetSheetId || '未知'}
                               </span>
                               {job.mappingConfigId && (
                                 <span className="flex items-center gap-1 text-xs bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 px-2 py-0.5 rounded">
@@ -802,12 +793,10 @@ export default function SyncJobsPage() {
                 <div className="space-y-4">
                   <MappingSelector
                     selectedMappingId={formData.mappingConfigId}
-                    fieldMappings={formData.fieldMappings}
-                    onMappingChange={(mappingId, fieldMappings) => {
+                    onMappingChange={(mappingId) => {
                       setFormData({
                         ...formData,
-                        mappingConfigId: mappingId,
-                        fieldMappings
+                        mappingConfigId: mappingId
                       });
                     }}
                   />
@@ -826,7 +815,7 @@ export default function SyncJobsPage() {
                     setFormData({
                       ...formData,
                       schedule,
-                      scheduleTemplate: template
+                      scheduleTemplate: template || ''
                     });
                   }}
                 />
@@ -839,12 +828,13 @@ export default function SyncJobsPage() {
                 </h4>
                 <ConflictStrategyConfig
                   globalStrategy={formData.conflictStrategy}
-                  fieldStrategies={formData.fieldConflictStrategies}
-                  onStrategyChange={(globalStrategy, fieldStrategies) => {
+                  fieldMappings={selectedMappingConfig?.fieldMappings || []}
+                  fieldConflictStrategies={formData.fieldConflictStrategies}
+                  onChange={(globalStrategy, fieldStrategies) => {
                     setFormData({
                       ...formData,
                       conflictStrategy: globalStrategy,
-                      fieldConflictStrategies: fieldStrategies
+                      fieldConflictStrategies: fieldStrategies || []
                     });
                   }}
                 />
@@ -862,7 +852,7 @@ export default function SyncJobsPage() {
                   pageSize={formData.pageSize}
                   enableResume={formData.enableResume}
                   maxRecordsPerSync={formData.maxRecordsPerSync}
-                  onConfigChange={(config) => {
+                  onChange={(config) => {
                     setFormData({
                       ...formData,
                       ...config

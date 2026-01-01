@@ -121,7 +121,6 @@ export interface SyncJob {
   name: string;
   description?: string;
   mappingConfigId: string; // 必填，引用的数据映射配置ID
-  fieldMappings: FieldMapping[];
   schedule: string; // cron expression
   scheduleTemplate?: string; // 调度模板名称
   status: SyncStatus;

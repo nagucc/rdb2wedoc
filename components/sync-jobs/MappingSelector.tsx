@@ -14,15 +14,13 @@ import { MappingConfig, FieldMapping } from '@/types';
 
 interface MappingSelectorProps {
   selectedMappingId?: string;
-  fieldMappings?: FieldMapping[];
-  onMappingChange: (mappingId: string, fieldMappings: FieldMapping[]) => void;
+  onMappingChange: (mappingId: string) => void;
   disabled?: boolean;
   error?: string;
 }
 
 export default function MappingSelector({
   selectedMappingId,
-  fieldMappings,
   onMappingChange,
   disabled = false,
   error
@@ -67,13 +65,13 @@ export default function MappingSelector({
 
   const handleSelect = (mapping: MappingConfig) => {
     setSelectedMapping(mapping);
-    onMappingChange(mapping.id, mapping.fieldMappings);
+    onMappingChange(mapping.id);
     setIsOpen(false);
   };
 
   const handleClear = () => {
     setSelectedMapping(null);
-    onMappingChange('', []);
+    onMappingChange('');
   };
 
   return (
