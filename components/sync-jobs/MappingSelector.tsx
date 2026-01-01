@@ -13,19 +13,17 @@ import {
 import { MappingConfig, FieldMapping } from '@/types';
 
 interface MappingSelectorProps {
-  value?: string;
-  onChange: (mappingId: string, mapping: MappingConfig) => void;
-  sourceDatabaseId?: string;
-  targetDocId?: string;
+  selectedMappingId?: string;
+  fieldMappings?: FieldMapping[];
+  onMappingChange: (mappingId: string, fieldMappings: FieldMapping[]) => void;
   disabled?: boolean;
   error?: string;
 }
 
 export default function MappingSelector({
-  value,
-  onChange,
-  sourceDatabaseId,
-  targetDocId,
+  selectedMappingId,
+  fieldMappings,
+  onMappingChange,
   disabled = false,
   error
 }: MappingSelectorProps) {
@@ -37,23 +35,19 @@ export default function MappingSelector({
 
   useEffect(() => {
     fetchMappings();
-  }, [sourceDatabaseId, targetDocId]);
+  }, []);
 
   useEffect(() => {
-    if (value && mappings.length > 0) {
-      const mapping = mappings.find(m => m.id === value);
+    if (selectedMappingId && mappings.length > 0) {
+      const mapping = mappings.find(m => m.id === selectedMappingId);
       setSelectedMapping(mapping || null);
     }
-  }, [value, mappings]);
+  }, [selectedMappingId, mappings]);
 
   const fetchMappings = async () => {
     try {
       setLoading(true);
-      const params = new URLSearchParams();
-      if (sourceDatabaseId) params.append('sourceDatabaseId', sourceDatabaseId);
-      if (targetDocId) params.append('targetDocId', targetDocId);
-
-      const response = await fetch(`/api/mappings?${params}`);
+      const response = await fetch('/api/mappings');
       const result = await response.json();
 
       if (result.success) {
@@ -73,13 +67,13 @@ export default function MappingSelector({
 
   const handleSelect = (mapping: MappingConfig) => {
     setSelectedMapping(mapping);
-    onChange(mapping.id, mapping);
+    onMappingChange(mapping.id, mapping.fieldMappings);
     setIsOpen(false);
   };
 
   const handleClear = () => {
     setSelectedMapping(null);
-    onChange('', {} as MappingConfig);
+    onMappingChange('', []);
   };
 
   return (

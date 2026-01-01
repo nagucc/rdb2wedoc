@@ -57,6 +57,28 @@ export async function PUT(
       enabled 
     } = body;
 
+    // 验证必填字段
+    if (name !== undefined && (typeof name !== 'string' || name.trim() === '')) {
+      return NextResponse.json(
+        { success: false, error: '作业名称不能为空' },
+        { status: 400 }
+      );
+    }
+
+    if (mappingConfigId !== undefined && (typeof mappingConfigId !== 'string' || mappingConfigId.trim() === '')) {
+      return NextResponse.json(
+        { success: false, error: '请选择数据映射配置' },
+        { status: 400 }
+      );
+    }
+
+    if (fieldMappings !== undefined && (!Array.isArray(fieldMappings) || fieldMappings.length === 0)) {
+      return NextResponse.json(
+        { success: false, error: '字段映射不能为空' },
+        { status: 400 }
+      );
+    }
+
     // 验证Cron表达式
     if (schedule && !validateCronExpression(schedule)) {
       return NextResponse.json(

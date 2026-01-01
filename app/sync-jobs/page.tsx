@@ -248,6 +248,23 @@ export default function SyncJobsPage() {
 
     try {
       setProcessing(true);
+
+      // 客户端验证
+      if (!formData.name || formData.name.trim() === '') {
+        alert('请输入作业名称');
+        return;
+      }
+
+      if (!formData.mappingConfigId || formData.mappingConfigId.trim() === '') {
+        alert('请选择数据映射配置');
+        return;
+      }
+
+      if (!formData.fieldMappings || !Array.isArray(formData.fieldMappings) || formData.fieldMappings.length === 0) {
+        alert('请选择数据映射配置（字段映射不能为空）');
+        return;
+      }
+
       const url = '/api/jobs';
       const method = editingJob ? 'PUT' : 'POST';
 

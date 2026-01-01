@@ -36,9 +36,23 @@ export async function POST(request: NextRequest) {
     } = body;
 
     // 验证必填字段
-    if (!name || !mappingConfigId || !fieldMappings) {
+    if (!name || typeof name !== 'string' || name.trim() === '') {
       return NextResponse.json(
-        { success: false, error: '所有必填字段都必须填写' },
+        { success: false, error: '作业名称不能为空' },
+        { status: 400 }
+      );
+    }
+
+    if (!mappingConfigId || typeof mappingConfigId !== 'string' || mappingConfigId.trim() === '') {
+      return NextResponse.json(
+        { success: false, error: '请选择数据映射配置' },
+        { status: 400 }
+      );
+    }
+
+    if (!fieldMappings || !Array.isArray(fieldMappings) || fieldMappings.length === 0) {
+      return NextResponse.json(
+        { success: false, error: '字段映射不能为空' },
         { status: 400 }
       );
     }
