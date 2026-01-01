@@ -421,7 +421,7 @@ export default function EditMappingPage() {
       return false;
     }
     if (!selectedDocument) {
-      setError('请选择智能文档');
+      setError('请选择智能表格');
       return false;
     }
     if (!selectedSheet) {
@@ -814,7 +814,7 @@ export default function EditMappingPage() {
 
                   <div>
                     <label htmlFor="targetDocId" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                      智能文档 <span className="text-red-500">*</span>
+                      智能表格 <span className="text-red-500">*</span>
                     </label>
                     <select
                       id="targetDocId"
@@ -824,7 +824,7 @@ export default function EditMappingPage() {
                       className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white disabled:opacity-50"
                       required
                     >
-                      <option value="">选择智能文档</option>
+                      <option value="">选择智能表格</option>
                       {documents.map((doc) => (
                         <option key={doc.id} value={doc.id}>
                           {doc.name}

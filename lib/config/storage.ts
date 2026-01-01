@@ -551,7 +551,7 @@ export function updateMappingStatus(mappingId: string, status: 'active' | 'inact
   return saveMapping(updatedMapping);
 }
 
-// 智能文档管理
+// 智能表格管理
 export function getIntelligentDocumentFilePath(docId: string): string {
   return path.join(DATA_DIR, 'documents', `${docId}.json`);
 }

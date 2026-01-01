@@ -83,7 +83,7 @@ export default function DataTargetModule() {
             数据目标统计
           </h3>
           <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-            企业微信和智能文档的配置与使用情况
+            企业微信和智能表格的配置与使用情况
           </p>
         </div>
         <button
@@ -106,12 +106,12 @@ export default function DataTargetModule() {
           href="/dashboard/wecom-accounts"
         />
         <MetricsCard
-          title="智能文档"
+          title="智能表格"
           value={metrics?.totalDocuments || 0}
           icon={FileText}
           color="green"
           trend={`${metrics?.activeDocuments || 0} 活跃`}
-          description="已配置的智能文档"
+          description="已配置的智能表格"
           href="/dashboard/documents"
         />
         <MetricsCard
@@ -170,7 +170,7 @@ export default function DataTargetModule() {
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                活跃智能文档
+                活跃智能表格
               </span>
               <span className="text-sm font-semibold text-gray-900 dark:text-white">
                 {metrics?.activeDocuments || 0} / {metrics?.totalDocuments || 0}
@@ -215,7 +215,7 @@ export default function DataTargetModule() {
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-900 dark:text-white">
-                      智能文档
+                      智能表格
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
                       已配置 {metrics?.totalDocuments || 0} 个文档

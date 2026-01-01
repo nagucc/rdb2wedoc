@@ -355,7 +355,7 @@ export default function WeComAccountDetailPage() {
           <div className="rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
             <div className="flex items-center justify-between border-b border-gray-200 p-6 dark:border-gray-700">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                智能文档管理
+                智能表格管理
               </h3>
               <button
                 onClick={() => setShowAddDocumentModal(true)}
@@ -398,10 +398,10 @@ export default function WeComAccountDetailPage() {
               <div className="flex flex-col items-center justify-center p-12">
                 <FileText className="mb-4 h-16 w-16 text-gray-400" />
                 <h4 className="mb-2 text-lg font-semibold text-gray-900 dark:text-white">
-                  {documents.length === 0 ? '暂无智能文档' : '未找到匹配的文档'}
+                  {documents.length === 0 ? '暂无智能表格' : '未找到匹配的文档'}
                 </h4>
                 <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">
-                  {documents.length === 0 ? '点击上方按钮添加第一个智能文档' : '尝试调整搜索条件'}
+                  {documents.length === 0 ? '点击上方按钮添加第一个智能表格' : '尝试调整搜索条件'}
                 </p>
               </div>
             ) : (
@@ -468,7 +468,7 @@ export default function WeComAccountDetailPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className="mx-4 w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-800">
             <h3 className="mb-6 text-xl font-semibold text-gray-900 dark:text-white">
-              添加智能文档
+              添加智能表格
             </h3>
             <div className="space-y-4">
               <div>
@@ -520,7 +520,7 @@ export default function WeComAccountDetailPage() {
               确认删除文档
             </h3>
             <p className="mb-2 text-center text-sm text-gray-600 dark:text-gray-400">
-              您即将删除以下智能文档：
+              您即将删除以下智能表格：
             </p>
             <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-900/10">
               <p className="text-base font-semibold text-gray-900 dark:text-white">

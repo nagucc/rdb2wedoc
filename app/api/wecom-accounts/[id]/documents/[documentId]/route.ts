@@ -7,7 +7,7 @@ export async function DELETE(
 ) {
   try {
     const { id, documentId } = await params;
-    console.log(`[API] 开始删除智能文档`, {
+    console.log(`[API] 开始删除智能表格`, {
       accountId: id,
       documentId,
       timestamp: new Date().toISOString()
@@ -47,7 +47,7 @@ export async function DELETE(
       message: '文档删除成功'
     });
   } catch (error) {
-    console.error('[API] 删除智能文档异常', {
+    console.error('[API] 删除智能表格异常', {
       error: (error as Error).message,
       stack: (error as Error).stack,
       timestamp: new Date().toISOString()

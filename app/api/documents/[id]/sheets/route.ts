@@ -33,11 +33,11 @@ export async function GET(
     
     Logger.info(`开始获取文档Sheet列表`, { docId: id });
 
-    // 先尝试获取智能文档
+    // 先尝试获取智能表格
     const intelligentDoc = getIntelligentDocumentById(id) as IntelligentDocument | null;
     
     if (intelligentDoc) {
-      Logger.info(`找到智能文档，直接返回缓存的Sheet列表`, { 
+      Logger.info(`找到智能表格，直接返回缓存的Sheet列表`, { 
         docId: id, 
         docName: intelligentDoc.name,
         sheetCount: intelligentDoc.sheets.length 
@@ -54,7 +54,7 @@ export async function GET(
       });
     }
 
-    // 如果不是智能文档，尝试获取普通文档
+    // 如果不是智能表格，尝试获取普通文档
     const document = await getDocumentById(id);
     
     if (!document) {

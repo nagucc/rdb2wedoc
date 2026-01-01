@@ -9,7 +9,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    console.log(`[API] 开始获取智能文档列表`, {
+    console.log(`[API] 开始获取智能表格列表`, {
       accountId: id,
       timestamp: new Date().toISOString()
     });
@@ -26,7 +26,7 @@ export async function GET(
     
     const documents = getIntelligentDocumentsByAccountId(id);
     
-    console.log(`[API] 成功获取智能文档列表`, {
+    console.log(`[API] 成功获取智能表格列表`, {
       accountId: id,
       documentCount: documents.length,
       timestamp: new Date().toISOString()
@@ -37,7 +37,7 @@ export async function GET(
       data: documents
     });
   } catch (error) {
-    console.error('[API] 获取智能文档列表异常', {
+    console.error('[API] 获取智能表格列表异常', {
       error: (error as Error).message,
       stack: (error as Error).stack,
       timestamp: new Date().toISOString()
@@ -76,7 +76,7 @@ export async function POST(
       );
     }
 
-    console.log(`[API] 开始添加智能文档`, {
+    console.log(`[API] 开始添加智能表格`, {
       accountId: id,
       documentId,
       timestamp: new Date().toISOString()
@@ -186,7 +186,7 @@ export async function POST(
       message: '文档添加成功'
     });
   } catch (error) {
-    console.error('[API] 添加智能文档异常', {
+    console.error('[API] 添加智能表格异常', {
       error: (error as Error).message,
       stack: (error as Error).stack,
       timestamp: new Date().toISOString()

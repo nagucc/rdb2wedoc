@@ -102,7 +102,7 @@ describe('Mapping Validation Logic', () => {
         expect(validateFormMock(formData)).toEqual({ valid: false, error: '请选择企业微信账户' });
       });
 
-      it('应该拒绝未选择智能文档', () => {
+      it('应该拒绝未选择智能表格', () => {
         const formData = {
           name: 'test',
           selectedDatabase: 'db1',
@@ -123,7 +123,7 @@ describe('Mapping Validation Logic', () => {
           ]
         };
         
-        expect(validateFormMock(formData)).toEqual({ valid: false, error: '请选择智能文档' });
+        expect(validateFormMock(formData)).toEqual({ valid: false, error: '请选择智能表格' });
       });
 
       it('应该拒绝未选择子表', () => {
@@ -1145,7 +1145,7 @@ function validateFormMock(formData: any): { valid: boolean; error: string | null
     return { valid: false, error: '请选择企业微信账户' };
   }
   if (!formData.selectedDocument) {
-    return { valid: false, error: '请选择智能文档' };
+    return { valid: false, error: '请选择智能表格' };
   }
   if (!formData.selectedSheet) {
     return { valid: false, error: '请选择子表' };

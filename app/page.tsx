@@ -54,7 +54,7 @@ export default function Home() {
     {
       icon: FileText,
       title: '企业微信文档',
-      description: '无缝集成企业微信智能文档，实现数据同步和协作',
+      description: '无缝集成企业微信智能表格，实现数据同步和协作',
       link: '/documents'
     },
     {
