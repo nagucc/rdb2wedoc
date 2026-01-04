@@ -26,10 +26,10 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, accessToken, documentId, accountId } = body;
+    const { name, documentId, accountId } = body;
 
     // 验证必填字段
-    if (!name || !accessToken || !documentId || !accountId) {
+    if (!name || !documentId || !accountId) {
       return NextResponse.json(
         { success: false, error: '所有字段都必须填写' },
         { status: 400 }
@@ -40,7 +40,6 @@ export async function POST(request: NextRequest) {
     const document: WeComDocument = {
       id: generateId(),
       name,
-      accessToken,
       documentId,
       accountId,
       createdAt: new Date().toISOString(),
@@ -72,11 +71,9 @@ export async function POST(request: NextRequest) {
 
     Logger.info(`企业微信文档创建成功: ${name}`, { docId: document.id });
 
-    // 返回文档信息（脱敏token）
-    const { accessToken: _, ...docWithoutToken } = document;
     return NextResponse.json({
       success: true,
-      data: docWithoutToken,
+      data: document,
       message: '文档连接成功'
     });
   } catch (error) {

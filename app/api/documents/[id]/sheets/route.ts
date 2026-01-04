@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDocumentById, getIntelligentDocumentById } from '@/lib/config/storage';
+import { getDocumentById, getIntelligentDocumentById, getWeComAccountById } from '@/lib/config/storage';
 import { weComDocumentService } from '@/lib/services/wecom-document.service';
 import { Logger } from '@/lib/utils/helpers';
 
@@ -70,7 +70,16 @@ export async function GET(
       docName: document.name 
     });
 
-    const accessToken = await weComDocumentService.getAccessToken(document.id, document.accessToken);
+    const account = getWeComAccountById(document.accountId);
+    if (!account) {
+      Logger.warn(`关联的企业微信账号不存在`, { docId: id, accountId: document.accountId });
+      return NextResponse.json(
+        { success: false, error: '关联的企业微信账号不存在' },
+        { status: 404 }
+      );
+    }
+
+    const accessToken = await weComDocumentService.getAccessToken(account.corpId, account.corpSecret);
     const sheets = await weComDocumentService.getDocumentSheets(accessToken, document.documentId);
 
     Logger.info(`获取企业微信文档Sheet列表成功: ${document.name}`, { 

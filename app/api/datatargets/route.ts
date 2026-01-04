@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Logger } from '@/lib/utils/helpers';
-import { getDocuments, getDocumentSheets } from '@/lib/config/storage';
+import { getDocuments, getDocumentSheets, getWeComAccountById } from '@/lib/config/storage';
 
 interface DataTargetMetrics {
   totalWeComAccounts: number;
@@ -32,7 +32,8 @@ export async function GET(request: NextRequest) {
           }
         }
         
-        if (doc.accessToken && doc.accessToken.length > 0 && doc.accessToken !== '******') {
+        const account = getWeComAccountById(doc.accountId);
+        if (account && account.enabled) {
           activeDocuments++;
         }
       } catch (error) {

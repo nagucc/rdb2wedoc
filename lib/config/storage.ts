@@ -200,11 +200,7 @@ export function getDocuments(): WeComDocument[] {
   files.forEach(file => {
     const doc = readJsonFile<WeComDocument>(path.join(DATA_DIR, 'documents', file));
     if (doc) {
-      // 脱敏token
-      documents.push({
-        ...doc,
-        accessToken: '******'
-      });
+      documents.push(doc);
     }
   });
   

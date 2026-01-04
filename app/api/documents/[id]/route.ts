@@ -19,13 +19,10 @@ export async function GET(
         { status: 404 }
       );
     }
-
-    // 脱敏token
-    const { accessToken: _, ...docWithoutToken } = document;
     
     return NextResponse.json({
       success: true,
-      data: docWithoutToken
+      data: document
     });
   } catch (error) {
     Logger.error('获取企业微信文档信息失败', { error: (error as Error).message });
@@ -53,14 +50,13 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { name, accessToken, documentId } = body;
+    const { name, documentId } = body;
 
     // 记录旧配置
     const oldConfig = { name: document.name, documentId: document.documentId };
 
     // 更新字段
     if (name) document.name = name;
-    if (accessToken) document.accessToken = accessToken;
     if (documentId) document.documentId = documentId;
 
     document.updatedAt = new Date().toISOString();
@@ -90,11 +86,9 @@ export async function PUT(
 
     Logger.info(`企业微信文档更新成功: ${document.name}`, { docId: document.id });
 
-    // 返回文档信息（脱敏token）
-    const { accessToken: _, ...docWithoutToken } = document;
     return NextResponse.json({
       success: true,
-      data: docWithoutToken,
+      data: document,
       message: '更新成功'
     });
   } catch (error) {

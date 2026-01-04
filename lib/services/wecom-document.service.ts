@@ -1,5 +1,6 @@
 import axios, { AxiosInstance } from 'axios';
-import { WeComDocument, DocumentSheet, DocumentField } from '@/types';
+import { WeComDocument, DocumentSheet, DocumentField, WeComAccount } from '@/types';
+import { getWeComAccountById } from '@/lib/config/storage';
 import { Logger } from '../utils/helpers';
 
 export class WeComDocumentService {
@@ -301,7 +302,12 @@ export class WeComDocumentService {
 
   async testConnection(document: WeComDocument): Promise<boolean> {
     try {
-      const accessToken = await this.getAccessToken(document.id, document.accessToken);
+      const account = getWeComAccountById(document.accountId);
+      if (!account) {
+        throw new Error('关联的企业微信账号不存在');
+      }
+      
+      const accessToken = await this.getAccessToken(account.corpId, account.corpSecret);
       const sheets = await this.getDocumentSheets(accessToken, document.documentId);
       return sheets.length > 0;
     } catch (error) {
