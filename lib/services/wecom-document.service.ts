@@ -211,16 +211,15 @@ export class WeComDocumentService {
       while (hasMore) {
         Logger.info('获取Sheet记录', { documentId, sheetId, offset, limit });
 
-        const recordsResponse = await this.client.post('/cgi-bin/wedoc/smartsheet/get_records', null, {
-          params: {
-            access_token: accessToken
-          },
-          data: {
+        const recordsResponse = await this.client.post('/cgi-bin/wedoc/smartsheet/get_records', {
             docid: documentId,
             sheet_id: sheetId,
             offset: offset,
             limit: limit,
-          }
+          }, {
+          params: {
+            access_token: accessToken
+          },
         });
 
         if (recordsResponse.data.errcode !== 0) {
@@ -265,14 +264,13 @@ export class WeComDocumentService {
           totalBatches: Math.ceil(allRecordIds.length / batchSize) 
         });
 
-        const deleteResponse = await this.client.post('/cgi-bin/wedoc/smartsheet/delete_records', null, {
+        const deleteResponse = await this.client.post('/cgi-bin/wedoc/smartsheet/delete_records', {
+          docid: documentId,
+          sheet_id: sheetId,
+          record_ids: batch
+        }, {
           params: {
             access_token: accessToken
-          },
-          data: {
-            docid: documentId,
-            sheet_id: sheetId,
-            record_ids: batch
           }
         });
 
