@@ -69,6 +69,7 @@ export default function SyncJobsPage() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [jobToDelete, setJobToDelete] = useState<SyncJob | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [executingJobId, setExecutingJobId] = useState<string | null>(null);
 
   const handleLogout = async () => {
     try {
@@ -346,9 +347,15 @@ export default function SyncJobsPage() {
 
   const handleExecuteJob = async (jobId: string) => {
     try {
+      setExecutingJobId(jobId);
+
       const response = await fetch(`/api/jobs/${jobId}/execute`, {
         method: 'POST'
       });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
       const data = await response.json();
 
@@ -358,8 +365,11 @@ export default function SyncJobsPage() {
         alert(data.error || '执行失败');
       }
     } catch (err) {
-      alert('网络错误，请检查连接后重试');
+      const errorMessage = err instanceof Error ? err.message : '网络错误，请检查连接后重试';
+      alert(errorMessage);
       console.error('Error executing job:', err);
+    } finally {
+      setExecutingJobId(null);
     }
   };
 
@@ -700,10 +710,20 @@ export default function SyncJobsPage() {
                             {job.enabled && job.status !== 'running' && (
                               <button
                                 onClick={() => handleExecuteJob(job.id)}
-                                className="flex items-center gap-1 rounded-lg bg-blue-100 px-3 py-1.5 text-sm font-medium text-blue-700 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50 transition-colors"
+                                disabled={executingJobId === job.id}
+                                className="flex items-center gap-1 rounded-lg bg-blue-100 px-3 py-1.5 text-sm font-medium text-blue-700 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                               >
-                                <PlayCircle className="h-4 w-4" />
-                                立即执行
+                                {executingJobId === job.id ? (
+                                  <>
+                                    <RefreshCw className="h-4 w-4 animate-spin" />
+                                    执行中...
+                                  </>
+                                ) : (
+                                  <>
+                                    <PlayCircle className="h-4 w-4" />
+                                    立即执行
+                                  </>
+                                )}
                               </button>
                             )}
                             <button
