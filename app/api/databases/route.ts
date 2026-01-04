@@ -186,8 +186,8 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // 测试连接
-    const testConfig: DatabaseConnection = {
+    // 保存数据源配置
+    const updatedConfig: DatabaseConnection = {
       id,
       name: name.trim(),
       type,
@@ -201,23 +201,13 @@ export async function PUT(request: NextRequest) {
       updatedAt: new Date().toISOString()
     };
 
-    const isConnected = await databaseService.testConnection(testConfig);
-    if (!isConnected) {
-      Logger.warn(`数据库连接测试失败: ${name}`, { host, port, database });
-      return NextResponse.json(
-        { success: false, error: '数据库连接失败，请检查配置信息' },
-        { status: 400 }
-      );
-    }
-
-    // 保存数据源配置
-    await saveDatabase(testConfig);
+    await saveDatabase(updatedConfig);
 
     // 记录历史（不记录敏感信息）
     await saveHistory({
       id: generateId(),
       entityType: 'database',
-      entityId: testConfig.id,
+      entityId: updatedConfig.id,
       action: 'update',
       oldConfig: { 
         name: existingDb.name, 
@@ -227,20 +217,20 @@ export async function PUT(request: NextRequest) {
         database: existingDb.database 
       },
       newConfig: { 
-        name: testConfig.name, 
-        type: testConfig.type, 
-        host: testConfig.host, 
-        port: testConfig.port, 
-        database: testConfig.database 
+        name: updatedConfig.name, 
+        type: updatedConfig.type, 
+        host: updatedConfig.host, 
+        port: updatedConfig.port, 
+        database: updatedConfig.database 
       },
       userId: 'system',
       timestamp: new Date().toISOString()
     });
 
-    Logger.info(`数据源更新成功: ${name}`, { dbId: testConfig.id });
+    Logger.info(`数据源更新成功: ${name}`, { dbId: updatedConfig.id });
 
     // 返回数据源信息（脱敏密码）
-    const { password: _, ...dbWithoutPassword } = testConfig;
+    const { password: _, ...dbWithoutPassword } = updatedConfig;
     return NextResponse.json({
       success: true,
       data: dbWithoutPassword,

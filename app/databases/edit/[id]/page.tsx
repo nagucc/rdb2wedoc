@@ -226,18 +226,36 @@ export default function EditDatabasePage() {
       return;
     }
 
-    if (!testResult || !testResult.success) {
-      setTestResult({
-        success: false,
-        message: '请先测试数据库连接，确保配置正确后再保存'
-      });
-      return;
-    }
-
     setSaving(true);
     setTestResult(null);
 
     try {
+      setTestResult({
+        success: false,
+        message: '正在测试数据库连接...'
+      });
+
+      const testResponse = await fetch('/api/databases/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(config)
+      });
+
+      const testResult = await testResponse.json();
+
+      if (!testResult.success) {
+        setTestResult({
+          success: false,
+          message: `连接测试失败: ${testResult.message || '无法连接到数据库，请检查配置后重试'}`
+        });
+        return;
+      }
+
+      setTestResult({
+        success: false,
+        message: '连接测试成功，正在保存...'
+      });
+
       const configToSave = config.password === originalPassword 
         ? { ...config, password: '' } 
         : config;
