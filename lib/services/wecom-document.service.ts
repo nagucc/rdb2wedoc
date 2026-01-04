@@ -189,21 +189,112 @@ export class WeComDocumentService {
     }
   }
 
+  /**
+   * 清空企业微信文档中指定 Sheet 的所有数据
+   *
+   * @param accessToken - 企业微信访问令牌
+   * @param documentId - 文档ID
+   * @param sheetId - Sheet ID
+   * @returns Promise<boolean> - 清空成功返回 true，失败抛出异常
+   * @throws Error - 当清空操作失败时抛出错误
+   */
   async clearSheetData(accessToken: string, documentId: string, sheetId: string): Promise<boolean> {
     try {
-      const response = await this.client.post('/cgi-bin/wedoc/smartsheet/clear_sheet', {
-        access_token: accessToken,
-        docid: documentId,
-        sheet_id: sheetId
-      });
+      Logger.info('开始清空Sheet数据', { documentId, sheetId });
 
-      if (response.data.errcode !== 0) {
-        throw new Error(`清空Sheet数据失败: ${response.data.errmsg}`);
+      const allRecordIds: string[] = [];
+      let offset = 0;
+      const limit = 1000;
+      let hasMore = true;
+
+      while (hasMore) {
+        Logger.info('获取Sheet记录', { documentId, sheetId, offset, limit });
+
+        const recordsResponse = await this.client.post('/cgi-bin/wedoc/smartsheet/get_records', null, {
+          params: {
+            access_token: accessToken
+          },
+          data: {
+            docid: documentId,
+            sheet_id: sheetId,
+            offset: offset,
+            limit: limit,
+          }
+        });
+
+        if (recordsResponse.data.errcode !== 0) {
+          throw new Error(`获取Sheet记录失败: ${recordsResponse.data.errmsg}`);
+        }
+
+        const records = recordsResponse.data.records || [];
+        records.forEach((record: any) => {
+          if (record.record_id) {
+            allRecordIds.push(record.record_id);
+          }
+        });
+
+        hasMore = recordsResponse.data.has_more || false;
+        offset = recordsResponse.data.next || offset + limit;
+
+        Logger.info('已获取记录', { 
+          documentId, 
+          sheetId, 
+          currentBatch: records.length, 
+          total: allRecordIds.length,
+          hasMore 
+        });
       }
 
+      Logger.info('获取记录完成', { documentId, sheetId, totalRecords: allRecordIds.length });
+
+      if (allRecordIds.length === 0) {
+        Logger.info('Sheet中没有记录，无需删除', { documentId, sheetId });
+        return true;
+      }
+
+      const batchSize = 500;
+      for (let i = 0; i < allRecordIds.length; i += batchSize) {
+        const batch = allRecordIds.slice(i, i + batchSize);
+        
+        Logger.info('批量删除记录', { 
+          documentId, 
+          sheetId, 
+          batchIndex: Math.floor(i / batchSize) + 1, 
+          batchSize: batch.length,
+          totalBatches: Math.ceil(allRecordIds.length / batchSize) 
+        });
+
+        const deleteResponse = await this.client.post('/cgi-bin/wedoc/smartsheet/delete_records', null, {
+          params: {
+            access_token: accessToken
+          },
+          data: {
+            docid: documentId,
+            sheet_id: sheetId,
+            record_ids: batch
+          }
+        });
+
+        if (deleteResponse.data.errcode !== 0) {
+          throw new Error(`删除Sheet记录失败: ${deleteResponse.data.errmsg}`);
+        }
+
+        Logger.info('批量删除记录成功', { 
+          documentId, 
+          sheetId, 
+          batchIndex: Math.floor(i / batchSize) + 1,
+          deletedCount: batch.length 
+        });
+      }
+
+      Logger.info('清空Sheet数据成功', { documentId, sheetId, totalDeleted: allRecordIds.length });
       return true;
     } catch (error) {
-      Logger.error('清空Sheet数据失败', { error: (error as Error).message });
+      Logger.error('清空Sheet数据失败', { 
+        error: (error as Error).message,
+        documentId,
+        sheetId 
+      });
       throw error;
     }
   }
