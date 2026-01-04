@@ -194,7 +194,7 @@ export async function PUT(request: NextRequest) {
       host: host.trim(),
       port,
       username: username.trim(),
-      password: password || existingDb.password,
+      password: password,
       database: database.trim(),
       options,
       createdAt: existingDb.createdAt,

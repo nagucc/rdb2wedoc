@@ -60,7 +60,6 @@ export default function EditDatabasePage() {
       maxConnections: 10
     }
   });
-  const [originalPassword, setOriginalPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [testing, setTesting] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -80,7 +79,6 @@ export default function EditDatabasePage() {
       
       if (result.success && result.data) {
         const db = result.data;
-        setOriginalPassword(db.password);
         setConfig({
           id: db.id,
           name: db.name,
@@ -256,16 +254,12 @@ export default function EditDatabasePage() {
         message: '连接测试成功，正在保存...'
       });
 
-      const configToSave = config.password === originalPassword 
-        ? { ...config, password: '' } 
-        : config;
-
       const response = await fetch('/api/databases', {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(configToSave)
+        body: JSON.stringify(config)
       });
 
       const result = await response.json();
@@ -491,7 +485,7 @@ export default function EditDatabasePage() {
                       type={showPassword ? 'text' : 'password'}
                       value={config.password}
                       onChange={(e) => handleInputChange('password', e.target.value)}
-                      placeholder="留空表示不修改密码"
+                      placeholder="请输入数据库密码"
                       className={`w-full rounded-lg border px-4 py-2.5 pr-10 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white ${
                         errors.password ? 'border-red-500' : ''
                       }`}
