@@ -28,7 +28,7 @@ export async function GET(
     }
 
     const accessToken = await weComDocumentService.getAccessToken(account.corpId, account.corpSecret);
-    const fields = await weComDocumentService.getSheetFields(accessToken, document.documentId, sheetId);
+    const fields = await weComDocumentService.getSheetFields(accessToken, document.id, sheetId);
 
     Logger.info(`获取企业微信文档Sheet字段成功: ${document.name}`, { 
       docId: document.id, 

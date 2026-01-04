@@ -53,11 +53,11 @@ export async function PUT(
     const { name, documentId } = body;
 
     // 记录旧配置
-    const oldConfig = { name: document.name, documentId: document.documentId };
+    const oldConfig = { name: document.name, documentId: document.id };
 
     // 更新字段
     if (name) document.name = name;
-    if (documentId) document.documentId = documentId;
+    if (documentId) document.id = documentId;
 
     document.updatedAt = new Date().toISOString();
 
@@ -79,7 +79,7 @@ export async function PUT(
       entityId: document.id,
       action: 'update',
       oldConfig,
-      newConfig: { name: document.name, documentId: document.documentId },
+      newConfig: { name: document.name, documentId: document.id },
       userId: 'system',
       timestamp: new Date().toISOString()
     });
@@ -122,7 +122,7 @@ export async function DELETE(
       entityType: 'document',
       entityId: document.id,
       action: 'delete',
-      oldConfig: { name: document.name, documentId: document.documentId },
+      oldConfig: { name: document.name, documentId: document.id },
       userId: 'system',
       timestamp: new Date().toISOString()
     });

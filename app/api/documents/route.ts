@@ -38,9 +38,8 @@ export async function POST(request: NextRequest) {
 
     // 创建文档配置
     const document: WeComDocument = {
-      id: generateId(),
+      id: documentId,
       name,
-      documentId,
       accountId,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()

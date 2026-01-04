@@ -308,7 +308,7 @@ export class WeComDocumentService {
       }
       
       const accessToken = await this.getAccessToken(account.corpId, account.corpSecret);
-      const sheets = await this.getDocumentSheets(accessToken, document.documentId);
+      const sheets = await this.getDocumentSheets(accessToken, document.id);
       return sheets.length > 0;
     } catch (error) {
       Logger.error('测试企业微信文档连接失败', { error: (error as Error).message });

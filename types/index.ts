@@ -64,23 +64,35 @@ export interface DatabaseColumn {
 
 export type DatabaseField = DatabaseColumn;
 
-// 企业微信文档相关类型
+// 企业微信账号配置接口
 export interface WeComAccount {
+  /** 账号唯一标识 */
   id: string;
+  /** 账号名称（便于识别） */
   name: string;
+  /** 企业微信企业ID */
   corpId: string;
+  /** 企业微信应用密钥 */
   corpSecret: string;
+  /** 是否启用该账号 */
   enabled: boolean;
+  /** 创建时间（ISO 字符串） */
   createdAt: string;
+  /** 最后更新时间（ISO 字符串） */
   updatedAt: string;
 }
 
+// 企业微信文档接口
 export interface WeComDocument {
+  /** 文档唯一标识，也是文档的docid */
   id: string;
+  /** 文档名称 */
   name: string;
-  documentId: string;
+  /** 所属企业微信账号ID（不是corpId） */
   accountId: string;
+  /** 创建时间（ISO 字符串） */
   createdAt: string;
+  /** 最后更新时间（ISO 字符串） */
   updatedAt: string;
 }
 

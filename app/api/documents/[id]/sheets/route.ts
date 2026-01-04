@@ -80,7 +80,7 @@ export async function GET(
     }
 
     const accessToken = await weComDocumentService.getAccessToken(account.corpId, account.corpSecret);
-    const sheets = await weComDocumentService.getDocumentSheets(accessToken, document.documentId);
+    const sheets = await weComDocumentService.getDocumentSheets(accessToken, document.id);
 
     Logger.info(`获取企业微信文档Sheet列表成功: ${document.name}`, { 
       docId: document.id, 

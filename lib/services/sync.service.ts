@@ -1,8 +1,8 @@
 import * as cron from 'node-cron';
 import { databaseService } from './database.service';
 import { weComDocumentService } from './wecom-document.service';
-import { SyncJob, FieldMapping, ConflictStrategy, ExecutionLog } from '@/types';
-import { getDatabaseById, getDocumentById, saveJob, saveLog, getJobById, getMappingById } from '../config/storage';
+import { SyncJob, FieldMapping, ConflictStrategy, ExecutionLog, WeComDocument } from '@/types';
+import { getDatabaseById, getDocumentById, saveJob, saveLog, getJobById, getMappingById, getWeComAccountById } from '../config/storage';
 import { Logger, generateId, formatDate, retry } from '../utils/helpers';
 
 export class SyncService {
@@ -195,13 +195,23 @@ export class SyncService {
     return value;
   }
 
-  private async overwriteToDocument(document: any, sheetId: string, data: any[]): Promise<void> {
-    await weComDocumentService.clearSheetData(document.id, document.documentId, sheetId);
-    await weComDocumentService.writeSheetData(document.id, document.documentId, sheetId, data);
+  private async overwriteToDocument(document: WeComDocument, sheetId: string, data: any[]): Promise<void> {
+    // 根据document.accountId获取corpid和corpsecret
+    const account = getWeComAccountById(document.accountId);
+    if (!account) {
+      throw new Error(`关联的企业微信账号不存在，accountId: ${document.accountId}`);
+    }
+
+    const accessToken = await weComDocumentService.getAccessToken(account.corpId, account.corpSecret);
+    if (!accessToken) {
+      throw new Error(`获取企业微信access token失败, corpId: ${account.corpId}`);
+    }
+    await weComDocumentService.clearSheetData(accessToken, document.id, sheetId);
+    await weComDocumentService.writeSheetData(accessToken, document.id, sheetId, data);
   }
 
   private async appendToDocument(document: any, sheetId: string, data: any[]): Promise<void> {
-    await weComDocumentService.appendSheetData(document.id, document.documentId, sheetId, data);
+    await weComDocumentService.appendSheetData(document.id, document.id, sheetId, data);
   }
 
   private async mergeToDocument(document: any, sheetId: string, data: any[]): Promise<void> {
