@@ -89,29 +89,55 @@ export class SyncService {
       log.errorMessage = (error as Error).message;
       log.recordsFailed = log.recordsProcessed - log.recordsSucceeded;
 
-      // 更新作业状态
+      // 更新作业状态为失败
       job.status = 'failed';
+      job.lastError = log.errorMessage;
+      job.lastErrorTime = log.endTime;
       job.retryCount++;
 
       // 如果未达到最大重试次数，则重试
-      if (job.retryCount < job.maxRetries) {
+      if (job.retryCount <= job.maxRetries) {
         Logger.warn(`同步作业失败，准备重试: ${job.name}`, {
           jobId,
           retryAttempt: job.retryCount,
           maxRetries: job.maxRetries,
-          error: log.errorMessage
+          error: log.errorMessage,
+          errorTime: log.endTime
         });
 
-        await retry(() => this.executeJob(jobId), 1, 5000);
+        // 保存失败状态后再重试
+        await saveJob(job);
+
+        try {
+          await retry(() => this.executeJob(jobId), 1, 5000);
+        } catch (retryError) {
+          // 重试失败，状态已在递归调用中更新为 'failed'
+          Logger.error(`同步作业重试失败: ${job.name}`, {
+            jobId,
+            retryAttempt: job.retryCount,
+            maxRetries: job.maxRetries,
+            error: (retryError as Error).message
+          });
+        }
       } else {
+        // 达到最大重试次数，确保状态为失败
+        job.status = 'failed';
+        job.lastError = log.errorMessage;
+        job.lastErrorTime = log.endTime;
+        
         Logger.error(`同步作业执行失败，已达最大重试次数: ${job.name}`, {
           jobId,
           retryAttempt: job.retryCount,
-          error: log.errorMessage
+          maxRetries: job.maxRetries,
+          error: log.errorMessage,
+          errorTime: log.endTime,
+          recordsProcessed: log.recordsProcessed,
+          recordsSucceeded: log.recordsSucceeded,
+          recordsFailed: log.recordsFailed
         });
-      }
 
-      await saveJob(job);
+        await saveJob(job);
+      }
     } finally {
       this.runningJobs.delete(jobId);
       await saveLog(log);

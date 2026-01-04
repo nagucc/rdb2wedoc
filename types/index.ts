@@ -137,6 +137,8 @@ export interface SyncJob {
   enableDataValidation?: boolean; // 是否启用数据验证
   lastRun?: string;
   nextRun?: string;
+  lastError?: string;
+  lastErrorTime?: string;
   enabled: boolean;
   retryCount: number;
   maxRetries: number;

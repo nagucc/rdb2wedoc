@@ -23,7 +23,7 @@ interface SyncJob {
   name: string;
   source: string;
   target: string;
-  status: 'running' | 'success' | 'failed' | 'pending' | 'paused';
+  status: 'running' | 'success' | 'failed' | 'pending' | 'paused' | 'idle';
   lastSyncTime: string;
   nextSyncTime: string;
   progress: number;
@@ -32,6 +32,8 @@ interface SyncJob {
   successCount: number;
   failureCount: number;
   avgExecutionTime: number;
+  lastError?: string;
+  lastErrorTime?: string;
 }
 
 interface SyncHistory {
@@ -430,6 +432,22 @@ export default function SyncJobsModule() {
                         最后同步: {new Date(job.lastSyncTime).toLocaleString()}
                       </span>
                     </div>
+                    {job.status === 'failed' && job.lastError && (
+                      <div className="mt-2 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+                        <div className="flex items-start gap-2">
+                          <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-red-800 dark:text-red-300 mb-1">执行失败</p>
+                            <p className="text-xs text-red-700 dark:text-red-400 break-words">{job.lastError}</p>
+                            {job.lastErrorTime && (
+                              <p className="text-xs text-red-600 dark:text-red-500 mt-1">
+                                失败时间: {new Date(job.lastErrorTime).toLocaleString()}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <div className="flex items-center gap-2">
                     {job.status === 'running' ? (
