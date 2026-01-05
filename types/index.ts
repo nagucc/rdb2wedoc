@@ -324,7 +324,6 @@ export interface MappingConfig {
   sourceTableName: string;
   targetDocId: string;
   targetSheetId: string;
-  status: MappingStatus;
   fieldMappings: FieldMapping[];
   createdAt: string;
   updatedAt: string;

@@ -36,7 +36,6 @@ export default function DataMappingModule() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive' | 'draft'>('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedMapping, setSelectedMapping] = useState<MappingConfigUI | null>(null);
@@ -173,32 +172,6 @@ export default function DataMappingModule() {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active':
-        return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400';
-      case 'inactive':
-        return 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400';
-      case 'draft':
-        return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400';
-      default:
-        return 'bg-gray-100 text-gray-700';
-    }
-  };
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'active':
-        return '启用';
-      case 'inactive':
-        return '禁用';
-      case 'draft':
-        return '草稿';
-      default:
-        return status;
-    }
-  };
-
   const getDataTypeIcon = (dataType: string) => {
     switch (dataType) {
       case 'string':
@@ -218,16 +191,8 @@ export default function DataMappingModule() {
                          mapping.sourceTableName.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          mapping.targetDocId.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          mapping.targetSheetId.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || mapping.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    return matchesSearch;
   });
-
-  const stats = {
-    total: mappings.length,
-    active: mappings.filter(m => m.status === 'active').length,
-    inactive: mappings.filter(m => m.status === 'inactive').length,
-    draft: mappings.filter(m => m.status === 'draft').length
-  };
 
   if (loading && mappings.length === 0) {
     return (
@@ -294,37 +259,6 @@ export default function DataMappingModule() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-          <div className="flex items-center gap-2 mb-2">
-            <Database className="h-5 w-5 text-blue-600" />
-            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">总映射</span>
-          </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total}</p>
-        </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-          <div className="flex items-center gap-2 mb-2">
-            <CheckCircle className="h-5 w-5 text-green-600" />
-            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">启用</span>
-          </div>
-          <p className="text-2xl font-bold text-green-600 dark:text-green-400">{stats.active}</p>
-        </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-          <div className="flex items-center gap-2 mb-2">
-            <XCircle className="h-5 w-5 text-gray-600" />
-            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">禁用</span>
-          </div>
-          <p className="text-2xl font-bold text-gray-600 dark:text-gray-400">{stats.inactive}</p>
-        </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-          <div className="flex items-center gap-2 mb-2">
-            <AlertCircle className="h-5 w-5 text-yellow-600" />
-            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">草稿</span>
-          </div>
-          <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{stats.draft}</p>
-        </div>
-      </div>
-
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
@@ -335,20 +269,6 @@ export default function DataMappingModule() {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
           />
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Filter className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as any)}
-            className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-          >
-            <option value="all">全部状态</option>
-            <option value="active">启用</option>
-            <option value="inactive">禁用</option>
-            <option value="draft">草稿</option>
-          </select>
         </div>
       </div>
 
@@ -367,12 +287,7 @@ export default function DataMappingModule() {
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{mapping.name}</h3>
-                    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium ${getStatusColor(mapping.status)}`}>
-                      {getStatusText(mapping.status)}
-                    </span>
-                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{mapping.name}</h3>
                   <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
                     <span className="flex items-center gap-1">
                       <Database className="h-4 w-4" />

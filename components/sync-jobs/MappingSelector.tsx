@@ -184,11 +184,6 @@ export default function MappingSelector({
                           <span className="font-medium text-gray-900 dark:text-white">
                             {mapping.name}
                           </span>
-                          {mapping.status === 'active' && (
-                            <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                              活跃
-                            </span>
-                          )}
                         </div>
                         <div className="mt-1 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                           <Database className="h-3 w-3" />

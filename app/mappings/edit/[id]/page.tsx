@@ -59,7 +59,6 @@ interface MappingFormData {
   sourceTableName: string;
   targetDocId: string;
   targetSheetId: string;
-  status: 'active' | 'inactive' | 'draft';
   fieldMappings: FieldMappingUI[];
 }
 
@@ -81,7 +80,6 @@ export default function EditMappingPage() {
     sourceTableName: '',
     targetDocId: '',
     targetSheetId: '',
-    status: 'draft',
     fieldMappings: []
   });
 
@@ -141,7 +139,6 @@ export default function EditMappingPage() {
             sourceTableName: mapping.sourceTableName,
             targetDocId: mapping.targetDocId,
             targetSheetId: mapping.targetSheetId,
-            status: mapping.status,
             fieldMappings: processedFieldMappings
           });
           setSelectedDatabase(mapping.sourceDatabaseId);
@@ -544,7 +541,6 @@ export default function EditMappingPage() {
         sourceTableName: selectedTable,
         targetDocId: selectedDocument,
         targetSheetId: selectedSheet,
-        status: formData.status,
         fieldMappings: fieldMappings,
         corpId: selectedWeComAccountData?.corpId,
         targetName: selectedWeComAccountData?.name,
@@ -662,23 +658,6 @@ export default function EditMappingPage() {
                     placeholder="输入映射名称"
                     required
                   />
-                </div>
-
-                <div>
-                  <label htmlFor="status" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    状态
-                  </label>
-                  <select
-                    id="status"
-                    name="status"
-                    value={formData.status}
-                    onChange={handleInputChange}
-                    className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                  >
-                    <option value="draft">草稿</option>
-                    <option value="active">启用</option>
-                    <option value="inactive">禁用</option>
-                  </select>
                 </div>
               </div>
 

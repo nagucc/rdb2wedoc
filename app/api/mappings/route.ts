@@ -3,8 +3,7 @@ import {
   getMappings, 
   getMappingById, 
   saveMapping, 
-  deleteMapping,
-  updateMappingStatus 
+  deleteMapping
 } from '@/lib/config/storage';
 
 export async function GET(request: NextRequest) {
@@ -46,7 +45,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, sourceDatabaseId, sourceTableName, targetDocId, targetSheetId, fieldMappings, status, corpId, targetName, documentName, sheetName } = body;
+    const { name, sourceDatabaseId, sourceTableName, targetDocId, targetSheetId, fieldMappings, corpId, targetName, documentName, sheetName } = body;
     
     if (!name || !sourceDatabaseId || !sourceTableName || !targetDocId || !targetSheetId || !fieldMappings) {
       return NextResponse.json(
@@ -93,14 +92,6 @@ export async function POST(request: NextRequest) {
     if (!Array.isArray(fieldMappings) || fieldMappings.length === 0) {
       return NextResponse.json(
         { success: false, error: '字段映射必须是非空数组' },
-        { status: 400 }
-      );
-    }
-
-    const validStatuses = ['draft', 'active', 'inactive'];
-    if (status && !validStatuses.includes(status)) {
-      return NextResponse.json(
-        { success: false, error: `无效的状态：${status}，必须是 ${validStatuses.join(', ')} 之一` },
         { status: 400 }
       );
     }
@@ -180,7 +171,6 @@ export async function POST(request: NextRequest) {
       targetDocId,
       targetSheetId,
       fieldMappings,
-      status: status || 'draft',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       corpId,
@@ -242,7 +232,7 @@ function validateDefaultValue(value: string, dataType: string): boolean {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    const { id, name, sourceDatabaseId, sourceTableName, targetDocId, targetSheetId, fieldMappings, status, corpId, targetName, documentName, sheetName } = body;
+    const { id, name, sourceDatabaseId, sourceTableName, targetDocId, targetSheetId, fieldMappings, corpId, targetName, documentName, sheetName } = body;
     
     if (!id) {
       return NextResponse.json(
@@ -268,7 +258,6 @@ export async function PUT(request: NextRequest) {
       targetDocId: targetDocId || existingMapping.targetDocId,
       targetSheetId: targetSheetId || existingMapping.targetSheetId,
       fieldMappings: fieldMappings || existingMapping.fieldMappings,
-      status: status !== undefined ? status : existingMapping.status,
       updatedAt: new Date().toISOString(),
       corpId: corpId !== undefined ? corpId : existingMapping.corpId,
       targetName: targetName !== undefined ? targetName : existingMapping.targetName,
@@ -328,40 +317,6 @@ export async function DELETE(request: NextRequest) {
     console.error('删除映射配置失败', { error: (error as Error).message });
     return NextResponse.json(
       { success: false, error: '删除映射配置失败' },
-      { status: 500 }
-    );
-  }
-}
-
-export async function PATCH(request: NextRequest) {
-  try {
-    const body = await request.json();
-    const { id, status } = body;
-    
-    if (!id || !status) {
-      return NextResponse.json(
-        { success: false, error: '缺少映射ID或状态' },
-        { status: 400 }
-      );
-    }
-    
-    const updated = updateMappingStatus(id, status);
-    
-    if (!updated) {
-      return NextResponse.json(
-        { success: false, error: '更新映射状态失败' },
-        { status: 500 }
-      );
-    }
-    
-    return NextResponse.json({
-      success: true,
-      message: '映射状态更新成功'
-    });
-  } catch (error) {
-    console.error('更新映射状态失败', { error: (error as Error).message });
-    return NextResponse.json(
-      { success: false, error: '更新映射状态失败' },
       { status: 500 }
     );
   }

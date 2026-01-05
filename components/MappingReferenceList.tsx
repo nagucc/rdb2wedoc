@@ -18,7 +18,6 @@ interface MappingConfig {
     transform?: string;
     defaultValue?: string;
   }>;
-  status: 'draft' | 'active' | 'inactive';
   createdAt: string;
   updatedAt: string;
   corpId?: string;
@@ -97,24 +96,6 @@ export default function MappingReferenceList({
     return db?.name || '未知数据源';
   };
 
-  const getStatusLabel = (status: string): string => {
-    const statusMap: Record<string, string> = {
-      draft: '草稿',
-      active: '启用',
-      inactive: '禁用'
-    };
-    return statusMap[status] || status;
-  };
-
-  const getStatusColor = (status: string): string => {
-    const colorMap: Record<string, string> = {
-      draft: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
-      active: 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400',
-      inactive: 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400'
-    };
-    return colorMap[status] || 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300';
-  };
-
   const handleMappingClick = (mappingId: string) => {
     router.push(`/mappings/edit/${mappingId}`);
     onClose();
@@ -175,16 +156,11 @@ export default function MappingReferenceList({
                   </div>
 
                   <div className="flex min-w-0 flex-1">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
+                      <div className="min-w-0 flex-1">
                         <h4 className="truncate text-sm font-semibold text-gray-900 dark:text-white">
                           {mapping.name}
                         </h4>
-                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${getStatusColor(mapping.status)}`}>
-                          {getStatusLabel(mapping.status)}
-                        </span>
-                      </div>
-                      <div className="mt-1 flex items-center gap-3 text-xs text-gray-600 dark:text-gray-400">
+                        <div className="mt-1 flex items-center gap-3 text-xs text-gray-600 dark:text-gray-400">
                         <span className="flex items-center gap-1">
                           <Database className="h-3.5 w-3.5" />
                           {getDatabaseName(mapping.sourceDatabaseId)}

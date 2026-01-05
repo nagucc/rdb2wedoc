@@ -18,7 +18,6 @@ import {
   XCircle,
   AlertCircle,
   Eye,
-  EyeOff,
   Clock
 } from 'lucide-react';
 import { authService } from '@/lib/services/authService';
@@ -66,8 +65,6 @@ export default function MappingsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive' | 'draft'>('all');
-  const [previewMode, setPreviewMode] = useState(false);
   const [showFieldMapping, setShowFieldMapping] = useState(false);
   const [showJobsDialog, setShowJobsDialog] = useState(false);
   const [selectedMapping, setSelectedMapping] = useState<MappingConfigUI | null>(null);
@@ -224,32 +221,6 @@ export default function MappingsPage() {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active':
-        return 'bg-green-100 text-green-600 dark:bg-green-900/20 dark:text-green-400';
-      case 'inactive':
-        return 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400';
-      case 'draft':
-        return 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900/20 dark:text-yellow-400';
-      default:
-        return 'bg-gray-100 text-gray-600';
-    }
-  };
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'active':
-        return '启用';
-      case 'inactive':
-        return '禁用';
-      case 'draft':
-        return '草稿';
-      default:
-        return status;
-    }
-  };
-
   const getDataTypeIcon = (dataType: string) => {
     switch (dataType) {
       case 'string':
@@ -334,16 +305,8 @@ export default function MappingsPage() {
     const matchesSearch = mapping.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          resolvedSourceName.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          resolvedTargetName.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || mapping.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    return matchesSearch;
   });
-
-  const stats = {
-    total: mappings.length,
-    active: mappings.filter(m => m.status === 'active').length,
-    inactive: mappings.filter(m => m.status === 'inactive').length,
-    draft: mappings.filter(m => m.status === 'draft').length
-  };
 
   if (loading && mappings.length === 0) {
     return (
@@ -393,25 +356,6 @@ export default function MappingsPage() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <button
-                onClick={() => setPreviewMode(!previewMode)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                  previewMode
-                    ? 'bg-purple-500 text-white hover:bg-purple-600'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
-                }`}
-              >
-                {previewMode ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                {previewMode ? '编辑模式' : '预览模式'}
-              </button>
-              <button
-                onClick={fetchMappings}
-                disabled={loading}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                刷新
-              </button>
               <Link
                 href="/mappings/create"
                 className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors shadow-sm hover:shadow-md"
@@ -419,37 +363,6 @@ export default function MappingsPage() {
                 <Plus className="h-4 w-4" />
                 新建映射
               </Link>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-              <div className="flex items-center gap-2 mb-2">
-                <Database className="h-5 w-5 text-blue-600" />
-                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">总映射</span>
-              </div>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total}</p>
-            </div>
-            <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-              <div className="flex items-center gap-2 mb-2">
-                <CheckCircle className="h-5 w-5 text-green-600" />
-                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">启用</span>
-              </div>
-              <p className="text-2xl font-bold text-green-600 dark:text-green-400">{stats.active}</p>
-            </div>
-            <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-              <div className="flex items-center gap-2 mb-2">
-                <XCircle className="h-5 w-5 text-gray-600" />
-                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">禁用</span>
-              </div>
-              <p className="text-2xl font-bold text-gray-600 dark:text-gray-400">{stats.inactive}</p>
-            </div>
-            <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-              <div className="flex items-center gap-2 mb-2">
-                <AlertCircle className="h-5 w-5 text-yellow-600" />
-                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">草稿</span>
-              </div>
-              <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{stats.draft}</p>
             </div>
           </div>
 
@@ -463,20 +376,6 @@ export default function MappingsPage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
               />
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as 'all' | 'active' | 'inactive' | 'draft')}
-                className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-              >
-                <option value="all">全部状态</option>
-                <option value="active">启用</option>
-                <option value="inactive">禁用</option>
-                <option value="draft">草稿</option>
-              </select>
             </div>
           </div>
 
@@ -502,9 +401,6 @@ export default function MappingsPage() {
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
                           <h4 className="text-base font-semibold text-gray-900 dark:text-white">{mapping.name}</h4>
-                          <span className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusColor(mapping.status)}`}>
-                            {getStatusText(mapping.status)}
-                          </span>
                           <div className="flex items-center gap-2 ml-2">
                             <button
                               onClick={() => router.push(`/mappings/edit/${mapping.id}`)}

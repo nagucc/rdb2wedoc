@@ -527,32 +527,12 @@ export function getMappingById(mappingId: string): MappingConfig | null {
   return readJsonFile<MappingConfig>(getMappingFilePath(mappingId));
 }
 
-export function getActiveMappings(): MappingConfig[] {
-  const mappings = getMappings();
-  return mappings.filter(mapping => mapping.status === 'active');
-}
-
 export function saveMapping(mapping: MappingConfig): boolean {
   return writeJsonFile(getMappingFilePath(mapping.id), mapping);
 }
 
 export function deleteMapping(mappingId: string): boolean {
   return deleteFile(getMappingFilePath(mappingId));
-}
-
-export function updateMappingStatus(mappingId: string, status: 'active' | 'inactive' | 'draft'): boolean {
-  const mapping = getMappingById(mappingId);
-  if (!mapping) {
-    return false;
-  }
-  
-  const updatedMapping = {
-    ...mapping,
-    status,
-    updatedAt: new Date().toISOString()
-  };
-  
-  return saveMapping(updatedMapping);
 }
 
 // 智能表格管理
