@@ -299,18 +299,6 @@ export default function DatabaseDetailPage({ params }: { params: Promise<{ id: s
                   <span className="text-sm text-gray-600 dark:text-gray-400">用户名</span>
                   <span className="text-sm font-medium text-gray-900 dark:text-white">{database.username}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">状态</span>
-                  <span
-                    className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${
-                      database.enabled
-                        ? 'bg-green-100 text-green-600 dark:bg-green-900/20 dark:text-green-400'
-                        : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
-                    }`}
-                  >
-                    {database.enabled ? '已启用' : '已禁用'}
-                  </span>
-                </div>
               </div>
             </div>
 

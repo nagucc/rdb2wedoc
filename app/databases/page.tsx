@@ -353,15 +353,6 @@ export default function DatabasesPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
-                      <span
-                        className={`rounded-full px-3 py-1 text-xs font-medium ${
-                          database.enabled
-                            ? 'bg-green-100 text-green-600 dark:bg-green-900/20 dark:text-green-400'
-                            : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
-                        }`}
-                      >
-                        {database.enabled ? '已启用' : '已禁用'}
-                      </span>
                       <button
                         onClick={() => handleEdit(database)}
                         className="flex items-center gap-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
@@ -485,18 +476,6 @@ export default function DatabasesPage() {
                       placeholder={editingDatabase ? '留空保持不变' : '输入密码'}
                       required={!editingDatabase}
                     />
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="checkbox"
-                      id="enabled"
-                      checked={formData.enabled}
-                      onChange={(e) => setFormData({ ...formData, enabled: e.target.checked })}
-                      className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800"
-                    />
-                    <label htmlFor="enabled" className="text-sm text-gray-700 dark:text-gray-300">
-                      启用此数据源
-                    </label>
                   </div>
                   
                   {testResult && (

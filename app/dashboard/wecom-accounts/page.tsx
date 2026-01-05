@@ -284,15 +284,6 @@ export default function WeComAccountsPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
-                  <span
-                    className={`rounded-full px-3 py-1 text-xs font-medium ${
-                      account.enabled
-                        ? 'bg-green-100 text-green-600 dark:bg-green-900/20 dark:text-green-400'
-                        : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
-                    }`}
-                  >
-                    {account.enabled ? '已启用' : '已禁用'}
-                  </span>
                   <button
                     onClick={() => handleEdit(account)}
                     className="flex items-center gap-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"

@@ -616,13 +616,6 @@ export default function SyncJobsPage() {
             </div>
             <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
               <div className="flex items-center gap-2 mb-2">
-                <PlayCircle className="h-5 w-5 text-green-600" />
-                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">已启用</span>
-              </div>
-              <p className="text-2xl font-bold text-green-600 dark:text-green-400">{jobs.filter(j => j.enabled).length}</p>
-            </div>
-            <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-              <div className="flex items-center gap-2 mb-2">
                 <CheckCircle className="h-5 w-5 text-blue-600" />
                 <span className="text-sm font-medium text-gray-600 dark:text-gray-400">运行中</span>
               </div>
@@ -702,11 +695,6 @@ export default function SyncJobsPage() {
                                 {getStatusIcon(job.status)}
                                 {getStatusText(job.status)}
                               </span>
-                              {!job.enabled && (
-                                <span className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400">
-                                  已禁用
-                                </span>
-                              )}
                               {job.syncMode && job.syncMode !== 'full' && (
                                 <span className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
                                   {job.syncMode === 'incremental' ? '增量' : '分页'}
