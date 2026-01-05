@@ -9,12 +9,8 @@ import {
   Clock,
   TrendingUp,
   AlertTriangle,
-  Filter,
-  Search,
   Download,
   Settings,
-  Bell,
-  ChevronDown,
   CheckCircle,
   XCircle,
   PlayCircle,
@@ -27,7 +23,6 @@ import MetricsCard from '@/components/dashboard/MetricsCard';
 import ActivityChart from '@/components/dashboard/ActivityChart';
 import JobList from '@/components/dashboard/JobList';
 import SystemStatus from '@/components/dashboard/SystemStatus';
-import FilterPanel from '@/components/dashboard/FilterPanel';
 import DataSourceModule from '@/components/dashboard/datasource/DataSourceModule';
 import Header from '@/components/layout/Header';
 
@@ -75,9 +70,6 @@ function DashboardContent() {
   const [jobMetrics, setJobMetrics] = useState<JobMetrics[]>([]);
   const [loading, setLoading] = useState(true);
   const [autoRefresh, setAutoRefresh] = useState(true);
-  const [showFilterPanel, setShowFilterPanel] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'success' | 'failed' | 'running'>('all');
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
 
   useEffect(() => {
@@ -145,12 +137,6 @@ function DashboardContent() {
     URL.revokeObjectURL(url);
   };
 
-  const filteredJobs = jobMetrics.filter(job => {
-    const matchesSearch = job.jobName.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || job.lastStatus === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
-
   if (!mounted || !currentUser) {
     return null;
   }
@@ -206,40 +192,6 @@ function DashboardContent() {
             </button>
           </div>
         </div>
-
-        <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              placeholder="搜索作业..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-            />
-          </div>
-
-          <button
-            onClick={() => setShowFilterPanel(!showFilterPanel)}
-            className={`flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
-              showFilterPanel
-                ? 'border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-500 dark:bg-blue-900/20 dark:text-blue-400'
-                : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
-            }`}
-          >
-            <Filter className="h-4 w-4" />
-            筛选
-            <ChevronDown className={`h-4 w-4 transition-transform ${showFilterPanel ? 'rotate-180' : ''}`} />
-          </button>
-        </div>
-
-        {showFilterPanel && (
-          <FilterPanel
-            statusFilter={statusFilter}
-            onStatusFilterChange={setStatusFilter}
-            onClose={() => setShowFilterPanel(false)}
-          />
-        )}
 
         {metrics && (
           <>
@@ -352,7 +304,7 @@ function DashboardContent() {
                       作业列表
                     </h3>
                     <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                      共 {filteredJobs.length} 个作业
+                      共 {jobMetrics.length} 个作业
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -373,7 +325,7 @@ function DashboardContent() {
                   </div>
                 </div>
               </div>
-              <JobList jobs={filteredJobs} />
+              <JobList jobs={jobMetrics} />
             </div>
           </>
         )}
