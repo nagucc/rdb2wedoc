@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { X, Link2, FileText, Database, ArrowRight } from 'lucide-react';
+import { X, Link2, FileText, ArrowRight } from 'lucide-react';
 
 interface MappingConfig {
   id: string;
@@ -26,12 +26,6 @@ interface MappingConfig {
   sheetName?: string;
 }
 
-interface DatabaseConfig {
-  id: string;
-  name: string;
-  type: string;
-}
-
 interface MappingReferenceListProps {
   show: boolean;
   onClose: () => void;
@@ -47,13 +41,11 @@ export default function MappingReferenceList({
 }: MappingReferenceListProps) {
   const router = useRouter();
   const [mappings, setMappings] = useState<MappingConfig[]>([]);
-  const [databases, setDatabases] = useState<DatabaseConfig[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (show && databaseId) {
       fetchMappings();
-      fetchDatabases();
     }
   }, [show, databaseId]);
 
@@ -78,24 +70,6 @@ export default function MappingReferenceList({
     }
   };
 
-  const fetchDatabases = async () => {
-    try {
-      const response = await fetch('/api/databases');
-      const data = await response.json();
-
-      if (data.success) {
-        setDatabases(data.data);
-      }
-    } catch (err) {
-      console.error('Error fetching databases:', err);
-    }
-  };
-
-  const getDatabaseName = (dbId: string): string => {
-    const db = databases.find(d => d.id === dbId);
-    return db?.name || '未知数据源';
-  };
-
   const handleMappingClick = (mappingId: string) => {
     router.push(`/mappings/edit/${mappingId}`);
     onClose();
@@ -104,8 +78,14 @@ export default function MappingReferenceList({
   if (!show) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-2xl rounded-2xl bg-white shadow-2xl dark:bg-gray-800">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      onClick={onClose}
+    >
+      <div 
+        className="w-full max-w-2xl rounded-2xl bg-white shadow-2xl dark:bg-gray-800"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex items-center justify-between border-b border-gray-200 p-6 dark:border-gray-700">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-100 dark:bg-purple-900/20">
@@ -160,20 +140,7 @@ export default function MappingReferenceList({
                         <h4 className="truncate text-sm font-semibold text-gray-900 dark:text-white">
                           {mapping.name}
                         </h4>
-                        <div className="mt-1 flex items-center gap-3 text-xs text-gray-600 dark:text-gray-400">
-                        <span className="flex items-center gap-1">
-                          <Database className="h-3.5 w-3.5" />
-                          {getDatabaseName(mapping.sourceDatabaseId)}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <span className="font-medium">{mapping.sourceTableName}</span>
-                        </span>
-                        <ArrowRight className="h-3.5 w-3.5" />
-                        <span className="flex items-center gap-1">
-                          <span className="font-medium">{mapping.documentName || mapping.targetDocId}</span>
-                        </span>
                       </div>
-                    </div>
 
                     <div className="flex items-center gap-2 opacity-0 transition-opacity group-hover:opacity-100">
                       <span className="text-xs text-purple-600 dark:text-purple-400">
@@ -186,15 +153,6 @@ export default function MappingReferenceList({
               ))}
             </div>
           )}
-        </div>
-
-        <div className="flex justify-end border-t border-gray-200 p-6 dark:border-gray-700">
-          <button
-            onClick={onClose}
-            className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-          >
-            关闭
-          </button>
         </div>
       </div>
     </div>
