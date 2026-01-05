@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Plus, Edit, Trash2, RefreshCw, AlertCircle, Database, CheckCircle, XCircle } from 'lucide-react';
+import { Plus, Edit, Trash2, RefreshCw, AlertCircle, Database, CheckCircle, XCircle, Link2 } from 'lucide-react';
 import { authService } from '@/lib/services/authService';
 import Header from '@/components/layout/Header';
 
@@ -20,10 +20,34 @@ interface DatabaseConfig {
   updatedAt: string;
 }
 
+interface MappingConfig {
+  id: string;
+  name: string;
+  sourceDatabaseId: string;
+  sourceTableName: string;
+  targetDocId: string;
+  targetSheetId: string;
+  fieldMappings: Array<{
+    databaseColumn: string;
+    documentField: string;
+    dataType: string;
+    transform?: string;
+    defaultValue?: string;
+  }>;
+  status: 'draft' | 'active' | 'inactive';
+  createdAt: string;
+  updatedAt: string;
+  corpId?: string;
+  targetName?: string;
+  documentName?: string;
+  sheetName?: string;
+}
+
 export default function DatabasesPage() {
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState<{ username: string } | null>(null);
   const [databases, setDatabases] = useState<DatabaseConfig[]>([]);
+  const [mappings, setMappings] = useState<MappingConfig[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
@@ -66,6 +90,25 @@ export default function DatabasesPage() {
     }
   };
 
+  const fetchMappings = async () => {
+    try {
+      const response = await fetch('/api/mappings');
+      const data = await response.json();
+
+      if (data.success) {
+        setMappings(data.data);
+      } else {
+        console.error('获取映射列表失败:', data.error);
+      }
+    } catch (err) {
+      console.error('Error fetching mappings:', err);
+    }
+  };
+
+  const getMappingCount = (databaseId: string): number => {
+    return mappings.filter(mapping => mapping.sourceDatabaseId === databaseId).length;
+  };
+
   useEffect(() => {
     const user = authService.getCurrentUser();
     if (!user) {
@@ -74,6 +117,7 @@ export default function DatabasesPage() {
     }
     setCurrentUser(user);
     fetchDatabases();
+    fetchMappings();
   }, [router]);
 
   const handleCreate = () => {
@@ -128,6 +172,7 @@ export default function DatabasesPage() {
 
       if (data.success) {
         fetchDatabases();
+        fetchMappings();
       } else {
         alert(data.error || '删除失败');
       }
@@ -278,7 +323,10 @@ export default function DatabasesPage() {
                 添加数据源
               </Link>
               <button
-                onClick={fetchDatabases}
+                onClick={() => {
+                  fetchDatabases();
+                  fetchMappings();
+                }}
                 disabled={loading}
                 className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
@@ -321,6 +369,12 @@ export default function DatabasesPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex items-center gap-1 rounded-lg bg-purple-100 px-3 py-1.5 dark:bg-purple-900/20">
+                        <Link2 className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
+                        <span className="text-xs font-medium text-purple-700 dark:text-purple-300">
+                          {getMappingCount(database.id)}
+                        </span>
+                      </div>
                       <Link
                         href={`/databases/edit/${database.id}`}
                         className="flex items-center gap-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
