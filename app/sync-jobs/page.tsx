@@ -349,6 +349,12 @@ export default function SyncJobsPage() {
     try {
       setExecutingJobId(jobId);
 
+      setJobs(prevJobs =>
+        prevJobs.map(j =>
+          j.id === jobId ? { ...j, status: 'running' } : j
+        )
+      );
+
       const response = await fetch(`/api/jobs/${jobId}/execute`, {
         method: 'POST'
       });
@@ -360,17 +366,72 @@ export default function SyncJobsPage() {
       const data = await response.json();
 
       if (data.success) {
-        fetchJobs();
+        pollJobStatus(jobId);
       } else {
+        setJobs(prevJobs =>
+          prevJobs.map(j =>
+            j.id === jobId ? { ...j, status: 'idle' } : j
+          )
+        );
         alert(data.error || '执行失败');
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '网络错误，请检查连接后重试';
       alert(errorMessage);
       console.error('Error executing job:', err);
+      setJobs(prevJobs =>
+        prevJobs.map(j =>
+          j.id === jobId ? { ...j, status: 'idle' } : j
+        )
+      );
     } finally {
       setExecutingJobId(null);
     }
+  };
+
+  const pollJobStatus = async (jobId: string, maxAttempts: number = 60, interval: number = 2000) => {
+    let attempts = 0;
+
+    const poll = async (): Promise<void> => {
+      if (attempts >= maxAttempts) {
+        console.warn(`轮询作业状态超时: ${jobId}`);
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/jobs/${jobId}`);
+        const data = await response.json();
+
+        if (data.success && data.data) {
+          const job = data.data;
+
+          if (job.status === 'idle' || job.status === 'success' || job.status === 'failed') {
+            setJobs(prevJobs =>
+              prevJobs.map(j =>
+                j.id === jobId ? { ...j, status: job.status } : j
+              )
+            );
+            return;
+          }
+
+          if (job.status === 'running') {
+            setJobs(prevJobs =>
+              prevJobs.map(j =>
+                j.id === jobId ? { ...j, status: 'running' } : j
+              )
+            );
+            attempts++;
+            setTimeout(poll, interval);
+          }
+        }
+      } catch (error) {
+        console.error('轮询作业状态失败:', error);
+        attempts++;
+        setTimeout(poll, interval);
+      }
+    };
+
+    poll();
   };
 
   const handleViewLogs = async (jobId: string) => {
