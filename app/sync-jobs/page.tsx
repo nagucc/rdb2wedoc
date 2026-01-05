@@ -713,27 +713,8 @@ export default function SyncJobsPage() {
                                 </span>
                               )}
                             </div>
-                            <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
-                              <span className="flex items-center gap-1">
-                                <Database className="h-4 w-4" />
-                                {database?.name || mappingConfig?.sourceDatabaseId || '未知数据源'}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <FileIcon className="h-4 w-4" />
-                                {document?.name || mappingConfig?.targetDocId || '未知文档'}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <Settings className="h-4 w-4" />
-                                {mappingConfig?.sourceTableName || '未知'} → {mappingConfig?.sheetName || mappingConfig?.targetSheetId || '未知'}
-                              </span>
-                              {job.mappingConfigId && (
-                                <span className="flex items-center gap-1 text-xs bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 px-2 py-0.5 rounded">
-                                  使用映射配置
-                                </span>
-                              )}
-                            </div>
                             {job.lastRun && (
-                              <div className="mt-2 text-xs text-gray-500 dark:text-gray-500">
+                              <div className="text-xs text-gray-500 dark:text-gray-500">
                                 最后执行: {new Date(job.lastRun).toLocaleString('zh-CN')}
                               </div>
                             )}
@@ -802,6 +783,25 @@ export default function SyncJobsPage() {
                               删除
                             </button>
                           </div>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 dark:text-gray-400 mt-3">
+                          <span className="flex items-center gap-1">
+                            <Database className="h-4 w-4" />
+                            {database?.name || mappingConfig?.sourceDatabaseId || '未知数据源'}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <FileIcon className="h-4 w-4" />
+                            {document?.name || mappingConfig?.targetDocId || '未知文档'}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Settings className="h-4 w-4" />
+                            {mappingConfig?.sourceTableName || '未知'} → {mappingConfig?.sheetName || mappingConfig?.targetSheetId || '未知'}
+                          </span>
+                          {job.mappingConfigId && (
+                            <span className="flex items-center gap-1 text-xs bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 px-2 py-0.5 rounded">
+                              使用映射配置
+                            </span>
+                          )}
                         </div>
                       </div>
                       
