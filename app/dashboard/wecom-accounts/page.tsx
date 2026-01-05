@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Plus, Edit, Trash2, RefreshCw, AlertCircle, Building2, Link2 } from 'lucide-react';
 import { authService } from '@/lib/services/authService';
 import Header from '@/components/layout/Header';
+import AccountMappingReferenceList from '@/components/AccountMappingReferenceList';
 
 interface WeComAccount {
   id: string;
@@ -47,6 +48,15 @@ export default function WeComAccountsPage() {
     corpId: '',
     corpSecret: '',
     enabled: true
+  });
+  const [mappingReferenceDialog, setMappingReferenceDialog] = useState<{
+    show: boolean;
+    corpId: string;
+    accountName: string;
+  }>({
+    show: false,
+    corpId: '',
+    accountName: ''
   });
 
   const fetchAccounts = async () => {
@@ -272,6 +282,11 @@ export default function WeComAccountsPage() {
                 </div>
                 <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
                   <div
+                    onClick={() => setMappingReferenceDialog({
+                      show: true,
+                      corpId: account.corpId,
+                      accountName: account.name
+                    })}
                     className="flex cursor-pointer items-center gap-1 rounded-lg bg-purple-100 px-3 py-1.5 transition-colors hover:bg-purple-200 dark:bg-purple-900/20 dark:hover:bg-purple-900/30"
                   >
                     <Link2 className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
@@ -390,6 +405,13 @@ export default function WeComAccountsPage() {
           </div>
         </div>
       )}
+
+      <AccountMappingReferenceList
+        show={mappingReferenceDialog.show}
+        onClose={() => setMappingReferenceDialog({ ...mappingReferenceDialog, show: false })}
+        corpId={mappingReferenceDialog.corpId}
+        accountName={mappingReferenceDialog.accountName}
+      />
         </div>
       </main>
     </div>
