@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { RefreshCw, AlertCircle } from 'lucide-react';
 import { authService } from '@/lib/services/authService';
 import { LoginCredentials } from '@/types';
+import Header from '@/components/layout/Header';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -43,8 +44,11 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center px-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      <Header showPageTitle={false} />
+      
+      <div className="flex items-center justify-center px-4">
+        <div className="w-full max-w-md">
         {/* Logo和标题 */}
         <div className="mb-8 text-center">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600">
@@ -135,6 +139,7 @@ export default function LoginPage() {
           >
             ← 返回首页
           </Link>
+        </div>
         </div>
       </div>
     </div>
