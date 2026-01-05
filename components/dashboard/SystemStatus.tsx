@@ -7,10 +7,6 @@ import {
   Clock, 
   CheckCircle, 
   AlertTriangle,
-  Server,
-  HardDrive,
-  Cpu,
-  Wifi,
   Play
 } from 'lucide-react';
 
@@ -74,33 +70,6 @@ export default function SystemStatus({ metrics }: SystemStatusProps) {
     }
   ];
 
-  const systemResources = [
-    {
-      icon: Cpu,
-      label: 'CPU使用率',
-      value: '45%',
-      color: 'green'
-    },
-    {
-      icon: HardDrive,
-      label: '内存使用',
-      value: '62%',
-      color: 'yellow'
-    },
-    {
-      icon: Database,
-      label: '磁盘使用',
-      value: '38%',
-      color: 'green'
-    },
-    {
-      icon: Wifi,
-      label: '网络延迟',
-      value: '12ms',
-      color: 'green'
-    }
-  ];
-
   const colorClasses = {
     blue: {
       bg: 'bg-blue-100 dark:bg-blue-900/20',
@@ -146,54 +115,6 @@ export default function SystemStatus({ metrics }: SystemStatusProps) {
             </div>
           );
         })}
-      </div>
-
-      <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/50">
-        <div className="mb-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Server className="h-5 w-5 text-gray-600 dark:text-gray-400" />
-            <span className="text-sm font-medium text-gray-900 dark:text-white">
-              系统资源
-            </span>
-          </div>
-          <span className="text-xs text-gray-500 dark:text-gray-400">
-            实时监控
-          </span>
-        </div>
-
-        <div className="space-y-3">
-          {systemResources.map((resource, index) => {
-            const Icon = resource.icon;
-            const classes = colorClasses[resource.color as keyof typeof colorClasses];
-            const percentage = parseInt(resource.value);
-
-            return (
-              <div key={index}>
-                <div className="mb-1.5 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Icon className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-                    <span className="text-sm text-gray-700 dark:text-gray-300">
-                      {resource.label}
-                    </span>
-                  </div>
-                  <span className={`text-sm font-semibold ${classes.text}`}>
-                    {resource.value}
-                  </span>
-                </div>
-                <div className="h-2 rounded-full bg-gray-200 dark:bg-gray-700">
-                  <div
-                    className={`h-2 rounded-full transition-all duration-500 ${
-                      resource.color === 'green' ? 'bg-green-500' :
-                      resource.color === 'yellow' ? 'bg-yellow-500' :
-                      'bg-red-500'
-                    }`}
-                    style={{ width: `${percentage}%` }}
-                  />
-                </div>
-              </div>
-            );
-          })}
-        </div>
       </div>
 
       <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/50">
