@@ -13,8 +13,6 @@ import {
   Search,
   Download,
   Settings,
-  User,
-  LogOut,
   Bell,
   ChevronDown,
   CheckCircle,
@@ -31,6 +29,7 @@ import JobList from '@/components/dashboard/JobList';
 import SystemStatus from '@/components/dashboard/SystemStatus';
 import FilterPanel from '@/components/dashboard/FilterPanel';
 import DataSourceModule from '@/components/dashboard/datasource/DataSourceModule';
+import Header from '@/components/layout/Header';
 
 interface SystemMetrics {
   timestamp: string;
@@ -126,15 +125,6 @@ function DashboardContent() {
     fetchDashboardData();
   };
 
-  const handleLogout = async () => {
-    try {
-      await authService.logout();
-      router.push('/login');
-    } catch (error) {
-      console.error('登出失败:', error);
-    }
-  };
-
   const handleExport = () => {
     if (!metrics) return;
 
@@ -167,59 +157,7 @@ function DashboardContent() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-      <header className="border-b border-gray-200 bg-white/80 backdrop-blur-sm dark:border-gray-700 dark:bg-gray-800/80">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <Link href="/dashboard" className="flex items-center gap-3 transition-transform hover:scale-105 active:scale-95">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600">
-                <RefreshCw className="h-6 w-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-                  RDB2WeDoc
-                </h1>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  数据库到企业微信文档同步系统
-                </p>
-              </div>
-            </Link>
-            <nav className="flex items-center gap-4">
-              <Link
-                href="/dashboard"
-                className="flex items-center gap-2 rounded-lg bg-blue-100 px-3 py-2 dark:bg-blue-900/20 hover:bg-blue-200 dark:hover:bg-blue-900/30 transition-colors"
-              >
-                <span className="text-sm font-medium text-blue-700 dark:text-blue-400">
-                  控制台
-                </span>
-              </Link>
-              <Link
-                href="/sync-jobs"
-                className="flex items-center gap-2 rounded-lg bg-gray-100 px-3 py-2 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-              >
-                <RefreshCw className="h-4 w-4 text-gray-600 dark:text-gray-300" />
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  同步作业
-                </span>
-              </Link>
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 rounded-lg bg-gray-100 px-3 py-2 dark:bg-gray-700">
-                  <User className="h-4 w-4 text-gray-600 dark:text-gray-300" />
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {currentUser.username}
-                  </span>
-                </div>
-                <button
-                  onClick={handleLogout}
-                  className="flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700"
-                >
-                  <LogOut className="h-4 w-4" />
-                  退出
-                </button>
-              </div>
-            </nav>
-          </div>
-        </div>
-      </header>
+      <Header showPageTitle={true} pageTitle="控制台" />
 
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">

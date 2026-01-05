@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { ArrowLeft, Building2, Save, AlertCircle, CheckCircle, Loader2, Eye, EyeOff, Info } from 'lucide-react';
+import Header from '@/components/layout/Header';
 
 interface WeComAccount {
   id: string;
@@ -156,35 +157,7 @@ export default function EditWeComAccountPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-      <header className="border-b border-gray-200 bg-white/80 backdrop-blur-sm dark:border-gray-700 dark:bg-gray-800/80">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => router.back()}
-                className="flex items-center gap-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
-              >
-                <ArrowLeft className="h-5 w-5" />
-                返回
-              </button>
-              <div className="h-6 w-px bg-gray-300 dark:bg-gray-600" />
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600">
-                  <Building2 className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-                    编辑企业微信账号
-                  </h1>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    修改企业微信账号配置信息
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
+      <Header showPageTitle={true} pageTitle="编辑企业微信账号" />
 
       <main className="container mx-auto px-4 py-8">
         <div className="mx-auto max-w-4xl">
