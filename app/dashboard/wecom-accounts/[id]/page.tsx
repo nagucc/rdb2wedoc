@@ -353,8 +353,9 @@ export default function WeComAccountDetailPage() {
             ) : (
               <div className="divide-y divide-gray-200 dark:divide-gray-700">
                 {filteredDocuments.map((doc) => (
-                  <div
+                  <Link
                     key={doc.id}
+                    href={`/dashboard/wecom-accounts/${accountId}/documents/${doc.id}`}
                     className="flex items-center justify-between p-6 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50"
                   >
                     <div className="flex items-center gap-4">
@@ -381,9 +382,16 @@ export default function WeComAccountDetailPage() {
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div 
+                      className="flex items-center gap-3"
+                      onClick={(e) => e.preventDefault()}
+                    >
                       <button
-                        onClick={() => handleRefreshDocument(doc.id)}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleRefreshDocument(doc.id);
+                        }}
                         disabled={refreshingDocumentId === doc.id}
                         className="flex items-center gap-1 rounded-lg border border-blue-300 bg-white px-3 py-2 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-blue-800 dark:bg-gray-800 dark:text-blue-400 dark:hover:bg-blue-900/20"
                         title="刷新此智能表格"
@@ -392,14 +400,18 @@ export default function WeComAccountDetailPage() {
                         {refreshingDocumentId === doc.id ? '刷新中...' : '刷新'}
                       </button>
                       <button
-                        onClick={() => handleDeleteDocument(doc)}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleDeleteDocument(doc);
+                        }}
                         className="flex items-center gap-1 rounded-lg border border-red-300 bg-white px-3 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 dark:border-red-800 dark:bg-gray-800 dark:text-red-400 dark:hover:bg-red-900/20"
                       >
                         <Trash2 className="h-4 w-4" />
                         删除
                       </button>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             )}
