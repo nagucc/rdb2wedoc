@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Plus, Edit, Trash2, RefreshCw, AlertCircle, Building2, Search, Filter, CheckCircle, XCircle, Clock, Link2, FileText } from 'lucide-react';
+import { ArrowLeft, Plus, Edit, Trash2, RefreshCw, AlertCircle, Building2, Search, Filter, CheckCircle, XCircle, Clock, FileText } from 'lucide-react';
 import { authService } from '@/lib/services/authService';
 import Header from '@/components/layout/Header';
 
@@ -26,22 +26,6 @@ interface IntelligentDocument {
   accountId: string;
 }
 
-interface MappingConfigUI {
-  id: string;
-  name: string;
-  sourceDatabaseId: string;
-  sourceTableName: string;
-  targetDocId: string;
-  targetSheetId: string;
-  fieldMappings: any[];
-  corpId?: string;
-  targetName?: string;
-  documentName?: string;
-  sheetName?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
 export default function WeComAccountDetailPage() {
   const router = useRouter();
   const params = useParams();
@@ -50,7 +34,6 @@ export default function WeComAccountDetailPage() {
   const [currentUser, setCurrentUser] = useState<{ username: string } | null>(null);
   const [account, setAccount] = useState<WeComAccount | null>(null);
   const [documents, setDocuments] = useState<IntelligentDocument[]>([]);
-  const [mappings, setMappings] = useState<MappingConfigUI[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -102,19 +85,6 @@ export default function WeComAccountDetailPage() {
     }
   };
 
-  const fetchMappings = async () => {
-    try {
-      const response = await fetch('/api/mappings');
-      const data = await response.json();
-
-      if (data.success) {
-        setMappings(data.data || []);
-      }
-    } catch (err) {
-      console.error('Error fetching mappings:', err);
-    }
-  };
-
   const handleRefreshDocument = async (documentId: string) => {
     try {
       setRefreshingDocumentId(documentId);
@@ -153,7 +123,6 @@ export default function WeComAccountDetailPage() {
     }
     setCurrentUser(user);
     fetchAccountDetails();
-    fetchMappings();
   }, [accountId, router]);
 
   const handleAddDocument = async () => {
@@ -311,11 +280,6 @@ export default function WeComAccountDetailPage() {
     }
   };
 
-  const getMappingCountForAccount = (): number => {
-    if (!account) return 0;
-    return mappings.filter(mapping => mapping.corpId === account.corpId).length;
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -371,41 +335,7 @@ export default function WeComAccountDetailPage() {
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   Corp ID: {account.corpId}
                 </p>
-                <div className="flex cursor-pointer items-center gap-1 rounded-lg bg-purple-100 px-3 py-1.5 transition-colors hover:bg-purple-200 dark:bg-purple-900/20 dark:hover:bg-purple-900/30">
-                  <Link2 className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
-                  <span className="text-xs font-medium text-purple-700 dark:text-purple-300">
-                    {getMappingCountForAccount()}
-                  </span>
-                </div>
               </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-              <div className="flex items-center gap-3 mb-2">
-                <FileText className="h-5 w-5 text-blue-600" />
-                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">总智能表格数</span>
-              </div>
-              <p className="text-3xl font-bold text-gray-900 dark:text-white">{documents.length}</p>
-            </div>
-            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-              <div className="flex items-center gap-3 mb-2">
-                <CheckCircle className="h-5 w-5 text-green-600" />
-                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">活跃智能表格</span>
-              </div>
-              <p className="text-3xl font-bold text-green-600 dark:text-green-400">
-                {documents.filter(d => d.status === 'active').length}
-              </p>
-            </div>
-            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-              <div className="flex items-center gap-3 mb-2">
-                <Clock className="h-5 w-5 text-yellow-600" />
-                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">同步中</span>
-              </div>
-              <p className="text-3xl font-bold text-yellow-600 dark:text-yellow-400">
-                {documents.filter(d => d.status === 'syncing').length}
-              </p>
             </div>
           </div>
 
