@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { X, Link2, FileText, ArrowRight } from 'lucide-react';
+import { Link2, FileText, ArrowRight } from 'lucide-react';
+import GenericReferenceDialog from './GenericReferenceDialog';
 
 interface MappingConfig {
   id: string;
@@ -70,91 +71,53 @@ export default function MappingReferenceList({
     }
   };
 
-  const handleMappingClick = (mappingId: string) => {
-    router.push(`/mappings/edit/${mappingId}`);
+  const handleMappingClick = (mapping: MappingConfig) => {
+    router.push(`/mappings/edit/${mapping.id}`);
     onClose();
   };
 
-  if (!show) return null;
+  const renderMappingItem = (mapping: MappingConfig) => (
+    <div className="group flex items-center gap-4 rounded-xl border border-gray-200 bg-white p-4 transition-all hover:border-purple-300 hover:shadow-md dark:border-gray-700 dark:bg-gray-800/50 dark:hover:border-purple-700">
+      <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-blue-100 dark:bg-blue-900/20">
+        <FileText className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+      </div>
 
-  return (
-    <div 
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-      onClick={onClose}
-    >
-      <div 
-        className="w-full max-w-2xl rounded-2xl bg-white shadow-2xl dark:bg-gray-800"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between border-b border-gray-200 p-6 dark:border-gray-700">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-100 dark:bg-purple-900/20">
-              <Link2 className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                数据映射引用
-              </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                {databaseName || '数据源'} · {mappings.length} 个映射
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-          >
-            <X className="h-5 w-5 text-gray-500 dark:text-gray-400" />
-          </button>
+      <div className="flex min-w-0 flex-1">
+        <div className="min-w-0 flex-1">
+          <h4 className="truncate text-sm font-semibold text-gray-900 dark:text-white">
+            {mapping.name}
+          </h4>
         </div>
 
-        <div className="max-h-[500px] overflow-y-auto p-6">
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="h-8 w-8 animate-spin rounded-full border-4 border-purple-200 border-t-purple-600"></div>
-            </div>
-          ) : mappings.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12">
-              <Link2 className="mb-4 h-16 w-16 text-gray-400" />
-              <h4 className="mb-2 text-lg font-semibold text-gray-900 dark:text-white">
-                暂无数据映射
-              </h4>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                该数据源尚未被任何数据映射引用
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {mappings.map((mapping) => (
-                <div
-                  key={mapping.id}
-                  onClick={() => handleMappingClick(mapping.id)}
-                  className="group flex cursor-pointer items-center gap-4 rounded-xl border border-gray-200 bg-white p-4 transition-all hover:border-purple-300 hover:shadow-md dark:border-gray-700 dark:bg-gray-800/50 dark:hover:border-purple-700"
-                >
-                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-blue-100 dark:bg-blue-900/20">
-                    <FileText className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                  </div>
-
-                  <div className="flex min-w-0 flex-1">
-                      <div className="min-w-0 flex-1">
-                        <h4 className="truncate text-sm font-semibold text-gray-900 dark:text-white">
-                          {mapping.name}
-                        </h4>
-                      </div>
-
-                    <div className="flex items-center gap-2 opacity-0 transition-opacity group-hover:opacity-100">
-                      <span className="text-xs text-purple-600 dark:text-purple-400">
-                        查看详情
-                      </span>
-                      <ArrowRight className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+        <div className="flex items-center gap-2 opacity-0 transition-opacity group-hover:opacity-100">
+          <span className="text-xs text-purple-600 dark:text-purple-400">
+            查看详情
+          </span>
+          <ArrowRight className="h-4 w-4 text-purple-600 dark:text-purple-400" />
         </div>
       </div>
     </div>
+  );
+
+  return (
+    <GenericReferenceDialog<MappingConfig>
+      show={show}
+      onClose={onClose}
+      title="数据映射引用"
+      subtitle={`${databaseName || '数据源'} · ${mappings.length} 个映射`}
+      icon={<Link2 className="h-5 w-5 text-purple-600 dark:text-purple-400" />}
+      items={mappings}
+      loading={loading}
+      renderItem={renderMappingItem}
+      onItemClick={handleMappingClick}
+      emptyState={{
+        icon: <Link2 className="h-16 w-16" />,
+        title: '暂无数据映射',
+        description: '该数据源尚未被任何数据映射引用'
+      }}
+      maxHeight="500px"
+      maxWidth="2xl"
+      closeOnOverlayClick={true}
+    />
   );
 }
