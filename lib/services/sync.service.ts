@@ -71,6 +71,7 @@ export class SyncService {
       log.recordsSucceeded = transformedData.length;
       log.status = 'success';
       log.endTime = new Date().toISOString();
+      log.duration = new Date(log.endTime).getTime() - new Date(log.startTime).getTime();
 
       // 更新作业状态
       job.status = 'idle';
@@ -86,6 +87,7 @@ export class SyncService {
     } catch (error) {
       log.status = 'failed';
       log.endTime = new Date().toISOString();
+      log.duration = new Date(log.endTime).getTime() - new Date(log.startTime).getTime();
       log.errorMessage = (error as Error).message;
       log.recordsFailed = log.recordsProcessed - log.recordsSucceeded;
 

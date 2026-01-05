@@ -9,7 +9,6 @@ import {
   Clock,
   TrendingUp,
   AlertTriangle,
-  Download,
   Settings,
   CheckCircle,
   XCircle,
@@ -21,7 +20,7 @@ import {
 import { authService } from '@/lib/services/authService';
 import MetricsCard from '@/components/dashboard/MetricsCard';
 import ActivityChart from '@/components/dashboard/ActivityChart';
-import JobList from '@/components/dashboard/JobList';
+import JobExecutionRecords from '@/components/dashboard/JobExecutionRecords';
 import SystemStatus from '@/components/dashboard/SystemStatus';
 import DataSourceModule from '@/components/dashboard/datasource/DataSourceModule';
 import Header from '@/components/layout/Header';
@@ -42,18 +41,6 @@ interface SystemMetrics {
   totalMappings: number;
 }
 
-interface JobMetrics {
-  jobId: string;
-  jobName: string;
-  lastExecutionTime: string;
-  executionCount: number;
-  successCount: number;
-  failureCount: number;
-  successRate: number;
-  avgExecutionTime: number;
-  lastStatus: 'success' | 'failed' | 'running';
-}
-
 interface User {
   id: string;
   username: string;
@@ -67,10 +54,7 @@ function DashboardContent() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [mounted, setMounted] = useState(false);
   const [metrics, setMetrics] = useState<SystemMetrics | null>(null);
-  const [jobMetrics, setJobMetrics] = useState<JobMetrics[]>([]);
   const [loading, setLoading] = useState(true);
-  const [autoRefresh, setAutoRefresh] = useState(true);
-  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
 
   useEffect(() => {
     setMounted(true);
@@ -84,14 +68,14 @@ function DashboardContent() {
   }, [router]);
 
   useEffect(() => {
-    if (!autoRefresh) return;
+    const refreshInterval = parseInt(process.env.NEXT_PUBLIC_REFRESH_INTERVAL || '5000');
 
     const interval = setInterval(() => {
       fetchDashboardData();
-    }, 30000);
+    }, refreshInterval);
 
     return () => clearInterval(interval);
-  }, [autoRefresh]);
+  }, []);
 
   const fetchDashboardData = async () => {
     try {
@@ -101,40 +85,14 @@ function DashboardContent() {
 
       if (result.success) {
         setMetrics(result.data.systemMetrics);
-        setJobMetrics(result.data.jobMetrics);
       } else {
         console.error('获取Dashboard数据失败:', result.error);
       }
-      setLastUpdated(new Date());
     } catch (error) {
       console.error('获取Dashboard数据失败:', error);
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleRefresh = () => {
-    fetchDashboardData();
-  };
-
-  const handleExport = () => {
-    if (!metrics) return;
-
-    const data = {
-      timestamp: new Date().toISOString(),
-      systemMetrics: metrics,
-      jobMetrics: jobMetrics
-    };
-
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `dashboard-export-${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
   };
 
   if (!mounted || !currentUser) {
@@ -154,42 +112,6 @@ function DashboardContent() {
             <p className="mt-1 text-gray-600 dark:text-gray-400">
               实时监控系统状态和作业执行情况
             </p>
-          </div>
-
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <div className="hidden md:flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-              <Clock className="h-4 w-4" />
-              <span>最后更新: {lastUpdated.toLocaleTimeString()}</span>
-            </div>
-
-            <button
-              onClick={() => setAutoRefresh(!autoRefresh)}
-              className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                autoRefresh
-                  ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                  : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
-              }`}
-            >
-              {autoRefresh ? <PlayCircle className="h-4 w-4" /> : <PauseCircle className="h-4 w-4" />}
-              {autoRefresh ? '自动刷新' : '已暂停'}
-            </button>
-
-            <button
-              onClick={handleRefresh}
-              disabled={loading}
-              className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-              刷新
-            </button>
-
-            <button
-              onClick={handleExport}
-              className="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-            >
-              <Download className="h-4 w-4" />
-              导出
-            </button>
           </div>
         </div>
 
@@ -268,10 +190,10 @@ function DashboardContent() {
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                      作业列表
+                      作业运行情况
                     </h3>
                     <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                      共 {jobMetrics.length} 个作业
+                      最近20条执行记录
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -292,7 +214,10 @@ function DashboardContent() {
                   </div>
                 </div>
               </div>
-              <JobList jobs={jobMetrics} />
+              <JobExecutionRecords 
+                scrollSpeed={1}
+                scrollDirection="down"
+              />
             </div>
           </>
         )}
@@ -303,16 +228,9 @@ function DashboardContent() {
             <h3 className="mb-2 text-xl font-semibold text-gray-900 dark:text-white">
               暂无数据
             </h3>
-            <p className="mb-4 text-center text-gray-600 dark:text-gray-400">
+            <p className="text-center text-gray-600 dark:text-gray-400">
               请先配置数据源和同步作业
             </p>
-            <button
-              onClick={handleRefresh}
-              className="flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-blue-700"
-            >
-              <RefreshCw className="h-4 w-4" />
-              刷新数据
-            </button>
           </div>
         )}
       </main>
