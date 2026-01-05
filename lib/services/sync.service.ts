@@ -210,12 +210,20 @@ export class SyncService {
     await weComDocumentService.writeSheetData(accessToken, document.id, sheetId, data);
   }
 
-  private async appendToDocument(document: any, sheetId: string, data: any[]): Promise<void> {
-    await weComDocumentService.appendSheetData(document.id, document.id, sheetId, data);
+  private async appendToDocument(document: WeComDocument, sheetId: string, data: any[]): Promise<void> {
+    const account = getWeComAccountById(document.accountId);
+    if (!account) {
+      throw new Error(`关联的企业微信账号不存在，accountId: ${document.accountId}`);
+    }
+
+    const accessToken = await weComDocumentService.getAccessToken(account.corpId, account.corpSecret);
+    if (!accessToken) {
+      throw new Error(`获取企业微信access token失败, corpId: ${account.corpId}`);
+    }
+    await weComDocumentService.appendSheetData(accessToken, document.id, sheetId, data);
   }
 
-  private async mergeToDocument(document: any, sheetId: string, data: any[]): Promise<void> {
-    // 先清空再写入（简化实现）
+  private async mergeToDocument(document: WeComDocument, sheetId: string, data: any[]): Promise<void> {
     await this.overwriteToDocument(document, sheetId, data);
   }
 

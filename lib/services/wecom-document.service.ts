@@ -147,11 +147,29 @@ export class WeComDocumentService {
     data: any[]
   ): Promise<boolean> {
     try {
-      const response = await this.client.post('/cgi-bin/wedoc/smartsheet/batch_update_rows', {
-        access_token: accessToken,
+      const records = data.map(row => {
+        const values: any = {};
+        Object.keys(row).forEach(key => {
+          const value = row[key];
+          if (value !== null && value !== undefined) {
+            values[key] = [{
+              type: 'text',
+              text: String(value)
+            }];
+          }
+        });
+        return { values };
+      });
+
+      const response = await this.client.post('/cgi-bin/wedoc/smartsheet/add_records', {
         docid: documentId,
         sheet_id: sheetId,
-        rows: data
+        key_type: 'CELL_VALUE_KEY_TYPE_FIELD_TITLE',
+        records: records
+      }, {
+        params: {
+          access_token: accessToken
+        }
       });
 
       if (response.data.errcode !== 0) {
@@ -172,11 +190,29 @@ export class WeComDocumentService {
     data: any[]
   ): Promise<boolean> {
     try {
-      const response = await this.client.post('/cgi-bin/wedoc/smartsheet/append_rows', {
-        access_token: accessToken,
+      const records = data.map(row => {
+        const values: any = {};
+        Object.keys(row).forEach(key => {
+          const value = row[key];
+          if (value !== null && value !== undefined) {
+            values[key] = [{
+              type: 'text',
+              text: String(value)
+            }];
+          }
+        });
+        return { values };
+      });
+
+      const response = await this.client.post('/cgi-bin/wedoc/smartsheet/add_records', {
         docid: documentId,
         sheet_id: sheetId,
-        rows: data
+        key_type: 'CELL_VALUE_KEY_TYPE_FIELD_TITLE',
+        records: records
+      }, {
+        params: {
+          access_token: accessToken
+        }
       });
 
       if (response.data.errcode !== 0) {
