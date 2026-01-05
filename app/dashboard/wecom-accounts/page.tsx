@@ -286,13 +286,26 @@ export default function WeComAccountsPage() {
                     <Edit className="h-4 w-4" />
                     编辑
                   </Link>
-                  <button
-                    onClick={() => handleDelete(account.id)}
-                    className="flex items-center gap-1 rounded-lg border border-red-300 bg-white px-3 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 dark:border-red-800 dark:bg-gray-800 dark:text-red-400 dark:hover:bg-red-900/20"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    删除
-                  </button>
+                  <div className="relative group">
+                    <button
+                      onClick={() => handleDelete(account.id)}
+                      disabled={getMappingCountForAccount(account) > 0}
+                      className={`flex items-center gap-1 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
+                        getMappingCountForAccount(account) > 0
+                          ? 'border-gray-300 bg-gray-100 text-gray-400 cursor-not-allowed dark:border-gray-600 dark:bg-gray-700 dark:text-gray-500'
+                          : 'border-red-300 bg-white text-red-600 hover:bg-red-50 dark:border-red-800 dark:bg-gray-800 dark:text-red-400 dark:hover:bg-red-900/20'
+                      }`}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      删除
+                    </button>
+                    {getMappingCountForAccount(account) > 0 && (
+                      <div className="absolute bottom-full left-1/2 mb-2 hidden -translate-x-1/2 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-1.5 text-xs text-white shadow-lg group-hover:block dark:bg-gray-700 dark:text-gray-200">
+                        该账号存在数据映射，无法删除
+                        <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900 dark:border-t-gray-700"></div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
