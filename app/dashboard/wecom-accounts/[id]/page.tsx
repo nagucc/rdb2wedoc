@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Plus, Edit, Trash2, RefreshCw, AlertCircle, Building2, Search, Filter, CheckCircle, XCircle, Clock, Link2 } from 'lucide-react';
+import { ArrowLeft, Plus, Edit, Trash2, RefreshCw, AlertCircle, Building2, Search, Filter, CheckCircle, XCircle, Clock, Link2, FileText } from 'lucide-react';
 import { authService } from '@/lib/services/authService';
 import Header from '@/components/layout/Header';
 
