@@ -39,6 +39,11 @@ export default function DatabasesPage() {
   });
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [deleteDialog, setDeleteDialog] = useState<{ show: boolean; databaseId: string; databaseName: string }>({
+    show: false,
+    databaseId: '',
+    databaseName: ''
+  });
 
   const handleLogout = async () => {
     try {
@@ -111,10 +116,17 @@ export default function DatabasesPage() {
     setShowModal(true);
   };
 
-  const handleDelete = async (databaseId: string) => {
-    if (!confirm('确定要删除这个数据源吗？删除后，所有相关的同步任务和数据映射也将被移除。')) {
-      return;
-    }
+  const handleDelete = (databaseId: string, databaseName: string) => {
+    setDeleteDialog({
+      show: true,
+      databaseId,
+      databaseName
+    });
+  };
+
+  const confirmDelete = async () => {
+    const { databaseId } = deleteDialog;
+    setDeleteDialog({ ...deleteDialog, show: false });
 
     try {
       const response = await fetch(`/api/databases?id=${databaseId}`, {
@@ -131,6 +143,10 @@ export default function DatabasesPage() {
       alert('网络错误，请检查连接后重试');
       console.error('Error deleting database:', err);
     }
+  };
+
+  const cancelDelete = () => {
+    setDeleteDialog({ show: false, databaseId: '', databaseName: '' });
   };
 
   const handleTestConnection = async () => {
@@ -361,7 +377,7 @@ export default function DatabasesPage() {
                         编辑
                       </Link>
                       <button
-                        onClick={() => handleDelete(database.id)}
+                        onClick={() => handleDelete(database.id, database.name)}
                         className="flex items-center gap-1 rounded-lg border border-red-300 bg-white px-3 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 dark:border-red-800 dark:bg-gray-800 dark:text-red-400 dark:hover:bg-red-900/20"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -517,6 +533,41 @@ export default function DatabasesPage() {
                     </button>
                   </div>
                 </form>
+              </div>
+            </div>
+          )}
+
+          {deleteDialog.show && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+              <div className="mx-4 w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-800">
+                <div className="mb-6">
+                  <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/20">
+                    <AlertCircle className="h-6 w-6 text-red-600 dark:text-red-400" />
+                  </div>
+                  <h3 className="mb-2 text-center text-xl font-semibold text-gray-900 dark:text-white">
+                    确认删除
+                  </h3>
+                  <p className="text-center text-gray-600 dark:text-gray-400">
+                    是否确定删除该数据源？
+                  </p>
+                  <p className="mt-2 text-center text-sm text-gray-500 dark:text-gray-500">
+                    数据源名称：{deleteDialog.databaseName}
+                  </p>
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={cancelDelete}
+                    className="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                  >
+                    否
+                  </button>
+                  <button
+                    onClick={confirmDelete}
+                    className="flex-1 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700"
+                  >
+                    是
+                  </button>
+                </div>
               </div>
             </div>
           )}
