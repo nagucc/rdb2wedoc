@@ -232,39 +232,6 @@ function DashboardContent() {
                 description="所有配置的同步作业"
                 href="/sync-jobs"
               />
-              <MetricsCard
-                title="运行中"
-                value={metrics.runningJobs}
-                icon={PlayCircle}
-                color="green"
-                trend={metrics.runningJobs > 0 ? '运行中' : '无运行'}
-                description="当前正在执行的作业"
-              />
-              <MetricsCard
-                title="失败作业"
-                value={metrics.failedJobs}
-                icon={XCircle}
-                color="red"
-                trend={metrics.failedJobs > 0 ? '需要关注' : '正常'}
-                description="执行失败的作业数量"
-              />
-              <MetricsCard
-                title="成功率"
-                value={`${metrics.successRate.toFixed(1)}%`}
-                icon={TrendingUp}
-                color="purple"
-                trend={metrics.successRate >= 90 ? '优秀' : metrics.successRate >= 70 ? '良好' : '需改进'}
-                description="作业执行成功率"
-              />
-              <MetricsCard
-                title="活跃作业"
-                value={metrics.activeJobs}
-                icon={PlayCircle}
-                color="green"
-                trend={metrics.activeJobs > 0 ? '活跃' : '空闲'}
-                description="最近执行的作业数量"
-                href="/sync-jobs"
-              />
 
               
             </div>
