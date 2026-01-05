@@ -284,13 +284,13 @@ export default function WeComAccountsPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
-                  <button
-                    onClick={() => handleEdit(account)}
+                  <Link
+                    href={`/dashboard/wecom-accounts/edit/${account.id}`}
                     className="flex items-center gap-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
                   >
                     <Edit className="h-4 w-4" />
                     编辑
-                  </button>
+                  </Link>
                   <button
                     onClick={() => handleDelete(account.id)}
                     className="flex items-center gap-1 rounded-lg border border-red-300 bg-white px-3 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 dark:border-red-800 dark:bg-gray-800 dark:text-red-400 dark:hover:bg-red-900/20"
