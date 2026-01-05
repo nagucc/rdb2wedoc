@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getWeComAccountById, saveIntelligentDocument } from '@/lib/config/storage';
 import { weComDocumentService } from '@/lib/services/wecom-document.service';
-import { IntelligentDocument } from '@/types';
+import { WecomSmartSheet } from '@/types';
 
 export async function POST(
   request: NextRequest,
@@ -113,10 +113,9 @@ export async function POST(
         timestamp: new Date().toISOString()
       });
 
-      const newDocument: IntelligentDocument = {
+      const newDocument: WecomSmartSheet = {
         id: documentId,
         name: docName.trim(),
-        status: 'active',
         sheetCount: 0,
         createdAt: new Date().toISOString(),
         accountId: id,

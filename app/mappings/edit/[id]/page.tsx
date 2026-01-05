@@ -29,7 +29,7 @@ interface WeComAccount {
   corpId: string;
 }
 
-interface IntelligentDocument {
+interface WecomSmartSheet {
   id: string;
   name: string;
   accountId: string;
@@ -99,7 +99,7 @@ export default function EditMappingPage() {
   const [loadingDocumentFields, setLoadingDocumentFields] = useState(false);
 
   const [wecomAccounts, setWeComAccounts] = useState<WeComAccount[]>([]);
-  const [documents, setDocuments] = useState<IntelligentDocument[]>([]);
+  const [documents, setDocuments] = useState<WecomSmartSheet[]>([]);
   const [sheets, setSheets] = useState<Sheet[]>([]);
   const [selectedWeComAccount, setSelectedWeComAccount] = useState<string>('');
   const [selectedDocument, setSelectedDocument] = useState<string>('');

@@ -96,10 +96,9 @@ export interface WeComDocument {
   updatedAt: string;
 }
 
-export interface IntelligentDocument {
+export interface WecomSmartSheet {
   id: string;
   name: string;
-  status: 'active' | 'inactive' | 'syncing';
   lastSyncTime?: string;
   sheetCount: number;
   sheets?: DocumentSheet[];

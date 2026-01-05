@@ -34,11 +34,10 @@ interface DatabaseConnection {
   database: string;
 }
 
-interface IntelligentDocument {
+interface WecomSmartSheet {
   id: string;
   name: string;
   accountId: string;
-  status: string;
   sheetCount: number;
   sheets?: {
     id: string;
@@ -60,7 +59,7 @@ export default function MappingsPage() {
   const [currentUser, setCurrentUser] = useState<{ username: string } | null>(null);
   const [mappings, setMappings] = useState<MappingConfigUI[]>([]);
   const [databases, setDatabases] = useState<DatabaseConnection[]>([]);
-  const [documents, setDocuments] = useState<IntelligentDocument[]>([]);
+  const [documents, setDocuments] = useState<WecomSmartSheet[]>([]);
   const [jobs, setJobs] = useState<SyncJob[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -125,7 +124,7 @@ export default function MappingsPage() {
       const accountsData = await accountsResponse.json();
       
       if (accountsData.success && accountsData.data) {
-        const allDocuments: IntelligentDocument[] = [];
+        const allDocuments: WecomSmartSheet[] = [];
         for (const account of accountsData.data) {
           const docsResponse = await fetch(`/api/wecom-accounts/${account.id}/documents`);
           const docsData = await docsResponse.json();

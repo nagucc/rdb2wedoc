@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { ArrowLeft, Plus, Edit, Trash2, RefreshCw, AlertCircle, Building2, Search, Filter, CheckCircle, XCircle, Clock, FileText } from 'lucide-react';
 import { authService } from '@/lib/services/authService';
 import Header from '@/components/layout/Header';
+import { WecomSmartSheet } from '@/types';
 
 interface WeComAccount {
   id: string;
@@ -16,16 +17,6 @@ interface WeComAccount {
   updatedAt: string;
 }
 
-interface IntelligentDocument {
-  id: string;
-  name: string;
-  status: 'active' | 'inactive' | 'syncing';
-  lastSyncTime?: string;
-  sheetCount: number;
-  createdAt: string;
-  accountId: string;
-}
-
 export default function WeComAccountDetailPage() {
   const router = useRouter();
   const params = useParams();
@@ -33,15 +24,14 @@ export default function WeComAccountDetailPage() {
 
   const [currentUser, setCurrentUser] = useState<{ username: string } | null>(null);
   const [account, setAccount] = useState<WeComAccount | null>(null);
-  const [documents, setDocuments] = useState<IntelligentDocument[]>([]);
+  const [documents, setDocuments] = useState<WecomSmartSheet[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive' | 'syncing'>('all');
   const [showAddDocumentModal, setShowAddDocumentModal] = useState(false);
   const [newDocumentId, setNewDocumentId] = useState('');
   const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
-  const [documentToDelete, setDocumentToDelete] = useState<IntelligentDocument | null>(null);
+  const [documentToDelete, setDocumentToDelete] = useState<WecomSmartSheet | null>(null);
   const [isProcessingDocument, setIsProcessingDocument] = useState(false);
   const [refreshingDocumentId, setRefreshingDocumentId] = useState<string | null>(null);
   const [showCreateSheetModal, setShowCreateSheetModal] = useState(false);
@@ -214,7 +204,7 @@ export default function WeComAccountDetailPage() {
     }
   };
 
-  const handleDeleteDocument = async (document: IntelligentDocument) => {
+  const handleDeleteDocument = async (document: WecomSmartSheet) => {
     setDocumentToDelete(document);
     setShowDeleteConfirmModal(true);
   };
@@ -250,35 +240,8 @@ export default function WeComAccountDetailPage() {
   const filteredDocuments = documents.filter(doc => {
     const matchesSearch = doc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          doc.id.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || doc.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    return matchesSearch;
   });
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active':
-        return 'bg-green-100 text-green-600 dark:bg-green-900/20 dark:text-green-400';
-      case 'inactive':
-        return 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400';
-      case 'syncing':
-        return 'bg-blue-100 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400';
-      default:
-        return 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400';
-    }
-  };
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'active':
-        return '活跃';
-      case 'inactive':
-        return '未激活';
-      case 'syncing':
-        return '同步中';
-      default:
-        return status;
-    }
-  };
 
   if (loading) {
     return (
@@ -374,19 +337,6 @@ export default function WeComAccountDetailPage() {
                     className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-4 py-2 text-sm text-gray-900 transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
                   />
                 </div>
-                <div className="flex items-center gap-2">
-                  <Filter className="h-4 w-4 text-gray-400" />
-                  <select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value as any)}
-                    className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-                  >
-                    <option value="all">全部状态</option>
-                    <option value="active">活跃</option>
-                    <option value="inactive">未激活</option>
-                    <option value="syncing">同步中</option>
-                  </select>
-                </div>
               </div>
             </div>
 
@@ -432,9 +382,6 @@ export default function WeComAccountDetailPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusColor(doc.status)}`}>
-                        {getStatusText(doc.status)}
-                      </span>
                       <button
                         onClick={() => handleRefreshDocument(doc.id)}
                         disabled={refreshingDocumentId === doc.id}

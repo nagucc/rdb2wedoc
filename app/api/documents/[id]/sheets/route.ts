@@ -3,7 +3,7 @@ import { getDocumentById, getIntelligentDocumentById, getWeComAccountById } from
 import { weComDocumentService } from '@/lib/services/wecom-document.service';
 import { Logger } from '@/lib/utils/helpers';
 
-interface IntelligentDocument {
+interface WecomSmartSheet {
   id: string;
   name: string;
   status: string;
@@ -34,7 +34,7 @@ export async function GET(
     Logger.info(`开始获取文档Sheet列表`, { docId: id });
 
     // 先尝试获取智能表格
-    const intelligentDoc = getIntelligentDocumentById(id) as IntelligentDocument | null;
+    const intelligentDoc = getIntelligentDocumentById(id) as WecomSmartSheet | null;
     
     if (intelligentDoc) {
       Logger.info(`找到智能表格，直接返回缓存的Sheet列表`, { 
