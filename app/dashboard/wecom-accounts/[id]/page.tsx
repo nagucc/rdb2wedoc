@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Plus, Edit, Trash2, RefreshCw, AlertCircle, Building2, FileText, Search, Filter, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { ArrowLeft, Plus, Edit, Trash2, RefreshCw, AlertCircle, Building2, Search, Filter, CheckCircle, XCircle, Clock, Link2 } from 'lucide-react';
 import { authService } from '@/lib/services/authService';
 import Header from '@/components/layout/Header';
 
@@ -26,6 +26,22 @@ interface IntelligentDocument {
   accountId: string;
 }
 
+interface MappingConfigUI {
+  id: string;
+  name: string;
+  sourceDatabaseId: string;
+  sourceTableName: string;
+  targetDocId: string;
+  targetSheetId: string;
+  fieldMappings: any[];
+  corpId?: string;
+  targetName?: string;
+  documentName?: string;
+  sheetName?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export default function WeComAccountDetailPage() {
   const router = useRouter();
   const params = useParams();
@@ -34,6 +50,7 @@ export default function WeComAccountDetailPage() {
   const [currentUser, setCurrentUser] = useState<{ username: string } | null>(null);
   const [account, setAccount] = useState<WeComAccount | null>(null);
   const [documents, setDocuments] = useState<IntelligentDocument[]>([]);
+  const [mappings, setMappings] = useState<MappingConfigUI[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -85,6 +102,19 @@ export default function WeComAccountDetailPage() {
     }
   };
 
+  const fetchMappings = async () => {
+    try {
+      const response = await fetch('/api/mappings');
+      const data = await response.json();
+
+      if (data.success) {
+        setMappings(data.data || []);
+      }
+    } catch (err) {
+      console.error('Error fetching mappings:', err);
+    }
+  };
+
   const handleRefreshDocument = async (documentId: string) => {
     try {
       setRefreshingDocumentId(documentId);
@@ -123,6 +153,7 @@ export default function WeComAccountDetailPage() {
     }
     setCurrentUser(user);
     fetchAccountDetails();
+    fetchMappings();
   }, [accountId, router]);
 
   const handleAddDocument = async () => {
@@ -280,6 +311,11 @@ export default function WeComAccountDetailPage() {
     }
   };
 
+  const getMappingCountForAccount = (): number => {
+    if (!account) return 0;
+    return mappings.filter(mapping => mapping.corpId === account.corpId).length;
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -335,6 +371,12 @@ export default function WeComAccountDetailPage() {
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   Corp ID: {account.corpId}
                 </p>
+                <div className="flex cursor-pointer items-center gap-1 rounded-lg bg-purple-100 px-3 py-1.5 transition-colors hover:bg-purple-200 dark:bg-purple-900/20 dark:hover:bg-purple-900/30">
+                  <Link2 className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
+                  <span className="text-xs font-medium text-purple-700 dark:text-purple-300">
+                    {getMappingCountForAccount()}
+                  </span>
+                </div>
               </div>
             </div>
           </div>

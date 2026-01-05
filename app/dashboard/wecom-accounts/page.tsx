@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Plus, Edit, Trash2, RefreshCw, AlertCircle, Building2 } from 'lucide-react';
+import { Plus, Edit, Trash2, RefreshCw, AlertCircle, Building2, Link2 } from 'lucide-react';
 import { authService } from '@/lib/services/authService';
 import Header from '@/components/layout/Header';
 
@@ -17,10 +17,27 @@ interface WeComAccount {
   updatedAt: string;
 }
 
+interface MappingConfigUI {
+  id: string;
+  name: string;
+  sourceDatabaseId: string;
+  sourceTableName: string;
+  targetDocId: string;
+  targetSheetId: string;
+  fieldMappings: any[];
+  corpId?: string;
+  targetName?: string;
+  documentName?: string;
+  sheetName?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export default function WeComAccountsPage() {
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState<{ username: string } | null>(null);
   const [accounts, setAccounts] = useState<WeComAccount[]>([]);
+  const [mappings, setMappings] = useState<MappingConfigUI[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
@@ -52,6 +69,19 @@ export default function WeComAccountsPage() {
     }
   };
 
+  const fetchMappings = async () => {
+    try {
+      const response = await fetch('/api/mappings');
+      const data = await response.json();
+
+      if (data.success) {
+        setMappings(data.data || []);
+      }
+    } catch (err) {
+      console.error('Error fetching mappings:', err);
+    }
+  };
+
   useEffect(() => {
     const user = authService.getCurrentUser();
     if (!user) {
@@ -60,6 +90,7 @@ export default function WeComAccountsPage() {
     }
     setCurrentUser(user);
     fetchAccounts();
+    fetchMappings();
   }, [router]);
 
   const handleCreate = () => {
@@ -71,6 +102,10 @@ export default function WeComAccountsPage() {
       enabled: true
     });
     setShowModal(true);
+  };
+
+  const getMappingCountForAccount = (account: WeComAccount): number => {
+    return mappings.filter(mapping => mapping.corpId === account.corpId).length;
   };
 
   const handleEdit = (account: WeComAccount) => {
@@ -236,6 +271,14 @@ export default function WeComAccountsPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
+                  <div
+                    className="flex cursor-pointer items-center gap-1 rounded-lg bg-purple-100 px-3 py-1.5 transition-colors hover:bg-purple-200 dark:bg-purple-900/20 dark:hover:bg-purple-900/30"
+                  >
+                    <Link2 className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
+                    <span className="text-xs font-medium text-purple-700 dark:text-purple-300">
+                      {getMappingCountForAccount(account)}
+                    </span>
+                  </div>
                   <Link
                     href={`/dashboard/wecom-accounts/edit/${account.id}`}
                     className="flex items-center gap-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
