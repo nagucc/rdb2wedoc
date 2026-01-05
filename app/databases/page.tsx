@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Plus, Edit, Trash2, RefreshCw, AlertCircle, Database, CheckCircle, XCircle, Link2 } from 'lucide-react';
 import { authService } from '@/lib/services/authService';
 import Header from '@/components/layout/Header';
+import MappingReferenceList from '@/components/MappingReferenceList';
 
 interface DatabaseConfig {
   id: string;
@@ -65,6 +66,15 @@ export default function DatabasesPage() {
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [deleteDialog, setDeleteDialog] = useState<{ show: boolean; databaseId: string; databaseName: string }>({
+    show: false,
+    databaseId: '',
+    databaseName: ''
+  });
+  const [mappingReferenceDialog, setMappingReferenceDialog] = useState<{
+    show: boolean;
+    databaseId: string;
+    databaseName: string;
+  }>({
     show: false,
     databaseId: '',
     databaseName: ''
@@ -369,7 +379,14 @@ export default function DatabasesPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex items-center gap-1 rounded-lg bg-purple-100 px-3 py-1.5 dark:bg-purple-900/20">
+                      <div
+                        onClick={() => setMappingReferenceDialog({
+                          show: true,
+                          databaseId: database.id,
+                          databaseName: database.name
+                        })}
+                        className="flex cursor-pointer items-center gap-1 rounded-lg bg-purple-100 px-3 py-1.5 transition-colors hover:bg-purple-200 dark:bg-purple-900/20 dark:hover:bg-purple-900/30"
+                      >
                         <Link2 className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
                         <span className="text-xs font-medium text-purple-700 dark:text-purple-300">
                           {getMappingCount(database.id)}
@@ -577,6 +594,13 @@ export default function DatabasesPage() {
               </div>
             </div>
           )}
+
+          <MappingReferenceList
+            show={mappingReferenceDialog.show}
+            onClose={() => setMappingReferenceDialog({ ...mappingReferenceDialog, show: false })}
+            databaseId={mappingReferenceDialog.databaseId}
+            databaseName={mappingReferenceDialog.databaseName}
+          />
         </div>
       </main>
     </div>
