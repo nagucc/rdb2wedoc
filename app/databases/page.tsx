@@ -337,7 +337,7 @@ export default function DatabasesPage() {
                   <div
                     key={database.id}
                     className="flex items-center justify-between p-6 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"
-                    onClick={() => router.push(`/databases/edit/${database.id}`)}
+                    onClick={() => router.push(`/databases/${database.id}`)}
                   >
                     <div className="flex items-center gap-4">
                       <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 dark:bg-blue-900/20">
