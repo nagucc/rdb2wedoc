@@ -116,6 +116,32 @@ export default function Home() {
         </div>
       </section>
 
+      {mounted && currentUser && (
+        <div className="container mx-auto px-4 py-6">
+          <div className="flex justify-center">
+            <Link
+              href="/dashboard"
+              className="group relative inline-flex items-center gap-3 rounded-2xl bg-gradient-to-r from-blue-600 to-purple-600 px-10 py-4 text-lg font-semibold text-white shadow-xl shadow-blue-500/30 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/40 active:scale-95"
+            >
+              <span>进入控制台</span>
+              <svg
+                className="h-5 w-5 transition-transform group-hover:translate-x-1"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M13 7l5 5m0 0l-5 5m5-5H6"
+                />
+              </svg>
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* Features Grid */}
       <section className="container mx-auto px-4 py-16">
         <div className="mb-12 text-center">
