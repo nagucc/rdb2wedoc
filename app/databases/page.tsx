@@ -302,13 +302,13 @@ export default function DatabasesPage() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <button
-                onClick={handleCreate}
+              <Link
+                href="/databases/add"
                 className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 active:bg-green-700 transition-colors shadow-sm hover:shadow-md"
               >
                 <Plus className="h-4 w-4" />
                 添加数据源
-              </button>
+              </Link>
               <button
                 onClick={fetchDatabases}
                 disabled={loading}

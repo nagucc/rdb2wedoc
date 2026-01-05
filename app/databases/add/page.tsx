@@ -214,7 +214,7 @@ export default function AddDatabasePage() {
         });
         
         setTimeout(() => {
-          router.push('/dashboard?tab=datasources');
+          router.push('/databases');
         }, 1500);
       } else {
         const errorMessage = result.error || '保存失败，请重试';

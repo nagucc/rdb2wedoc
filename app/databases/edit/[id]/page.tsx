@@ -96,11 +96,11 @@ export default function EditDatabasePage() {
           }
         });
       } else {
-        router.push('/dashboard?tab=datasources');
+        router.push('/databases');
       }
     } catch (error) {
       console.error('Failed to fetch database config:', error);
-      router.push('/dashboard?tab=datasources');
+      router.push('/databases');
     } finally {
       setLoading(false);
     }
@@ -271,7 +271,7 @@ export default function EditDatabasePage() {
         });
         
         setTimeout(() => {
-          router.push('/dashboard?tab=datasources');
+          router.push('/databases');
         }, 1500);
       } else {
         const errorMessage = result.error || '保存失败，请重试';
