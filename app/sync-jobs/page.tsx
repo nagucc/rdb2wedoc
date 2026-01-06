@@ -670,11 +670,13 @@ export default function SyncJobsPage() {
                             {job.status !== 'running' && (
                               <button
                                 onClick={() => handleToggleStatus(job.id, job.enabled)}
+                                title={job.status === 'running' ? '作业运行中，此操作暂时不可用' : ''}
+                                disabled={job.status === 'running'}
                                 className={`flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
                                   job.enabled
                                     ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:hover:bg-yellow-900/50'
                                     : 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50'
-                                }`}
+                                } disabled:opacity-50 disabled:cursor-not-allowed`}
                               >
                                 {job.enabled ? (
                                   <>
@@ -710,14 +712,18 @@ export default function SyncJobsPage() {
                             )}
                             <button
                               onClick={() => handleEdit(job)}
-                              className="flex items-center gap-1 rounded-lg border border-blue-300 bg-white px-3 py-1.5 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-50 dark:border-blue-800 dark:bg-gray-800 dark:text-blue-400 dark:hover:bg-blue-900/20"
+                              title={job.status === 'running' ? '作业运行中，此操作暂时不可用' : ''}
+                              disabled={job.status === 'running'}
+                              className="flex items-center gap-1 rounded-lg border border-blue-300 bg-white px-3 py-1.5 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-50 dark:border-blue-800 dark:bg-gray-800 dark:text-blue-400 dark:hover:bg-blue-900/20 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               <Edit className="h-4 w-4" />
                               编辑
                             </button>
                             <button
                               onClick={() => handleDelete(job.id)}
-                              className="flex items-center gap-1 rounded-lg border border-red-300 bg-white px-3 py-1.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 dark:border-red-800 dark:bg-gray-800 dark:text-red-400 dark:hover:bg-red-900/20"
+                              title={job.status === 'running' ? '作业运行中，此操作暂时不可用' : ''}
+                              disabled={job.status === 'running'}
+                              className="flex items-center gap-1 rounded-lg border border-red-300 bg-white px-3 py-1.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 dark:border-red-800 dark:bg-gray-800 dark:text-red-400 dark:hover:bg-red-900/20 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               <Trash2 className="h-4 w-4" />
                               删除
