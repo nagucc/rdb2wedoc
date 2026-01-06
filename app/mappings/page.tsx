@@ -394,7 +394,8 @@ export default function MappingsPage() {
                 {filteredMappings.map((mapping) => (
                   <div
                     key={mapping.id}
-                    className="p-6 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                    className="p-6 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"
+                    onClick={() => router.push(`/mappings/${mapping.id}`)}
                   >
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex-1">
@@ -402,7 +403,10 @@ export default function MappingsPage() {
                           <h4 className="text-base font-semibold text-gray-900 dark:text-white">{mapping.name}</h4>
                           <div className="flex items-center gap-2 ml-2">
                             <button
-                              onClick={() => router.push(`/mappings/edit/${mapping.id}`)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                router.push(`/mappings/edit/${mapping.id}`);
+                              }}
                               className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition-colors dark:text-blue-400 dark:hover:bg-blue-900/20"
                               title="编辑"
                             >
@@ -410,7 +414,10 @@ export default function MappingsPage() {
                               编辑
                             </button>
                             <button
-                              onClick={() => handleDeleteMapping(mapping.id)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteMapping(mapping.id);
+                              }}
                               disabled={getJobsForMapping(mapping.id).length > 0}
                               className={`flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
                                 getJobsForMapping(mapping.id).length > 0
@@ -430,7 +437,8 @@ export default function MappingsPage() {
                             {resolveSourceName(mapping.sourceDatabaseId, mapping.sourceTableName)} <ArrowRight className="h-4 w-4" /> {resolveTargetName(mapping.targetDocId, mapping.targetSheetId)}
                           </span>
                           <span 
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.stopPropagation();
                               setSelectedMapping(mapping);
                               setShowFieldMapping(true);
                             }}
@@ -444,7 +452,8 @@ export default function MappingsPage() {
                             if (mappingJobs.length === 0) return null;
                             return (
                               <span 
-                                onClick={() => {
+                                onClick={(e) => {
+                                  e.stopPropagation();
                                   setSelectedMappingForJobs(mapping);
                                   setShowJobsDialog(true);
                                 }}
