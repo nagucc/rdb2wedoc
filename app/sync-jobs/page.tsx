@@ -626,13 +626,11 @@ export default function SyncJobsPage() {
                                   e.stopPropagation();
                                   handleToggleStatus(job.id, job.enabled);
                                 }}
-                                title={job.status === 'running' ? '作业运行中，此操作暂时不可用' : ''}
-                                disabled={job.status === 'running'}
                                 className={`flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
                                   job.enabled
                                     ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:hover:bg-yellow-900/50'
                                     : 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50'
-                                } disabled:opacity-50 disabled:cursor-not-allowed`}
+                                }`}
                               >
                                 {job.enabled ? (
                                   <>

@@ -11,6 +11,8 @@ interface PaginationConfigProps {
   incrementalType?: IncrementalType;
   incrementalField?: string;
   lastSyncValue?: string;
+  syncTimeout?: number;
+  enableDataValidation?: boolean;
   onChange: (config: {
     syncMode: SyncMode;
     pageSize?: number;
@@ -20,6 +22,8 @@ interface PaginationConfigProps {
     incrementalType?: IncrementalType;
     incrementalField?: string;
     lastSyncValue?: string;
+    syncTimeout?: number;
+    enableDataValidation?: boolean;
   }) => void;
   disabled?: boolean;
   error?: string;
@@ -82,6 +86,8 @@ export default function PaginationConfig({
   incrementalType = 'timestamp',
   incrementalField,
   lastSyncValue,
+  syncTimeout = 300,
+  enableDataValidation = true,
   onChange,
   disabled = false,
   error
@@ -410,7 +416,8 @@ export default function PaginationConfig({
                 min="60"
                 max="3600"
                 step="60"
-                defaultValue={300}
+                value={syncTimeout}
+                onChange={(e) => onChange({ syncMode, pageSize, enableResume, lastSyncPosition, maxRecordsPerSync, incrementalType, incrementalField, lastSyncValue, syncTimeout: parseInt(e.target.value) || 300, enableDataValidation })}
                 disabled={disabled}
                 className="flex-1 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
               />
@@ -440,6 +447,34 @@ export default function PaginationConfig({
             <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
               多线程并发同步可提高速度，但会增加服务器负载
             </p>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <FileText className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+              <div>
+                <div className="font-medium text-gray-900 dark:text-white">
+                  启用数据验证
+                </div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">
+                  同步时验证数据完整性和格式
+                </div>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => onChange({ syncMode, pageSize, enableResume, lastSyncPosition, maxRecordsPerSync, incrementalType, incrementalField, lastSyncValue, syncTimeout, enableDataValidation: !enableDataValidation })}
+              disabled={disabled}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                enableDataValidation ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'
+              } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  enableDataValidation ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
           </div>
         </div>
       )}

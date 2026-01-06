@@ -484,13 +484,14 @@ export default function EditSyncJobPage() {
                 高级配置
               </h2>
               <PaginationConfig
+                syncMode={formData.syncMode}
                 pageSize={formData.pageSize}
                 enableResume={formData.enableResume}
                 syncTimeout={formData.syncTimeout}
                 maxRecordsPerSync={formData.maxRecordsPerSync}
                 enableDataValidation={formData.enableDataValidation}
                 onChange={handlePaginationConfigChange}
-                errors={errors}
+                error={errors.pagination}
               />
             </div>
 
