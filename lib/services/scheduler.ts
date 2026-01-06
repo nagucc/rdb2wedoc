@@ -2,21 +2,31 @@ import { syncService } from './sync.service';
 import { getJobs, saveJob } from '@/lib/config/storage';
 import { Logger } from '@/lib/utils/helpers';
 
+declare global {
+  var schedulerManagerInstance: SchedulerManager | undefined;
+}
+
 /**
  * 调度器管理器
  * 负责管理所有同步作业的调度生命周期
  */
 export class SchedulerManager {
-  private static instance: SchedulerManager;
   private isInitialized: boolean = false;
 
   private constructor() {}
 
   static getInstance(): SchedulerManager {
-    if (!SchedulerManager.instance) {
-      SchedulerManager.instance = new SchedulerManager();
+    if (typeof global !== 'undefined' && global.schedulerManagerInstance) {
+      return global.schedulerManagerInstance;
     }
-    return SchedulerManager.instance;
+
+    const instance = new SchedulerManager();
+    
+    if (typeof global !== 'undefined') {
+      global.schedulerManagerInstance = instance;
+    }
+    
+    return instance;
   }
 
   /**
@@ -52,6 +62,11 @@ export class SchedulerManager {
       }
 
       this.isInitialized = true;
+
+      // 保存到全局变量
+      if (typeof global !== 'undefined') {
+        global.schedulerManagerInstance = this;
+      }
 
       Logger.info(`调度器初始化完成，已启动 ${enabledCount} 个同步作业`, {
         totalJobs: jobs.length,

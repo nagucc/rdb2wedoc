@@ -50,6 +50,18 @@ export default function SyncJobsPage() {
       setLoading(true);
       setError(null);
       const response = await fetch('/api/jobs');
+      
+      if (!response.ok) {
+        setError('获取同步作业列表失败');
+        return;
+      }
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        setError('服务器返回了非JSON响应');
+        return;
+      }
+
       const data = await response.json();
 
       if (data.success) {
@@ -68,6 +80,16 @@ export default function SyncJobsPage() {
   const fetchDatabases = async () => {
     try {
       const response = await fetch('/api/databases');
+      
+      if (!response.ok) {
+        return;
+      }
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        return;
+      }
+
       const data = await response.json();
 
       if (data.success) {
@@ -81,6 +103,16 @@ export default function SyncJobsPage() {
   const fetchDocuments = async () => {
     try {
       const response = await fetch('/api/documents');
+      
+      if (!response.ok) {
+        return;
+      }
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        return;
+      }
+
       const data = await response.json();
 
       if (data.success) {
@@ -94,6 +126,16 @@ export default function SyncJobsPage() {
   const fetchMappingConfigs = async () => {
     try {
       const response = await fetch('/api/mappings');
+      
+      if (!response.ok) {
+        return;
+      }
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        return;
+      }
+
       const data = await response.json();
 
       if (data.success) {
@@ -190,6 +232,17 @@ export default function SyncJobsPage() {
         body: JSON.stringify({ enabled: !enabled })
       });
 
+      if (!response.ok) {
+        alert('操作失败');
+        return;
+      }
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        alert('服务器返回了非JSON响应');
+        return;
+      }
+
       const data = await response.json();
 
       if (data.success) {
@@ -219,6 +272,11 @@ export default function SyncJobsPage() {
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('服务器返回了非JSON响应');
       }
 
       const data = await response.json();
@@ -258,6 +316,20 @@ export default function SyncJobsPage() {
 
       try {
         const response = await fetch(`/api/jobs/${jobId}`);
+        
+        if (!response.ok) {
+          attempts++;
+          setTimeout(poll, interval);
+          return;
+        }
+
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          attempts++;
+          setTimeout(poll, interval);
+          return;
+        }
+
         const data = await response.json();
 
         if (data.success && data.data) {
@@ -296,6 +368,18 @@ export default function SyncJobsPage() {
     try {
       setLoadingLogs(true);
       const response = await fetch(`/api/jobs/${jobId}/logs`);
+      
+      if (!response.ok) {
+        alert('获取日志失败');
+        return;
+      }
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        alert('服务器返回了非JSON响应');
+        return;
+      }
+
       const data = await response.json();
 
       if (data.success) {
@@ -527,7 +611,10 @@ export default function SyncJobsPage() {
                           </div>
                           <div className="flex items-center gap-2">
                             <button
-                              onClick={() => handleViewLogs(job.id)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleViewLogs(job.id);
+                              }}
                               className="flex items-center gap-1 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
                             >
                               <History className="h-4 w-4" />
@@ -535,7 +622,10 @@ export default function SyncJobsPage() {
                             </button>
                             {job.status !== 'running' && (
                               <button
-                                onClick={() => handleToggleStatus(job.id, job.enabled)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleToggleStatus(job.id, job.enabled);
+                                }}
                                 title={job.status === 'running' ? '作业运行中，此操作暂时不可用' : ''}
                                 disabled={job.status === 'running'}
                                 className={`flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
@@ -559,7 +649,10 @@ export default function SyncJobsPage() {
                             )}
                             {job.enabled && job.status !== 'running' && (
                               <button
-                                onClick={() => handleExecuteJob(job.id)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleExecuteJob(job.id);
+                                }}
                                 disabled={executingJobId === job.id}
                                 className="flex items-center gap-1 rounded-lg bg-blue-100 px-3 py-1.5 text-sm font-medium text-blue-700 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                               >
@@ -577,7 +670,10 @@ export default function SyncJobsPage() {
                               </button>
                             )}
                             <button
-                              onClick={() => handleEdit(job)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEdit(job);
+                              }}
                               title={job.status === 'running' ? '作业运行中，此操作暂时不可用' : ''}
                               disabled={job.status === 'running'}
                               className="flex items-center gap-1 rounded-lg border border-blue-300 bg-white px-3 py-1.5 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-50 dark:border-blue-800 dark:bg-gray-800 dark:text-blue-400 dark:hover:bg-blue-900/20 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -586,7 +682,10 @@ export default function SyncJobsPage() {
                               编辑
                             </button>
                             <button
-                              onClick={() => handleDelete(job.id)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDelete(job.id);
+                              }}
                               title={job.status === 'running' ? '作业运行中，此操作暂时不可用' : ''}
                               disabled={job.status === 'running'}
                               className="flex items-center gap-1 rounded-lg border border-red-300 bg-white px-3 py-1.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 dark:border-red-800 dark:bg-gray-800 dark:text-red-400 dark:hover:bg-red-900/20 disabled:opacity-50 disabled:cursor-not-allowed"

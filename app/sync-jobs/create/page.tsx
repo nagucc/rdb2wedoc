@@ -156,6 +156,12 @@ export default function CreateSyncJobPage() {
         body: JSON.stringify(formData)
       });
 
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        setErrors({ submit: '服务器返回了非JSON响应' });
+        return;
+      }
+
       const result = await response.json();
 
       if (response.ok && result.success) {

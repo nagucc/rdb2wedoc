@@ -76,6 +76,20 @@ export default function EditSyncJobPage() {
     try {
       setLoading(true);
       const response = await fetch(`/api/jobs/${jobId}`);
+      
+      if (!response.ok) {
+        console.error(`API request failed with status ${response.status}`);
+        router.push('/sync-jobs');
+        return;
+      }
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        console.error('API returned non-JSON response');
+        router.push('/sync-jobs');
+        return;
+      }
+
       const result = await response.json();
       
       if (result.success && result.data) {
@@ -103,9 +117,15 @@ export default function EditSyncJobPage() {
 
         if (job.mappingConfigId) {
           const mappingResponse = await fetch(`/api/mappings/${job.mappingConfigId}`);
-          const mappingResult = await mappingResponse.json();
-          if (mappingResult.success && mappingResult.data) {
-            setSelectedMapping(mappingResult.data);
+          
+          if (mappingResponse.ok) {
+            const mappingContentType = mappingResponse.headers.get('content-type');
+            if (mappingContentType && mappingContentType.includes('application/json')) {
+              const mappingResult = await mappingResponse.json();
+              if (mappingResult.success && mappingResult.data) {
+                setSelectedMapping(mappingResult.data);
+              }
+            }
           }
         }
       } else {
@@ -213,6 +233,12 @@ export default function EditSyncJobPage() {
           id: jobId
         })
       });
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        setErrors({ submit: '服务器返回了非JSON响应' });
+        return;
+      }
 
       const result = await response.json();
 
