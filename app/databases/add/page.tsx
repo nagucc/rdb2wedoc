@@ -308,12 +308,14 @@ export default function AddDatabasePage() {
                   {databaseTypes.map((type) => (
                     <button
                       key={type.value}
-                      onClick={() => handleTypeChange(type.value as DatabaseConfig['type'])}
+                      onClick={() => type.value === 'mysql' && handleTypeChange(type.value)}
+                      disabled={type.value !== 'mysql'}
+                      title={type.value !== 'mysql' ? '功能暂未开放' : undefined}
                       className={`flex flex-col items-center gap-2 rounded-lg border-2 p-4 transition-all ${
                         config.type === type.value
                           ? 'border-blue-500 bg-blue-50 dark:border-blue-500 dark:bg-blue-900/20'
                           : 'border-gray-200 hover:border-gray-300 dark:border-gray-600 dark:hover:border-gray-500'
-                      }`}
+                      } ${type.value !== 'mysql' ? 'disabled:opacity-50 disabled:cursor-not-allowed' : ''}`}
                     >
                       <span className="text-3xl">{type.icon}</span>
                       <span className="text-sm font-medium text-gray-900 dark:text-white">
@@ -443,8 +445,9 @@ export default function AddDatabasePage() {
                   </label>
                   <select
                     value={config.options?.ssl ? 'true' : 'false'}
-                    onChange={(e) => handleOptionChange('ssl', e.target.value === 'true')}
-                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                    disabled
+                    title="功能暂未开放"
+                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed dark:disabled:bg-gray-700 dark:disabled:text-gray-400"
                   >
                     <option value="false">禁用</option>
                     <option value="true">启用</option>
@@ -457,8 +460,9 @@ export default function AddDatabasePage() {
                   </label>
                   <select
                     value={config.options?.timezone || 'UTC'}
-                    onChange={(e) => handleOptionChange('timezone', e.target.value)}
-                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                    disabled
+                    title="功能暂未开放"
+                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed dark:disabled:bg-gray-700 dark:disabled:text-gray-400"
                   >
                     <option value="UTC">UTC</option>
                     <option value="Asia/Shanghai">Asia/Shanghai</option>
@@ -475,10 +479,11 @@ export default function AddDatabasePage() {
                   <input
                     type="number"
                     value={config.options?.connectionTimeout || 30}
-                    onChange={(e) => handleOptionChange('connectionTimeout', parseInt(e.target.value))}
+                    disabled
+                    title="功能暂未开放"
                     min="1"
                     max="300"
-                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed dark:disabled:bg-gray-700 dark:disabled:text-gray-400"
                   />
                 </div>
 
@@ -489,10 +494,11 @@ export default function AddDatabasePage() {
                   <input
                     type="number"
                     value={config.options?.maxConnections || 10}
-                    onChange={(e) => handleOptionChange('maxConnections', parseInt(e.target.value))}
+                    disabled
+                    title="功能暂未开放"
                     min="1"
                     max="100"
-                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed dark:disabled:bg-gray-700 dark:disabled:text-gray-400"
                   />
                 </div>
               </div>
