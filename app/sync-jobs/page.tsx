@@ -159,6 +159,18 @@ export default function SyncJobsPage() {
     fetchMappingConfigs();
   }, [router]);
 
+  useEffect(() => {
+    const handleRouteChange = () => {
+      fetchJobs();
+      fetchDatabases();
+      fetchDocuments();
+      fetchMappingConfigs();
+    };
+
+    window.addEventListener('focus', handleRouteChange);
+    return () => window.removeEventListener('focus', handleRouteChange);
+  }, []);
+
   const handleCreate = () => {
     router.push('/sync-jobs/create');
   };
@@ -709,14 +721,36 @@ export default function SyncJobsPage() {
                               {mappingConfig?.sourceDatabaseId || '未知数据源'}
                             </span>
                           )}
-                          <span className="flex items-center gap-1">
-                            <FileIcon className="h-4 w-4" />
-                            {document?.name || mappingConfig?.targetDocId || '未知文档'}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Settings className="h-4 w-4" />
-                            {mappingConfig?.sourceTableName || '未知'} → {mappingConfig?.sheetName || mappingConfig?.targetSheetId || '未知'}
-                          </span>
+                          {document ? (
+                            <Link
+                              href={`/dashboard/wecom-accounts/${document.accountId}/documents/${document.id}`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="flex items-center gap-1 text-blue-600 hover:text-blue-700 hover:underline dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+                            >
+                              <FileIcon className="h-4 w-4" />
+                              {document.name}
+                            </Link>
+                          ) : (
+                            <span className="flex items-center gap-1">
+                              <FileIcon className="h-4 w-4" />
+                              {mappingConfig?.targetDocId || '未知文档'}
+                            </span>
+                          )}
+                          {mappingConfig ? (
+                            <Link
+                              href={`/mappings/edit/${job.mappingConfigId}`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="flex items-center gap-1 text-blue-600 hover:text-blue-700 hover:underline dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+                            >
+                              <Settings className="h-4 w-4" />
+                              {mappingConfig.sourceTableName || '未知'} → {mappingConfig.sheetName || mappingConfig.targetSheetId || '未知'}
+                            </Link>
+                          ) : (
+                            <span className="flex items-center gap-1">
+                              <Settings className="h-4 w-4" />
+                              未知 → 未知
+                            </span>
+                          )}
                           {job.mappingConfigId && (
                             <span className="flex items-center gap-1 text-xs bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 px-2 py-0.5 rounded">
                               使用映射配置
