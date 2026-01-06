@@ -854,8 +854,9 @@ export default function EditMappingPage() {
                             </label>
                             <select
                               value={mapping.dataType}
-                              onChange={(e) => updateFieldMapping(index, 'dataType', e.target.value)}
-                              className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                              disabled
+                              title="该功能暂未开放"
+                              className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed dark:disabled:bg-gray-700 dark:disabled:text-gray-400"
                             >
                               <option value="string">字符串</option>
                               <option value="number">数字</option>
@@ -871,8 +872,9 @@ export default function EditMappingPage() {
                             </label>
                             <select
                               value={mapping.transform}
-                              onChange={(e) => updateFieldMapping(index, 'transform', e.target.value)}
-                              className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                              disabled
+                              title="该功能暂未开放"
+                              className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed dark:disabled:bg-gray-700 dark:disabled:text-gray-400"
                             >
                               <option value="">无转换</option>
                               <option value="trim">去除空格</option>
@@ -892,8 +894,9 @@ export default function EditMappingPage() {
                             <input
                               type="text"
                               value={mapping.defaultValue}
-                              onChange={(e) => updateFieldMapping(index, 'defaultValue', e.target.value)}
-                              className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                              disabled
+                              title="该功能暂未开放"
+                              className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed dark:disabled:bg-gray-700 dark:disabled:text-gray-400"
                               placeholder="可选"
                             />
                           </div>
