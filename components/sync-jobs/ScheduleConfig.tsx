@@ -30,6 +30,7 @@ export default function ScheduleConfig({
 
   const [customExpression, setCustomExpression] = useState(schedule || '');
   const [nextRunTime, setNextRunTime] = useState<string>('');
+  const [nextRunDate, setNextRunDate] = useState<Date | null>(null);
   const [isValid, setIsValid] = useState(true);
 
   useEffect(() => {
@@ -37,59 +38,193 @@ export default function ScheduleConfig({
     calculateNextRun(schedule || '');
   }, [schedule]);
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (nextRunDate) {
+        updateRemainingTime();
+      }
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, [nextRunDate]);
+
+  const updateRemainingTime = () => {
+    if (nextRunDate) {
+      const now = new Date();
+      const timeDiff = nextRunDate.getTime() - now.getTime();
+      
+      if (timeDiff <= 0) {
+        calculateNextRun(customExpression);
+      } else {
+        const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+        
+        let timeString = '';
+        if (days > 0) {
+          timeString += `${days}天`;
+        }
+        if (hours > 0) {
+          timeString += `${hours}小时`;
+        }
+        if (minutes > 0) {
+          timeString += `${minutes}分钟`;
+        }
+        if (timeString === '') {
+          timeString = '即将执行';
+        }
+        
+        setNextRunTime(timeString);
+      }
+    }
+  };
+
+  const parseCronPart = (part: string, min: number, max: number): number[] => {
+    if (part === '*') {
+      return Array.from({ length: max - min + 1 }, (_, i) => min + i);
+    }
+    
+    if (part.startsWith('*/')) {
+      const interval = parseInt(part.slice(2));
+      if (isNaN(interval) || interval <= 0) return [];
+      const result: number[] = [];
+      for (let i = min; i <= max; i += interval) {
+        result.push(i);
+      }
+      return result;
+    }
+    
+    if (part.includes(',')) {
+      const values = part.split(',').map(p => parseInt(p.trim()));
+      return values.filter(v => !isNaN(v) && v >= min && v <= max);
+    }
+    
+    if (part.includes('-')) {
+      const [start, end] = part.split('-').map(p => parseInt(p.trim()));
+      if (isNaN(start) || isNaN(end) || start > end || start < min || end > max) return [];
+      const result: number[] = [];
+      for (let i = start; i <= end; i++) {
+        result.push(i);
+      }
+      return result;
+    }
+    
+    const num = parseInt(part);
+    if (!isNaN(num) && num >= min && num <= max) {
+      return [num];
+    }
+    
+    return [];
+  };
+
   const calculateNextRun = (cronExpression: string) => {
     try {
-      const parts = cronExpression.split(' ');
+      const parts = cronExpression.trim().split(/\s+/);
       if (parts.length !== 5) {
         setIsValid(false);
         setNextRunTime('');
+        setNextRunDate(null);
+        return;
+      }
+
+      const [minutePart, hourPart, dayPart, monthPart, weekdayPart] = parts;
+      
+      const minutes = parseCronPart(minutePart, 0, 59);
+      const hours = parseCronPart(hourPart, 0, 23);
+      const days = parseCronPart(dayPart, 1, 31);
+      const months = parseCronPart(monthPart, 1, 12);
+      const weekdays = parseCronPart(weekdayPart, 0, 6);
+      
+      if (minutes.length === 0 || hours.length === 0 || months.length === 0) {
+        setIsValid(false);
+        setNextRunTime('');
+        setNextRunDate(null);
+        return;
+      }
+      
+      if (days.length === 0 && weekdays.length === 0) {
+        setIsValid(false);
+        setNextRunTime('');
+        setNextRunDate(null);
         return;
       }
 
       setIsValid(true);
       
       const now = new Date();
-      const [minute, hour, day, month, weekday] = parts;
+      const currentYear = now.getFullYear();
+      const currentMonth = now.getMonth() + 1;
+      const currentDay = now.getDate();
+      const currentHour = now.getHours();
+      const currentMinute = now.getMinutes();
+      const currentSecond = now.getSeconds();
       
-      let nextRun = new Date(now);
+      let nextRun: Date | null = null;
       
-      if (minute === '*') {
-        nextRun.setMinutes(now.getMinutes() + 1);
-      } else if (minute.startsWith('*/')) {
-        const interval = parseInt(minute.slice(2));
-        const currentMinute = now.getMinutes();
-        const nextMinute = Math.ceil((currentMinute + 1) / interval) * interval;
-        nextRun.setMinutes(nextMinute);
-      } else {
-        const targetMinute = parseInt(minute);
-        nextRun.setMinutes(targetMinute);
-        if (targetMinute <= now.getMinutes()) {
-          nextRun.setHours(now.getHours() + 1);
+      for (let yearOffset = 0; yearOffset < 2; yearOffset++) {
+        for (const month of months) {
+          const targetMonth = month;
+          const targetYear = currentYear + yearOffset + (targetMonth < currentMonth ? 1 : 0);
+          
+          if (yearOffset > 0 && targetMonth < currentMonth) continue;
+          if (yearOffset === 0 && targetMonth < currentMonth) continue;
+          
+          const daysInMonth = new Date(targetYear, targetMonth, 0).getDate();
+          const validDays = days.length > 0 
+            ? days.filter(d => d <= daysInMonth)
+            : [];
+          
+          const validWeekdays = weekdays.length > 0 ? weekdays : [];
+          
+          for (let day = 1; day <= daysInMonth; day++) {
+            const date = new Date(targetYear, targetMonth - 1, day);
+            const weekday = date.getDay();
+            
+            const dayMatches = validDays.length === 0 || validDays.includes(day);
+            const weekdayMatches = validWeekdays.length === 0 || validWeekdays.includes(weekday);
+            
+            if (!dayMatches && !weekdayMatches) continue;
+            
+            if (yearOffset === 0 && targetMonth === currentMonth && day < currentDay) continue;
+            
+            for (const hour of hours) {
+              if (yearOffset === 0 && targetMonth === currentMonth && day === currentDay && hour < currentHour) continue;
+              
+              for (const minute of minutes) {
+                const isSameDay = yearOffset === 0 && targetMonth === currentMonth && day === currentDay;
+                const isSameHour = isSameDay && hour === currentHour;
+                const isSameMinute = isSameHour && minute === currentMinute;
+                
+                if (isSameMinute && currentSecond >= 0) continue;
+                if (isSameHour && minute < currentMinute) continue;
+                
+                const candidate = new Date(targetYear, targetMonth - 1, day, hour, minute, 0, 0);
+                
+                if (candidate.getTime() > now.getTime()) {
+                  if (nextRun === null || candidate.getTime() < nextRun.getTime()) {
+                    nextRun = candidate;
+                  }
+                }
+              }
+            }
+          }
         }
+        
+        if (nextRun !== null) break;
       }
       
-      nextRun.setSeconds(0);
-      nextRun.setMilliseconds(0);
-      
-      const timeDiff = nextRun.getTime() - now.getTime();
-      const hours = Math.floor(timeDiff / (1000 * 60 * 60));
-      const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
-      
-      let timeString = '';
-      if (hours > 0) {
-        timeString += `${hours}小时`;
+      if (nextRun) {
+        setNextRunDate(nextRun);
+        updateRemainingTime();
+      } else {
+        setIsValid(false);
+        setNextRunTime('');
+        setNextRunDate(null);
       }
-      if (minutes > 0) {
-        timeString += `${minutes}分钟`;
-      }
-      if (timeString === '') {
-        timeString = '即将执行';
-      }
-      
-      setNextRunTime(timeString);
     } catch (error) {
       setIsValid(false);
       setNextRunTime('');
+      setNextRunDate(null);
     }
   };
 
