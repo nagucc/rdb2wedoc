@@ -43,9 +43,12 @@ export async function GET(
         sheetCount: intelligentDoc.sheets.length 
       });
 
-      const sheets: DocumentSheet[] = intelligentDoc.sheets.map(sheet => ({
+      const sheets = intelligentDoc.sheets.map(sheet => ({
+        id: sheet.id,
         sheet_id: sheet.id,
-        title: sheet.name
+        name: sheet.name,
+        title: sheet.name,
+        fields: sheet.fields || []
       }));
 
       return NextResponse.json({
@@ -82,14 +85,22 @@ export async function GET(
     const accessToken = await weComDocumentService.getAccessToken(account.corpId, account.corpSecret);
     const sheets = await weComDocumentService.getDocumentSheets(accessToken, document.id);
 
+    const formattedSheets = sheets.map(sheet => ({
+      id: sheet.id,
+      sheet_id: sheet.id,
+      name: sheet.name,
+      title: sheet.name,
+      fields: sheet.fields || []
+    }));
+
     Logger.info(`获取企业微信文档Sheet列表成功: ${document.name}`, { 
       docId: document.id, 
-      sheetCount: sheets.length 
+      sheetCount: formattedSheets.length 
     });
 
     return NextResponse.json({
       success: true,
-      data: sheets
+      data: formattedSheets
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : '未知错误';

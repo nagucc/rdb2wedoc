@@ -204,9 +204,9 @@ export default function WecomSmartSheetDetailPage() {
                 </div>
               ) : (
                 <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {sheets.map((sheet) => (
+                  {sheets.map((sheet, index) => (
                     <div
-                      key={sheet.id}
+                      key={sheet.id || `sheet-${index}`}
                       onClick={() => handleSheetClick(sheet)}
                       className="flex cursor-pointer items-center justify-between p-6 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50"
                     >
@@ -278,8 +278,8 @@ export default function WecomSmartSheetDetailPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                        {selectedSheet.fields.map((field) => (
-                          <tr key={field.id} className="transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                        {selectedSheet.fields.map((field, index) => (
+                          <tr key={field.id || `field-${index}`} className="transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50">
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                               {field.name}
                             </td>
