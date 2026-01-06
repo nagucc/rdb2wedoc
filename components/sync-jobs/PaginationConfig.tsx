@@ -395,12 +395,12 @@ export default function PaginationConfig({
         </div>
       )}
 
-      <button
+      <button disabled
         type="button"
         onClick={() => setShowAdvanced(!showAdvanced)}
         className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-1"
       >
-        {showAdvanced ? '收起' : '高级选项'}
+        {showAdvanced ? '收起' : '高级选项(暂不支持)'}
         <ChevronDown className={`w-4 h-4 transition-transform ${showAdvanced ? 'rotate-180' : ''}`} />
       </button>
 

@@ -154,8 +154,9 @@ export default function ConflictStrategyConfig({
           <button
             type="button"
             onClick={() => !disabled && setIsOpen(!isOpen)}
-            disabled={disabled}
-            className={`w-full rounded-lg border px-4 py-3 text-left transition-colors ${
+            disabled={true}
+            title="功能暂未开放"
+            className={`w-full rounded-lg border px-4 py-3 text-left transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
               error
                 ? 'border-red-500 bg-red-50 dark:border-red-500 dark:bg-red-900/20'
                 : 'border-gray-300 bg-white hover:border-gray-400 dark:border-gray-600 dark:bg-gray-800 dark:hover:border-gray-500'
@@ -207,12 +208,14 @@ export default function ConflictStrategyConfig({
                 <button
                   key={strategy.value}
                   type="button"
-                  onClick={() => handleGlobalStrategyChange(strategy.value)}
+                  onClick={() => strategy.value !== 'overwrite' && handleGlobalStrategyChange(strategy.value)}
+                  disabled={strategy.value === 'overwrite'}
+                  title={strategy.value === 'overwrite' ? '功能暂未开放' : undefined}
                   className={`w-full px-4 py-4 text-left transition-colors hover:bg-gray-50 dark:hover:bg-gray-700 ${
                     selectedGlobalStrategy?.value === strategy.value
                       ? 'bg-blue-50 dark:bg-blue-900/20'
                       : ''
-                  }`}
+                  } ${strategy.value === 'overwrite' ? 'disabled:opacity-50 disabled:cursor-not-allowed' : ''}`}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex-1">

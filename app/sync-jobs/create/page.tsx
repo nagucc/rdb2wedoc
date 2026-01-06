@@ -271,7 +271,7 @@ export default function CreateSyncJobPage() {
                     <div className="text-sm font-medium text-gray-900 dark:text-white">全量同步</div>
                     <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">每次同步全部数据</div>
                   </button>
-                  <button
+                  <button disabled
                     type="button"
                     onClick={() => setFormData(prev => ({ ...prev, syncMode: 'incremental' }))}
                     className={`rounded-lg border-2 p-4 text-center transition-all ${
@@ -281,10 +281,10 @@ export default function CreateSyncJobPage() {
                     }`}
                   >
                     <div className="text-2xl mb-2">📈</div>
-                    <div className="text-sm font-medium text-gray-900 dark:text-white">增量同步</div>
+                    <div className="text-sm font-medium text-gray-900 dark:text-white">增量同步(暂不开放)</div>
                     <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">仅同步新增或变更数据</div>
                   </button>
-                  <button
+                  <button disabled
                     type="button"
                     onClick={() => setFormData(prev => ({ ...prev, syncMode: 'paged' }))}
                     className={`rounded-lg border-2 p-4 text-center transition-all ${
@@ -294,7 +294,7 @@ export default function CreateSyncJobPage() {
                     }`}
                   >
                     <div className="text-2xl mb-2">📄</div>
-                    <div className="text-sm font-medium text-gray-900 dark:text-white">分页同步</div>
+                    <div className="text-sm font-medium text-gray-900 dark:text-white">分页同步(暂不开放)</div>
                     <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">分批次同步大量数据</div>
                   </button>
                 </div>
@@ -394,7 +394,7 @@ export default function CreateSyncJobPage() {
               <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
                 高级配置
               </h2>
-              <PaginationConfig
+              <PaginationConfig disabled
                 syncMode={formData.syncMode}
                 pageSize={formData.pageSize}
                 enableResume={formData.enableResume}
