@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { getJobs, getJobLogs } from '@/lib/config/storage';
 import { Logger } from '@/lib/utils/helpers';
 
+export const runtime = 'nodejs';
+
 export async function GET() {
   try {
     const jobs = await getJobs();

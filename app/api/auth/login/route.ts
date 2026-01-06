@@ -3,6 +3,8 @@ import { UserLogin } from '@/types';
 import { getUserByUsername, saveHistory } from '@/lib/config/storage';
 import { verifyPassword, generateId, Logger } from '@/lib/utils/helpers';
 
+export const runtime = 'nodejs';
+
 // 用户登录
 export async function POST(request: NextRequest) {
   try {

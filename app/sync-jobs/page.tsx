@@ -694,10 +694,21 @@ export default function SyncJobsPage() {
                           </div>
                         </div>
                         <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 dark:text-gray-400 mt-3">
-                          <span className="flex items-center gap-1">
-                            <Database className="h-4 w-4" />
-                            {database?.name || mappingConfig?.sourceDatabaseId || '未知数据源'}
-                          </span>
+                          {database ? (
+                            <Link
+                              href={`/databases/${database.id}`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="flex items-center gap-1 text-blue-600 hover:text-blue-700 hover:underline dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+                            >
+                              <Database className="h-4 w-4" />
+                              {database.name}
+                            </Link>
+                          ) : (
+                            <span className="flex items-center gap-1">
+                              <Database className="h-4 w-4" />
+                              {mappingConfig?.sourceDatabaseId || '未知数据源'}
+                            </span>
+                          )}
                           <span className="flex items-center gap-1">
                             <FileIcon className="h-4 w-4" />
                             {document?.name || mappingConfig?.targetDocId || '未知文档'}
