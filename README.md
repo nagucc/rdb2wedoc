@@ -26,7 +26,7 @@ bun dev
 
 推荐使用 Docker 进行部署，这样可以确保环境一致性和简化部署流程。
 
-📖 [Docker 部署指南](docs/DOCKER_DEPLOYMENT.md)
+📖 [Docker 部署指南](docs/项目Docker部署指南.md)
 
 ## ⚠️ 重要：部署后立即创建用户账户
 
