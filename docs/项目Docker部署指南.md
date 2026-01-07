@@ -20,7 +20,6 @@ rdb2wedoc 项目已发布到 Docker Hub，您可以直接拉取预构建的镜�
 
 **可用标签**:
 - `latest` - 最新版本
-- `production` - 生产环境版本
 - `<commit-sha>` - 基于提交 SHA 的唯一标识
 - 语义化版本标签（如 `v1.2.3`, `v1.2`, `v1`）
 
@@ -32,13 +31,7 @@ rdb2wedoc 项目已发布到 Docker Hub，您可以直接拉取预构建的镜�
 docker pull nagucc/rdb2wedoc:latest
 ```
 
-#### 1.2.2 拉取生产版本
-
-```bash
-docker pull nagucc/rdb2wedoc:production
-```
-
-#### 1.2.3 拉取特定版本
+#### 1.2.2 拉取特定版本
 
 ```bash
 # 拉取特定提交版本
@@ -58,7 +51,7 @@ docker images | grep rdb2wedoc
 
 # 预期输出示例：  
 # nagucc/rdb2wedoc   latest    abc123def456   2 hours ago   450MB
-# nagucc/rdb2wedoc   production abc123def456   2 hours ago   450MB
+# nagucc/rdb2wedoc   v1.2.3    abc123def456   2 hours ago   450MB
 
 # 查看镜像详细信息
 docker inspect nagucc/rdb2wedoc:latest
@@ -141,7 +134,7 @@ version: '3.8'
 
 services:
   rdb2wedoc:
-    image: nagucc/rdb2wedoc:production
+    image: nagucc/rdb2wedoc:latest
     container_name: rdb2wedoc
     restart: unless-stopped
     ports:
@@ -199,7 +192,7 @@ version: '3.8'
 
 services:
   rdb2wedoc:
-    image: nagucc/rdb2wedoc:production
+    image: nagucc/rdb2wedoc:latest
     container_name: rdb2wedoc
     restart: unless-stopped
     ports:
@@ -258,7 +251,7 @@ services:
       - rdb2wedoc-network
 
   rdb2wedoc:
-    image: nagucc/rdb2wedoc:production
+    image: nagucc/rdb2wedoc:latest
     container_name: rdb2wedoc
     restart: unless-stopped
     environment:
@@ -372,7 +365,7 @@ docker run -d \
 ```yaml
 services:
   rdb2wedoc:
-    image: nagucc/rdb2wedoc:production
+    image: nagucc/rdb2wedoc:latest
     environment:
       - NODE_ENV=production
       - TZ=Asia/Shanghai
@@ -962,7 +955,7 @@ sudo systemctl restart docker
 set -e
 
 DOCKERHUB_USERNAME="nagucc"
-IMAGE_NAME="${DOCKERHUB_USERNAME}/rdb2wedoc:production"
+IMAGE_NAME="${DOCKERHUB_USERNAME}/rdb2wedoc:latest"
 
 echo "开始部署 rdb2wedoc..."
 
@@ -1097,7 +1090,7 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     
     if docker images | grep -q "$IMAGE_NAME"; then
         echo "删除镜像..."
-        docker rmi $IMAGE_NAME:latest $IMAGE_NAME:production 2>/dev/null || true
+        docker rmi $IMAGE_NAME:latest 2>/dev/null || true
         echo "✓ 镜像已删除"
     else
         echo "未找到镜像"
@@ -1138,10 +1131,10 @@ chmod +x cleanup.sh
 
 ```bash
 # 拉取镜像
-docker pull nagucc/rdb2wedoc:production
+docker pull nagucc/rdb2wedoc:latest
 
 # 启动容器
-docker run -d --name rdb2wedoc -p 3000:3000 nagucc/rdb2wedoc:production
+docker run -d --name rdb2wedoc -p 3000:3000 nagucc/rdb2wedoc:latest
 
 # 查看日志
 docker logs -f rdb2wedoc
