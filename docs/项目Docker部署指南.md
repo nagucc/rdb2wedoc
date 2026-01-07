@@ -72,7 +72,7 @@ docker inspect nagucc/rdb2wedoc:latest
 
 ```bash
 # 导出镜像为 tar 文件
-docker save -o rdb2wedoc-latest.tar <DOCKERHUB_USERNAME>/rdb2wedoc:latest
+docker save -o rdb2wedoc-latest.tar nagucc/rdb2wedoc:latest
 
 # 压缩镜像文件
 gzip rdb2wedoc-latest.tar
@@ -103,7 +103,7 @@ docker images | grep rdb2wedoc
 docker run -d \
   --name rdb2wedoc \
   -p 3000:3000 \
-  <DOCKERHUB_USERNAME>/rdb2wedoc:latest
+  nagucc/rdb2wedoc:latest
 ```
 
 #### 2.1.2 完整配置启动
@@ -117,7 +117,7 @@ docker run -d \
   -v rdb2wedoc-data:/app/data \
   --memory="2g" \
   --cpus="2.0" \
-  <DOCKERHUB_USERNAME>/rdb2wedoc:latest
+  nagucc/rdb2wedoc:latest
 ```
 
 #### 2.1.3 指定端口启动
@@ -127,7 +127,7 @@ docker run -d \
 docker run -d \
   --name rdb2wedoc \
   -p 8080:3000 \
-  <DOCKERHUB_USERNAME>/rdb2wedoc:latest
+  nagucc/rdb2wedoc:latest
 ```
 
 ### 2.2 使用 Docker Compose 部署
@@ -141,7 +141,7 @@ version: '3.8'
 
 services:
   rdb2wedoc:
-    image: <DOCKERHUB_USERNAME>/rdb2wedoc:production
+    image: nagucc/rdb2wedoc:production
     container_name: rdb2wedoc
     restart: unless-stopped
     ports:
@@ -199,7 +199,7 @@ version: '3.8'
 
 services:
   rdb2wedoc:
-    image: <DOCKERHUB_USERNAME>/rdb2wedoc:production
+    image: nagucc/rdb2wedoc:production
     container_name: rdb2wedoc
     restart: unless-stopped
     ports:
@@ -258,7 +258,7 @@ services:
       - rdb2wedoc-network
 
   rdb2wedoc:
-    image: <DOCKERHUB_USERNAME>/rdb2wedoc:production
+    image: nagucc/rdb2wedoc:production
     container_name: rdb2wedoc
     restart: unless-stopped
     environment:
@@ -344,7 +344,7 @@ docker run -d \
   -p 3000:3000 \
   -e NODE_ENV=production \
   -e TZ=Asia/Shanghai \
-  <DOCKERHUB_USERNAME>/rdb2wedoc:latest
+  nagucc/rdb2wedoc:latest
 ```
 
 #### 3.3.2 使用 --env-file
@@ -364,7 +364,7 @@ docker run -d \
   --name rdb2wedoc \
   -p 3000:3000 \
   --env-file .env \
-  <DOCKERHUB_USERNAME>/rdb2wedoc:latest
+  nagucc/rdb2wedoc:latest
 ```
 
 #### 3.3.3 在 docker-compose.yml 中配置
@@ -372,7 +372,7 @@ docker run -d \
 ```yaml
 services:
   rdb2wedoc:
-    image: <DOCKERHUB_USERNAME>/rdb2wedoc:production
+    image: nagucc/rdb2wedoc:production
     environment:
       - NODE_ENV=production
       - TZ=Asia/Shanghai
@@ -391,14 +391,14 @@ docker run -d \
   --name rdb2wedoc \
   -p 3000:3000 \
   -e DATABASE_URL=postgresql://user:password@host:5432/dbname \
-  <DOCKERHUB_USERNAME>/rdb2wedoc:latest
+  nagucc/rdb2wedoc:latest
 
 # MySQL 示例
 docker run -d \
   --name rdb2wedoc \
   -p 3000:3000 \
   -e DATABASE_URL=mysql://user:password@host:3306/dbname \
-  <DOCKERHUB_USERNAME>/rdb2wedoc:latest
+  nagucc/rdb2wedoc:latest
 ```
 
 ---
@@ -526,7 +526,7 @@ docker ps | grep rdb2wedoc
 
 # 预期输出：
 # CONTAINER ID   IMAGE              COMMAND          CREATED         STATUS         PORTS                    NAMES
-# abc123def456   <DOCKERHUB_USERNAME>/rdb2wedoc:latest   "node server.js" 2 minutes ago   Up 2 minutes   0.0.0.0:3000->3000/tcp   rdb2wedoc
+# abc123def456   nagucc/rdb2wedoc:latest   "node server.js" 2 minutes ago   Up 2 minutes   0.0.0.0:3000->3000/tcp   rdb2wedoc
 ```
 
 ### 5.2 容器日志检查
@@ -680,7 +680,7 @@ docker inspect rdb2wedoc | grep -i exitcode
   sudo netstat -tulpn | grep 3000
 
   # 解决方案：更换端口
-  docker run -d --name rdb2wedoc -p 8080:3000 <DOCKERHUB_USERNAME>/rdb2wedoc:latest
+  docker run -d --name rdb2wedoc -p 8080:3000 nagucc/rdb2wedoc:latest
   ```
 
 - **内存不足**
@@ -689,7 +689,7 @@ docker inspect rdb2wedoc | grep -i exitcode
   free -h
 
   # 解决方案：增加内存限制或减少其他容器
-  docker run -d --name rdb2wedoc -p 3000:3000 --memory="1g" <DOCKERHUB_USERNAME>/rdb2wedoc:latest
+  docker run -d --name rdb2wedoc -p 3000:3000 --memory="1g" nagucc/rdb2wedoc:latest
   ```
 
 - **权限问题**
@@ -801,7 +801,7 @@ docker run -d \
   --name rdb2wedoc \
   -p 3000:3000 \
   -v rdb2wedoc-data:/app/data \
-  <DOCKERHUB_USERNAME>/rdb2wedoc:latest
+  nagucc/rdb2wedoc:latest
 ```
 
 ### 6.5 性能问题
@@ -831,7 +831,7 @@ top
     -p 3000:3000 \
     --memory="2g" \
     --cpus="2.0" \
-    <DOCKERHUB_USERNAME>/rdb2wedoc:latest
+    nagucc/rdb2wedoc:latest
   ```
 
 - 优化应用配置
@@ -850,14 +850,14 @@ docker run -d \
   -p 3000:3000 \
   --log-opt max-size=10m \
   --log-opt max-file=3 \
-  <DOCKERHUB_USERNAME>/rdb2wedoc:latest
+  nagucc/rdb2wedoc:latest
 ```
 
 2. 清理旧日志
 ```bash
 docker logs rdb2wedoc > rdb2wedoc.log
 docker rm rdb2wedoc
-docker run -d --name rdb2wedoc -p 3000:3000 <DOCKERHUB_USERNAME>/rdb2wedoc:latest
+docker run -d --name rdb2wedoc -p 3000:3000 nagucc/rdb2wedoc:latest
 ```
 
 ### 6.7 更新部署
@@ -868,7 +868,7 @@ docker run -d --name rdb2wedoc -p 3000:3000 <DOCKERHUB_USERNAME>/rdb2wedoc:lates
 
 1. 拉取新镜像
 ```bash
-docker pull <DOCKERHUB_USERNAME>/rdb2wedoc:latest
+docker pull nagucc/rdb2wedoc:latest
 ```
 
 2. 停止旧容器
@@ -887,7 +887,7 @@ docker run -d \
   --name rdb2wedoc \
   -p 3000:3000 \
   -v rdb2wedoc-data:/app/data \
-  <DOCKERHUB_USERNAME>/rdb2wedoc:latest
+  nagucc/rdb2wedoc:latest
 ```
 
 5. 验证更新
@@ -961,7 +961,7 @@ sudo systemctl restart docker
 
 set -e
 
-DOCKERHUB_USERNAME="<DOCKERHUB_USERNAME>"
+DOCKERHUB_USERNAME="nagucc"
 IMAGE_NAME="${DOCKERHUB_USERNAME}/rdb2wedoc:production"
 
 echo "开始部署 rdb2wedoc..."
@@ -1092,7 +1092,7 @@ fi
 read -p "是否删除镜像？(y/N) " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-    DOCKERHUB_USERNAME="<DOCKERHUB_USERNAME>"
+    DOCKERHUB_USERNAME="nagucc"
     IMAGE_NAME="${DOCKERHUB_USERNAME}/rdb2wedoc"
     
     if docker images | grep -q "$IMAGE_NAME"; then
@@ -1138,10 +1138,10 @@ chmod +x cleanup.sh
 
 ```bash
 # 拉取镜像
-docker pull <DOCKERHUB_USERNAME>/rdb2wedoc:production
+docker pull nagucc/rdb2wedoc:production
 
 # 启动容器
-docker run -d --name rdb2wedoc -p 3000:3000 <DOCKERHUB_USERNAME>/rdb2wedoc:production
+docker run -d --name rdb2wedoc -p 3000:3000 nagucc/rdb2wedoc:production
 
 # 查看日志
 docker logs -f rdb2wedoc
