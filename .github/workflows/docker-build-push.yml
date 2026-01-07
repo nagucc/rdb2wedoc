@@ -7,7 +7,7 @@ on:
 
 env:
   REGISTRY: docker.io
-  IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/rdb2wedoc
+  IMAGE_NAME: nagucc/rdb2wedoc
 
 jobs:
   build-and-push:
@@ -31,18 +31,31 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Extract and validate version from package.json
+        id: version
+        run: |
+          # Extract version from package.json
+          VERSION=$(node -p "require('./package.json').version")
+          echo "Extracted version: $VERSION"
+          
+          # Validate SemVer format (X.Y.Z where X, Y, Z are non-negative integers)
+          if [[ ! $VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Error: Version '$VERSION' does not follow SemVer format (X.Y.Z)"
+            exit 1
+          fi
+          
+          echo "Version validation successful: $VERSION"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
       - name: Extract metadata for Docker
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
+            type=raw,value=latest
+            type=raw,value=${{ steps.version.outputs.version }}
             type=sha,prefix=
-            type=raw,value=latest,enable={{is_default_branch}}
-            type=raw,value=production,enable={{is_default_branch}}
-            type=semver,pattern={{version}},enable={{is_default_branch}}
-            type=semver,pattern={{major}}.{{minor}},enable={{is_default_branch}}
-            type=semver,pattern={{major}},enable={{is_default_branch}}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
