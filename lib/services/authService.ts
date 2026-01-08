@@ -83,7 +83,10 @@ class AuthService {
 
     // 检查会话是否过期
     if (Date.now() > session.expiresAt) {
-      this.logout();
+      // 同步清除过期会话，避免在同步方法中调用异步方法
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem(this.SESSION_KEY);
+      }
       return null;
     }
 

@@ -46,7 +46,8 @@
  * 包括正常退出、会话过期、数据持久化和多用户切换等场景。
  */
 
-import { authService, LoginCredentials } from '@/lib/services/authService'
+import { authService } from '@/lib/services/authService'
+import { LoginCredentials } from '@/types'
 
 describe('AuthService - Logout and Session Management', () => {
   beforeEach(() => {

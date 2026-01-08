@@ -33,7 +33,8 @@
  */
 
 import { renderHook, act } from '@testing-library/react'
-import { authService, LoginCredentials, User } from '@/lib/services/authService'
+import { authService } from '@/lib/services/authService'
+import { LoginCredentials, User } from '@/types'
 
 describe('AuthService - Login Validation', () => {
   beforeEach(() => {
