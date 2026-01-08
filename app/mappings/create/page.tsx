@@ -3,10 +3,11 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { RefreshCw, AlertCircle, XCircle, CheckCircle } from 'lucide-react';
+import { RefreshCw, AlertCircle, XCircle, CheckCircle, Edit2, Trash2, AlertTriangle } from 'lucide-react';
 import { authService } from '@/lib/services/authService';
 import Header from '@/components/layout/Header';
 import { FieldMappingUI } from '@/types';
+import FieldMappingDialog from '@/components/FieldMappingDialog';
 
 interface DatabaseConnection {
   id: string;
@@ -90,6 +91,14 @@ export default function CreateMappingPage() {
 
   const [fieldMappings, setFieldMappings] = useState<FieldMappingUI[]>([]);
 
+  // 字段映射对话框状态
+  const [showFieldMappingDialog, setShowFieldMappingDialog] = useState<boolean>(false);
+  const [editingMapping, setEditingMapping] = useState<FieldMappingUI | null>(null);
+  
+  // 删除确认对话框状态
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<boolean>(false);
+  const [mappingToDelete, setMappingToDelete] = useState<number | null>(null);
+  
   const [databases, setDatabases] = useState<DatabaseConnection[]>([]);
   const [tables, setTables] = useState<Table[]>([]);
   const [selectedDatabase, setSelectedDatabase] = useState<string>('');
@@ -329,38 +338,43 @@ export default function CreateMappingPage() {
   };
 
   const addFieldMapping = () => {
-    const newMapping: FieldMappingUI = {
-      id: `field_${Date.now()}`,
-      databaseColumn: '',
-      documentField: '',
-      dataType: 'string',
-      transform: '',
-      defaultValue: '',
-      required: false,
-      description: ''
-    };
-    setFieldMappings(prev => [...prev, newMapping]);
+    setEditingMapping(null);
+    setShowFieldMappingDialog(true);
   };
 
-  const updateFieldMapping = (index: number, field: keyof FieldMappingUI, value: any) => {
-    setFieldMappings(prev => {
-      const updated = [...prev];
-      updated[index] = { ...updated[index], [field]: value };
-      
-      if (field === 'documentField') {
-        const selectedField = documentFields.find(f => f.id === value);
-        if (selectedField) {
-          updated[index].documentField = selectedField.name;
-          updated[index].documentFieldId = selectedField.id;
-        }
-      }
-      
-      return updated;
-    });
+  const handleSaveMapping = (mapping: FieldMappingUI) => {
+    if (editingMapping) {
+      // 更新现有映射
+      setFieldMappings(prev => prev.map(item => 
+        item.id === mapping.id ? mapping : item
+      ));
+    } else {
+      // 添加新映射
+      setFieldMappings(prev => [...prev, mapping]);
+    }
   };
 
-  const removeFieldMapping = (index: number) => {
-    setFieldMappings(prev => prev.filter((_, i) => i !== index));
+  const handleEditMapping = (mapping: FieldMappingUI) => {
+    setEditingMapping(mapping);
+    setShowFieldMappingDialog(true);
+  };
+
+  const handleDeleteMapping = (index: number) => {
+    setMappingToDelete(index);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDeleteMapping = () => {
+    if (mappingToDelete !== null) {
+      setFieldMappings(prev => prev.filter((_, i) => i !== mappingToDelete));
+      setShowDeleteConfirm(false);
+      setMappingToDelete(null);
+    }
+  };
+
+  const cancelDeleteMapping = () => {
+    setShowDeleteConfirm(false);
+    setMappingToDelete(null);
   };
 
   const validateForm = (): boolean => {
@@ -810,8 +824,8 @@ export default function CreateMappingPage() {
               </div>
 
               {fieldMappings.length === 0 ? (
-                <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 dark:bg-gray-700 dark:border-gray-600">
-                  <svg className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 dark:bg-gray-700 dark:border-gray-600 transition-all duration-300">
+                  <svg className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500 transition-transform duration-300 hover:scale-110" stroke="currentColor" fill="none" viewBox="0 0 48 48">
                     <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                   <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">暂无字段映射，点击上方按钮添加</p>
@@ -822,137 +836,67 @@ export default function CreateMappingPage() {
                     <div key={mapping.id} className="bg-gray-50 rounded-lg p-4 border border-gray-200 dark:bg-gray-700 dark:border-gray-600">
                       <div className="flex items-start justify-between mb-4">
                         <h4 className="text-sm font-medium text-gray-900 dark:text-white">字段映射 #{index + 1}</h4>
-                        <button
-                          type="button"
-                          onClick={() => removeFieldMapping(index)}
-                          className="text-red-600 hover:text-red-800 text-sm dark:text-red-400 dark:hover:text-red-300"
-                        >
-                          删除
-                        </button>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleEditMapping(mapping)}
+                            className="flex items-center gap-1 text-indigo-600 hover:text-indigo-800 text-sm dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors"
+                          >
+                            <Edit2 className="h-4 w-4" />
+                            修改
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteMapping(index)}
+                            className="flex items-center gap-1 text-red-600 hover:text-red-800 text-sm dark:text-red-400 dark:hover:text-red-300 transition-colors"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            删除
+                          </button>
+                        </div>
                       </div>
 
-                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">
-                            源字段 <span className="text-red-500">*</span>
-                          </label>
-                          <select
-                            value={mapping.databaseColumn}
-                            onChange={(e) => updateFieldMapping(index, 'databaseColumn', e.target.value)}
-                            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:focus:border-indigo-500 dark:focus:ring-indigo-500"
-                            required
-                          >
-                            <option value="">请选择源字段</option>
-                            {loadingDatabaseFields ? (
-                              <option disabled>加载中...</option>
-                            ) : databaseFields.length === 0 ? (
-                              <option disabled>暂无可用字段</option>
-                            ) : (
-                              databaseFields.map((field) => (
-                                <option key={field.name} value={field.name}>
-                                  {field.name} ({field.type})
-                                </option>
-                              ))
-                            )}
-                          </select>
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                        <div className="bg-white p-3 rounded-md shadow-sm dark:bg-gray-800">
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">源字段</p>
+                          <p className="font-medium text-gray-900 dark:text-white">{mapping.databaseColumn}</p>
                         </div>
 
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">
-                            目标字段 <span className="text-red-500">*</span>
-                          </label>
-                          <select
-                            value={mapping.documentFieldId || mapping.documentField}
-                            onChange={(e) => updateFieldMapping(index, 'documentField', e.target.value)}
-                            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:focus:border-indigo-500 dark:focus:ring-indigo-500"
-                            required
-                          >
-                            <option value="">请选择目标字段</option>
-                            {loadingDocumentFields ? (
-                              <option disabled>加载中...</option>
-                            ) : documentFields.length === 0 ? (
-                              <option disabled>暂无可用字段</option>
-                            ) : (
-                              documentFields.map((field) => (
-                                <option key={field.id} value={field.id}>
-                                  {field.name} ({field.type})
-                                </option>
-                              ))
-                            )}
-                          </select>
+                        <div className="bg-white p-3 rounded-md shadow-sm dark:bg-gray-800">
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">目标字段</p>
+                          <p className="font-medium text-gray-900 dark:text-white">{mapping.documentField}</p>
                         </div>
 
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">
-                            数据类型
-                          </label>
-                          <select
-                            value={mapping.dataType}
-                            disabled
-                            title="该功能暂未开放"
-                            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:focus:border-indigo-500 dark:focus:ring-indigo-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed dark:disabled:bg-gray-700 dark:disabled:text-gray-400"
-                          >
-                            <option value="string">字符串</option>
-                            <option value="number">数字</option>
-                            <option value="date">日期</option>
-                            <option value="boolean">布尔值</option>
-                            <option value="json">JSON</option>
-                          </select>
+                        <div className="bg-white p-3 rounded-md shadow-sm dark:bg-gray-800">
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">数据类型</p>
+                          <p className="font-medium text-gray-900 dark:text-white">{mapping.dataType}</p>
                         </div>
 
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">
-                            默认值
-                          </label>
-                          <input
-                            type="text"
-                            value={mapping.defaultValue}
-                            disabled
-                            title="该功能暂未开放"
-                            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:focus:border-indigo-500 dark:focus:ring-indigo-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed dark:disabled:bg-gray-700 dark:disabled:text-gray-400"
-                            placeholder="例如: N/A"
-                          />
+                        <div className="bg-white p-3 rounded-md shadow-sm dark:bg-gray-800">
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">必填状态</p>
+                          <p className="font-medium text-gray-900 dark:text-white">{mapping.required ? '必填' : '可选'}</p>
                         </div>
 
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">
-                            转换规则
-                          </label>
-                          <input
-                            type="text"
-                            value={mapping.transform}
-                            disabled
-                            title="该功能暂未开放"
-                            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:focus:border-indigo-500 dark:focus:ring-indigo-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed dark:disabled:bg-gray-700 dark:disabled:text-gray-400"
-                            placeholder="例如: toUpperCase()"
-                          />
-                        </div>
+                        {mapping.defaultValue && (
+                          <div className="bg-white p-3 rounded-md shadow-sm dark:bg-gray-800">
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">默认值</p>
+                            <p className="font-medium text-gray-900 dark:text-white">{mapping.defaultValue}</p>
+                          </div>
+                        )}
 
-                        <div className="flex items-center">
-                          <input
-                            type="checkbox"
-                            id={`required-${index}`}
-                            checked={mapping.required}
-                            onChange={(e) => updateFieldMapping(index, 'required', e.target.checked)}
-                            className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded dark:bg-gray-800 dark:border-gray-600"
-                          />
-                          <label htmlFor={`required-${index}`} className="ml-2 block text-sm text-gray-900 dark:text-gray-300">
-                            必填字段
-                          </label>
-                        </div>
+                        {mapping.transform && (
+                          <div className="bg-white p-3 rounded-md shadow-sm dark:bg-gray-800">
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">转换规则</p>
+                            <p className="font-medium text-gray-900 dark:text-white">{mapping.transform}</p>
+                          </div>
+                        )}
 
-                        <div className="sm:col-span-2">
-                          <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">
-                            描述
-                          </label>
-                          <textarea
-                            value={mapping.description}
-                            onChange={(e) => updateFieldMapping(index, 'description', e.target.value)}
-                            rows={2}
-                            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:focus:border-indigo-500 dark:focus:ring-indigo-500"
-                            placeholder="字段映射说明"
-                          />
-                        </div>
+                        {mapping.description && (
+                          <div className="sm:col-span-2 lg:col-span-4 bg-white p-3 rounded-md shadow-sm dark:bg-gray-800">
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">描述</p>
+                            <p className="font-medium text-gray-900 dark:text-white">{mapping.description}</p>
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -1038,6 +982,54 @@ export default function CreateMappingPage() {
                 <RefreshCw className="h-4 w-4" />
                 重试
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 字段映射对话框 */}
+      <FieldMappingDialog
+        show={showFieldMappingDialog}
+        onClose={() => setShowFieldMappingDialog(false)}
+        onSave={handleSaveMapping}
+        mapping={editingMapping}
+        databaseFields={databaseFields}
+        documentFields={documentFields}
+        loadingDatabaseFields={loadingDatabaseFields}
+        loadingDocumentFields={loadingDocumentFields}
+      />
+
+      {/* 删除确认对话框 */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 animate-fade-in">
+          <div 
+            className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-scale-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <AlertTriangle className="h-8 w-8 text-amber-500" />
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white">确认删除</h3>
+              </div>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+                您确定要删除这条字段映射吗？此操作不可恢复。
+              </p>
+              <div className="flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={cancelDeleteMapping}
+                  className="px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 transition-colors"
+                >
+                  取消
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmDeleteMapping}
+                  className="px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
+                >
+                  确认删除
+                </button>
+              </div>
             </div>
           </div>
         </div>
