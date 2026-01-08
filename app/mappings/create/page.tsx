@@ -6,8 +6,9 @@ import Link from 'next/link';
 import { RefreshCw, AlertCircle, XCircle, CheckCircle, Edit2, Trash2, AlertTriangle } from 'lucide-react';
 import { authService } from '@/lib/services/authService';
 import Header from '@/components/layout/Header';
-import { FieldMappingUI } from '@/types';
+import { FieldMappingUI, DatabaseField, DocumentField } from '@/types';
 import FieldMappingDialog from '@/components/FieldMappingDialog';
+import MappingFormFields from '@/components/mappings/MappingFormFields';
 
 interface DatabaseConnection {
   id: string;
@@ -39,19 +40,6 @@ interface WecomSmartSheet {
 interface Sheet {
   sheet_id: string;
   title: string;
-}
-
-interface DatabaseField {
-  name: string;
-  type: string;
-  nullable: boolean;
-  default?: string;
-}
-
-interface DocumentField {
-  id: string;
-  name: string;
-  type: string;
 }
 
 interface MappingFormData {
@@ -642,171 +630,34 @@ export default function CreateMappingPage() {
               </div>
             )}
 
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  映射名称 <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  id="name"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:border-indigo-500 dark:focus:ring-indigo-500"
-                  placeholder="请输入映射名称"
-                  required
-                />
-              </div>
-
-              <div>
-                <label htmlFor="status" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  状态
-                </label>
-                <select
-                  id="status"
-                  name="status"
-                  value={formData.status}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:border-indigo-500 dark:focus:ring-indigo-500"
-                >
-                  <option value="draft">草稿</option>
-                  <option value="active">激活</option>
-                  <option value="inactive">未激活</option>
-                </select>
-              </div>
-
-              <div>
-                <label htmlFor="sourceName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  源名称 <span className="text-red-500">*</span>
-                </label>
-                <select
-                      id="sourceDatabase"
-                      value={selectedDatabase}
-                      onChange={(e) => setSelectedDatabase(e.target.value)}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:border-indigo-500 dark:focus:ring-indigo-500"
-                      required
-                    >
-                      <option value="">请选择数据库</option>
-                      {loadingDatabases ? (
-                        <option disabled>加载中...</option>
-                      ) : databases.length === 0 ? (
-                        <option disabled>暂无可用数据库</option>
-                      ) : (
-                        databases.map((db) => (
-                          <option key={db.id} value={db.id}>
-                            {db.name} ({db.type})
-                          </option>
-                        ))
-                      )}
-                    </select>
-                    {selectedDatabase && (
-                      <div className="flex gap-2">
-                        <select
-                          id="sourceTable"
-                          value={selectedTable}
-                          onChange={(e) => setSelectedTable(e.target.value)}
-                          className="mt-2 flex-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:border-indigo-500 dark:focus:ring-indigo-500"
-                          required
-                        >
-                          <option value="">请选择表</option>
-                          {loadingTables || refreshingTables ? (
-                            <option disabled>加载中...</option>
-                          ) : tables.length === 0 ? (
-                            <option disabled>暂无可用表</option>
-                          ) : (
-                            tables.map((table) => (
-                              <option key={table.name} value={table.name}>
-                                {table.name} ({table.type})
-                              </option>
-                            ))
-                          )}
-                        </select>
-                        <button
-                          type="button"
-                          onClick={handleRefreshTables}
-                          disabled={refreshingTables || !selectedDatabase}
-                          className="mt-2 flex items-center justify-center w-10 h-10 rounded-md border border-gray-300 bg-white text-gray-600 hover:bg-gray-50 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white dark:focus:ring-offset-gray-800"
-                          aria-label="刷新表格数据"
-                        >
-                          <RefreshCw 
-                            className={`w-6 h-6 ${refreshingTables ? 'animate-spin' : ''}`} 
-                          />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-
-              <div>
-                <label htmlFor="targetName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  目标名称 <span className="text-red-500">*</span>
-                </label>
-                <select
-                  id="targetWeComAccount"
-                  value={selectedWeComAccount}
-                  onChange={(e) => setSelectedWeComAccount(e.target.value)}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:border-indigo-500 dark:focus:ring-indigo-500"
-                  required
-                >
-                  <option value="">请选择企业微信账户</option>
-                  {loadingWeComAccounts ? (
-                    <option disabled>加载中...</option>
-                  ) : wecomAccounts.length === 0 ? (
-                    <option disabled>暂无可用账户</option>
-                  ) : (
-                    wecomAccounts.map((account) => (
-                      <option key={account.id} value={account.id}>
-                        {account.name}
-                      </option>
-                    ))
-                  )}
-                </select>
-                {selectedWeComAccount && (
-                  <select
-                    id="targetDocument"
-                    value={selectedDocument}
-                    onChange={(e) => setSelectedDocument(e.target.value)}
-                    className="mt-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:border-indigo-500 dark:focus:ring-indigo-500"
-                    required
-                  >
-                    <option value="">请选择智能表格</option>
-                    {loadingDocuments ? (
-                      <option disabled>加载中...</option>
-                    ) : documents.length === 0 ? (
-                      <option disabled>暂无可用文档</option>
-                    ) : (
-                      documents.map((doc) => (
-                        <option key={doc.id} value={doc.id}>
-                          {doc.name}
-                        </option>
-                      ))
-                    )}
-                  </select>
-                )}
-                {selectedDocument && (
-                  <select
-                    id="targetSheet"
-                    value={selectedSheet}
-                    onChange={(e) => setSelectedSheet(e.target.value)}
-                    className="mt-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:border-indigo-500 dark:focus:ring-indigo-500"
-                    required
-                  >
-                    <option value="">请选择子表</option>
-                    {loadingSheets ? (
-                      <option disabled>加载中...</option>
-                    ) : sheets.length === 0 ? (
-                      <option disabled>暂无可用子表</option>
-                    ) : (
-                      sheets.map((sheet) => (
-                        <option key={sheet.sheet_id} value={sheet.sheet_id}>
-                          {sheet.title}
-                        </option>
-                      ))
-                    )}
-                  </select>
-                )}
-              </div>
-            </div>
+            <MappingFormFields
+              name={formData.name}
+              onNameChange={(value) => setFormData(prev => ({ ...prev, name: value }))}
+              status={formData.status}
+              onStatusChange={(value) => setFormData(prev => ({ ...prev, status: value }))}
+              selectedDatabase={selectedDatabase}
+              onDatabaseChange={setSelectedDatabase}
+              databases={databases}
+              loadingDatabases={loadingDatabases}
+              selectedTable={selectedTable}
+              onTableChange={setSelectedTable}
+              tables={tables}
+              loadingTables={loadingTables}
+              refreshingTables={refreshingTables}
+              onRefreshTables={handleRefreshTables}
+              selectedWeComAccount={selectedWeComAccount}
+              onWeComAccountChange={setSelectedWeComAccount}
+              wecomAccounts={wecomAccounts}
+              loadingWeComAccounts={loadingWeComAccounts}
+              selectedDocument={selectedDocument}
+              onDocumentChange={setSelectedDocument}
+              documents={documents}
+              loadingDocuments={loadingDocuments}
+              selectedSheet={selectedSheet}
+              onSheetChange={setSelectedSheet}
+              sheets={sheets}
+              loadingSheets={loadingSheets}
+            />
 
             <div>
               <div className="flex items-center justify-between mb-4">

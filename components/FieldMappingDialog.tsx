@@ -2,31 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
-
-interface DatabaseField {
-  name: string;
-  type: string;
-  nullable: boolean;
-  primaryKey: boolean;
-}
-
-interface DocumentField {
-  id: string;
-  name: string;
-  type: string;
-}
-
-export interface FieldMappingUI {
-  id: string;
-  databaseColumn: string;
-  documentField: string;
-  documentFieldId: string;
-  dataType: string;
-  transform: string;
-  defaultValue: string;
-  required: boolean;
-  description: string;
-}
+import { FieldMappingUI, DatabaseField, DocumentField } from '@/types';
 
 interface FieldMappingDialogProps {
   show: boolean;
@@ -84,7 +60,9 @@ export default function FieldMappingDialog({
   }, [mapping]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value, type, checked } = e.target;
+    const target = e.target as HTMLInputElement;
+    const { name, value, type } = target;
+    const checked = target.type === 'checkbox' ? target.checked : undefined;
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value
