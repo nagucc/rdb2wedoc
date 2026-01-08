@@ -312,24 +312,124 @@ docker inspect rdb2wedoc
 
 ## 3. 环境变量配置
 
-### 3.1 必需环境变量
+环境变量是控制应用运行行为的重要配置方式，rdb2wedoc 支持通过多种方式配置环境变量。本章节将详细介绍所有可用的环境变量、配置方法以及最佳实践。
 
-| 变量名 | 默认值 | 说明 | 示例 |
-|--------|--------|------|------|
-| `NODE_ENV` | `production` | 运行环境 | `production` |
-| `PORT` | `3000` | 应用端口 | `3000` |
-| `HOSTNAME` | `0.0.0.0` | 监听地址 | `0.0.0.0` |
+### 3.1 环境变量分类
 
-### 3.2 可选环境变量
+根据用途和重要性，rdb2wedoc 的环境变量分为以下几类：
 
-| 变量名 | 默认值 | 说明 | 示例 |
-|--------|--------|------|------|
-| `TZ` | `UTC` | 时区设置 | `Asia/Shanghai` |
-| `NEXT_TELEMETRY_DISABLED` | `1` | 禁用遥测 | `1` |
+#### 3.1.1 核心环境变量
 
-### 3.3 配置环境变量
+| 变量名 | 默认值 | 说明 | 示例 | 必需 |
+|--------|--------|------|------|------|
+| `NODE_ENV` | `production` | 应用运行环境，影响性能优化和错误处理 | `production` | 否 |
+| `PORT` | `3000` | 应用监听端口 | `3000` | 否 |
+| `HOSTNAME` | `0.0.0.0` | 应用监听地址，设为 `0.0.0.0` 允许外部访问 | `0.0.0.0` | 否 |
 
-#### 3.3.1 使用 -e 参数
+#### 3.1.2 应用配置变量
+
+| 变量名 | 默认值 | 说明 | 示例 | 必需 |
+|--------|--------|------|------|------|
+| `TZ` | `UTC` | 应用时区设置，影响日志时间和定时任务 | `Asia/Shanghai` | 否 |
+| `NEXT_PUBLIC_REFRESH_INTERVAL` | `5000` | 仪表板数据自动刷新间隔（毫秒） | `10000` | 否 |
+| `NEXT_TELEMETRY_DISABLED` | `1` | 是否禁用 Next.js 遥测数据收集 | `1` | 否 |
+
+#### 3.1.3 CI/CD 环境变量
+
+| 变量名 | 默认值 | 说明 | 示例 | 必需 |
+|--------|--------|------|------|------|
+| `CI` | 未设置 | 指示是否在 CI 环境中运行，影响测试配置 | `true` | 否 |
+
+#### 3.1.4 调试与日志变量
+
+| 变量名 | 默认值 | 说明 | 示例 | 必需 |
+|--------|--------|------|------|------|
+| `LOG_LEVEL` | `info` | 日志级别，可选值：debug、info、warn、error | `debug` | 否 |
+| `DEBUG` | 未设置 | 调试模式开关，设置后会输出更详细的调试信息 | `1` | 否 |
+
+### 3.2 敏感信息处理
+
+对于敏感信息，建议使用以下安全处理方式：
+
+#### 3.2.1 使用 Docker Secrets
+
+```yaml
+# docker-compose.yml
+services:
+  rdb2wedoc:
+    image: nagucc/rdb2wedoc:latest
+    environment:
+      - NODE_ENV=production
+      - TZ=Asia/Shanghai
+    secrets:
+      - db_password
+
+secrets:
+  db_password:
+    file: ./db_password.txt
+```
+
+#### 3.2.2 使用环境变量管理工具
+
+- **开发环境**：使用 `.env.local` 文件（已添加到 `.gitignore`）
+- **测试/生产环境**：使用云服务商提供的环境变量管理服务，如 AWS Secrets Manager、Azure Key Vault 等
+- **容器部署**：使用 Docker 环境变量或 Kubernetes Secrets
+
+#### 3.2.3 避免直接硬编码
+
+**错误示例**：
+```bash
+docker run -d --name rdb2wedoc -e DB_PASSWORD=mysecretpassword nagucc/rdb2wedoc:latest
+```
+
+**正确示例**：
+```bash
+docker run -d --name rdb2wedoc --env-file .env nagucc/rdb2wedoc:latest
+```
+
+### 3.3 不同环境的配置差异
+
+#### 3.3.1 开发环境
+
+```env
+# .env.local
+NODE_ENV=development
+PORT=3000
+TZ=Asia/Shanghai
+NEXT_PUBLIC_REFRESH_INTERVAL=2000
+LOG_LEVEL=debug
+DEBUG=1
+```
+
+#### 3.3.2 测试环境
+
+```env
+# .env.test
+NODE_ENV=test
+PORT=3000
+TZ=Asia/Shanghai
+NEXT_PUBLIC_REFRESH_INTERVAL=5000
+LOG_LEVEL=info
+```
+
+#### 3.3.3 生产环境
+
+```env
+# .env.production
+NODE_ENV=production
+PORT=3000
+HOSTNAME=0.0.0.0
+TZ=Asia/Shanghai
+NEXT_PUBLIC_REFRESH_INTERVAL=10000
+NEXT_TELEMETRY_DISABLED=1
+LOG_LEVEL=warn
+```
+
+### 3.4 配置环境变量的方法
+
+#### 3.4.1 使用 `-e` 参数
+
+适合临时测试或简单部署：
 
 ```bash
 docker run -d \
@@ -337,61 +437,77 @@ docker run -d \
   -p 3000:3000 \
   -e NODE_ENV=production \
   -e TZ=Asia/Shanghai \
+  -e NEXT_PUBLIC_REFRESH_INTERVAL=10000 \
   nagucc/rdb2wedoc:latest
 ```
 
-#### 3.3.2 使用 --env-file
+#### 3.4.2 使用 `--env-file`
 
-创建 `.env` 文件：
+适合大多数生产部署场景：
+
+1. 创建 `.env` 文件：
 
 ```env
 NODE_ENV=production
+PORT=3000
+HOSTNAME=0.0.0.0
 TZ=Asia/Shanghai
+NEXT_PUBLIC_REFRESH_INTERVAL=10000
 NEXT_TELEMETRY_DISABLED=1
+LOG_LEVEL=warn
 ```
 
-启动容器：
+2. 启动容器：
 
 ```bash
 docker run -d \
   --name rdb2wedoc \
   -p 3000:3000 \
   --env-file .env \
+  -v rdb2wedoc-data:/app/data \
   nagucc/rdb2wedoc:latest
 ```
 
-#### 3.3.3 在 docker-compose.yml 中配置
+#### 3.4.3 在 `docker-compose.yml` 中配置
+
+适合复杂部署场景，支持服务编排和依赖管理：
 
 ```yaml
+# docker-compose.yml
+version: '3.8'
+
 services:
   rdb2wedoc:
     image: nagucc/rdb2wedoc:latest
+    container_name: rdb2wedoc
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
     environment:
       - NODE_ENV=production
       - TZ=Asia/Shanghai
-      - NEXT_TELEMETRY_DISABLED=1
+      - NEXT_PUBLIC_REFRESH_INTERVAL=10000
     env_file:
       - .env
-```
+    volumes:
+      - rdb2wedoc-data:/app/data
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '1.0'
+          memory: 1G
 
-### 3.4 数据库连接配置
-
-如果需要连接外部数据库，在应用中配置相应的数据库连接信息：
-
-```bash
-# PostgreSQL 示例
-docker run -d \
-  --name rdb2wedoc \
-  -p 3000:3000 \
-  -e DATABASE_URL=postgresql://user:password@host:5432/dbname \
-  nagucc/rdb2wedoc:latest
-
-# MySQL 示例
-docker run -d \
-  --name rdb2wedoc \
-  -p 3000:3000 \
-  -e DATABASE_URL=mysql://user:password@host:3306/dbname \
-  nagucc/rdb2wedoc:latest
+volumes:
+  rdb2wedoc-data:
+    driver: local
 ```
 
 ---
@@ -1106,59 +1222,6 @@ echo "清理完成"
 ```bash
 chmod +x cleanup.sh
 ./cleanup.sh
-```
-
-### D. 端口映射参考
-
-| 场景 | 主机端口 | 容器端口 | 命令示例 |
-|------|---------|---------|---------|
-| 默认 | 3000 | 3000 | `-p 3000:3000` |
-| HTTP | 80 | 3000 | `-p 80:3000` |
-| HTTPS | 443 | 3000 | `-p 443:3000` |
-| 自定义 | 8080 | 3000 | `-p 8080:3000` |
-| 多端口 | 3000,3001 | 3000,3000 | `-p 3000:3000 -p 3001:3000` |
-
-### E. 资源限制参考
-
-| 场景 | CPU | 内存 | 命令示例 |
-|------|-----|------|---------|
-| 最小 | 0.5 | 512MB | `--cpus="0.5" --memory="512m"` |
-| 标准 | 1.0 | 1GB | `--cpus="1.0" --memory="1g"` |
-| 推荐 | 2.0 | 2GB | `--cpus="2.0" --memory="2g"` |
-| 高性能 | 4.0 | 4GB | `--cpus="4.0" --memory="4g"` |
-
-### F. 常用命令速查
-
-```bash
-# 拉取镜像
-docker pull nagucc/rdb2wedoc:latest
-
-# 启动容器
-docker run -d --name rdb2wedoc -p 3000:3000 nagucc/rdb2wedoc:latest
-
-# 查看日志
-docker logs -f rdb2wedoc
-
-# 进入容器
-docker exec -it rdb2wedoc sh
-
-# 创建用户
-docker exec rdb2wedoc node scripts/createUser.js admin Admin123
-
-# 重启容器
-docker restart rdb2wedoc
-
-# 停止容器
-docker stop rdb2wedoc
-
-# 删除容器
-docker rm rdb2wedoc
-
-# 查看容器状态
-docker ps -a | grep rdb2wedoc
-
-# 查看资源使用
-docker stats rdb2wedoc
 ```
 
 ---
