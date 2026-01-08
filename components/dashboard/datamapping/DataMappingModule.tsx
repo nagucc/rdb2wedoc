@@ -382,9 +382,6 @@ export default function DataMappingModule() {
                         <span className="text-sm font-medium text-gray-900 dark:text-white">
                           {fieldMapping.documentField}
                         </span>
-                        {fieldMapping.required && (
-                          <span className="text-xs text-red-600 dark:text-red-400">必填</span>
-                        )}
                       </div>
                       <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
                         <span className="flex items-center gap-1">

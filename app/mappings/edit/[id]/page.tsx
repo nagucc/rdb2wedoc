@@ -741,10 +741,7 @@ export default function EditMappingPage() {
                             <p className="font-medium text-gray-900 dark:text-white">{mapping.dataType}</p>
                           </div>
 
-                          <div className="bg-white p-3 rounded-md shadow-sm dark:bg-gray-800">
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">必填状态</p>
-                            <p className="font-medium text-gray-900 dark:text-white">{mapping.required ? '必填' : '可选'}</p>
-                          </div>
+
 
                           {mapping.defaultValue && (
                             <div className="bg-white p-3 rounded-md shadow-sm dark:bg-gray-800">

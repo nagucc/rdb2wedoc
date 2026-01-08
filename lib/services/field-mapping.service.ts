@@ -127,8 +127,7 @@ export class FieldMappingService {
       if (matchedDocField) {
         mappings.push({
           databaseColumn: dbField.name,
-          documentField: matchedDocField.name,
-          required: dbField.primaryKey || !dbField.nullable
+          documentField: matchedDocField.name
         });
       }
     }

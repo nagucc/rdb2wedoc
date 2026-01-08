@@ -33,7 +33,6 @@ export default function FieldMappingDialog({
     dataType: 'string',
     transform: '',
     defaultValue: '',
-    required: false,
     description: ''
   });
 
@@ -52,7 +51,6 @@ export default function FieldMappingDialog({
         dataType: 'string',
         transform: '',
         defaultValue: '',
-        required: false,
         description: ''
       });
     }
@@ -209,19 +207,7 @@ export default function FieldMappingDialog({
 
             {/* 必填字段 */}
             <div className="flex items-center justify-center p-4">
-              <div className="flex items-center">
-                <input
-                  id="required"
-                  name="required"
-                  type="checkbox"
-                  checked={formData.required}
-                  onChange={handleInputChange}
-                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded dark:focus:ring-indigo-600 dark:ring-offset-gray-800 dark:bg-gray-700 dark:border-gray-600"
-                />
-                <label htmlFor="required" className="ml-2 block text-sm text-gray-900 dark:text-white">
-                  字段必填
-                </label>
-              </div>
+
             </div>
 
             {/* 转换规则 */}

@@ -449,10 +449,7 @@ export default function CreateMappingPage() {
         return false;
       }
 
-      if (mapping.required && !dbField.nullable && !mapping.defaultValue) {
-        setError(`第 ${i + 1} 个字段映射标记为必填，但源字段 "${sourceField}" 不可为空且未设置默认值`);
-        return false;
-      }
+
 
       if (mapping.transform) {
         const validTransforms = ['trim', 'toUpperCase', 'toLowerCase', 'toDate', 'toNumber', 'toString', 'toBoolean'];
@@ -723,10 +720,7 @@ export default function CreateMappingPage() {
                           <p className="font-medium text-gray-900 dark:text-white">{mapping.dataType}</p>
                         </div>
 
-                        <div className="bg-white p-3 rounded-md shadow-sm dark:bg-gray-800">
-                          <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">必填状态</p>
-                          <p className="font-medium text-gray-900 dark:text-white">{mapping.required ? '必填' : '可选'}</p>
-                        </div>
+
 
                         {mapping.defaultValue && (
                           <div className="bg-white p-3 rounded-md shadow-sm dark:bg-gray-800">
