@@ -684,7 +684,7 @@ export default function CreateMappingPage() {
               ) : (
                 <div className="space-y-4">
                   {fieldMappings.map((mapping, index) => (
-                    <div key={mapping.id} className="bg-gray-50 rounded-lg p-4 border border-gray-200 dark:bg-gray-700 dark:border-gray-600">
+                    <div key={`${mapping.id}-${index}`} className="bg-gray-50 rounded-lg p-4 border border-gray-200 dark:bg-gray-700 dark:border-gray-600">
                       <div className="flex items-start justify-between mb-4">
                         <h4 className="text-sm font-medium text-gray-900 dark:text-white">字段映射 #{index + 1}</h4>
                         <div className="flex gap-2">
