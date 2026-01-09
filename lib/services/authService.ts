@@ -48,6 +48,11 @@ class AuthService {
       // 保存会话到本地存储
       this.saveSession(session);
 
+      // 触发自定义事件通知登录状态变化
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('auth-state-changed', { detail: { user } }));
+      }
+
       return session;
     } catch (error) {
       console.error('登录失败:', error);
@@ -62,6 +67,9 @@ class AuthService {
     try {
       if (typeof window !== 'undefined') {
         localStorage.removeItem(this.SESSION_KEY);
+        
+        // 触发自定义事件通知登录状态变化
+        window.dispatchEvent(new CustomEvent('auth-state-changed', { detail: { user: null } }));
       }
       
       console.log('用户已登出');
