@@ -192,33 +192,8 @@ export default function MappingsPage() {
     fetchJobs();
   }, [router]);
 
-  const handleDeleteMapping = async (id: string) => {
-    if (!confirm('确定要删除此映射配置吗？此操作不可恢复。')) {
-      return;
-    }
+  // 删除操作已移至确认对话框中处理
 
-    try {
-      const response = await fetch(`/api/mappings?id=${id}`, {
-        method: 'DELETE'
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data: ApiResponse<void> = await response.json();
-
-      if (data.success) {
-        fetchMappings();
-      } else {
-        alert(data.error || '删除失败');
-      }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : '删除映射配置失败';
-      alert(errorMessage);
-      console.error(errorMessage, err);
-    }
-  };
 
   const getDataTypeIcon = (dataType: string) => {
     switch (dataType) {
@@ -416,7 +391,8 @@ export default function MappingsPage() {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleDeleteMapping(mapping.id);
+                                setMappingToDelete(mapping);
+                                setShowDeleteDialog(true);
                               }}
                               disabled={getJobsForMapping(mapping.id).length > 0}
                               className={`flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
@@ -566,9 +542,6 @@ export default function MappingsPage() {
                         <span className="text-sm font-medium text-gray-900 dark:text-white">
                           {fieldMapping.documentField}
                         </span>
-                        {fieldMapping.required && (
-                          <span className="text-xs text-red-600 dark:text-red-400">必填</span>
-                        )}
                       </div>
                       <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
                         <span className="flex items-center gap-1">
@@ -700,6 +673,150 @@ export default function MappingsPage() {
                 })()}
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {showDeleteDialog && mappingToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="mx-4 w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-800">
+            <div className="mb-6 flex items-center justify-between border-b border-gray-200 pb-4 dark:border-gray-700">
+              <div>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+                  确认删除
+                </h3>
+                <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                  您确定要删除映射 <span className="font-medium">{mappingToDelete.name}</span> 吗？
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setShowDeleteDialog(false);
+                  setMappingToDelete(null);
+                }}
+                className="rounded-lg p-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              >
+                <XCircle className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="p-4 bg-yellow-50 rounded-lg dark:bg-yellow-900/20">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mt-0.5" />
+                  <div>
+                    <p className="text-sm text-yellow-800 dark:text-yellow-300">
+                      此操作不可恢复，删除后将无法恢复数据映射配置。
+                    </p>
+                    {getJobsForMapping(mappingToDelete.id).length > 0 && (
+                      <p className="mt-2 text-sm text-red-600 dark:text-red-400">
+                        警告：该映射存在同步作业，无法删除！
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-3">
+                <button
+                  onClick={() => {
+                    setShowDeleteDialog(false);
+                    setMappingToDelete(null);
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors dark:text-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600"
+                >
+                  取消
+                </button>
+                <button
+                  onClick={async () => {
+                    if (getJobsForMapping(mappingToDelete.id).length > 0) {
+                      setNotification({
+                        type: 'error',
+                        message: '该映射存在同步作业，无法删除！'
+                      });
+                      setShowDeleteDialog(false);
+                      setMappingToDelete(null);
+                      return;
+                    }
+                    
+                    try {
+                      setIsDeleting(true);
+                      const response = await fetch(`/api/mappings?id=${mappingToDelete.id}`, {
+                        method: 'DELETE'
+                      });
+
+                      if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                      }
+
+                      const data: ApiResponse<void> = await response.json();
+
+                      if (data.success) {
+                        await fetchMappings();
+                        setNotification({
+                          type: 'success',
+                          message: '映射删除成功！'
+                        });
+                      } else {
+                        setNotification({
+                          type: 'error',
+                          message: data.error || '删除失败'
+                        });
+                      }
+                    } catch (err) {
+                      const errorMessage = err instanceof Error ? err.message : '删除映射配置失败';
+                      setNotification({
+                        type: 'error',
+                        message: errorMessage
+                      });
+                      console.error(errorMessage, err);
+                    } finally {
+                      setIsDeleting(false);
+                      setShowDeleteDialog(false);
+                      setMappingToDelete(null);
+                    }
+                  }}
+                  disabled={isDeleting || getJobsForMapping(mappingToDelete.id).length > 0}
+                  className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                    isDeleting || getJobsForMapping(mappingToDelete.id).length > 0
+                      ? 'bg-gray-400 text-white cursor-not-allowed'
+                      : 'bg-red-500 text-white hover:bg-red-600'
+                  }`}
+                >
+                  {isDeleting ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                      删除中...
+                    </>
+                  ) : (
+                    '确认删除'
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {notification && (
+        <div className={`fixed bottom-6 right-6 px-4 py-3 rounded-lg shadow-lg transform transition-all duration-300 z-50 ${
+          notification.type === 'success' 
+            ? 'bg-green-500 text-white' 
+            : 'bg-red-500 text-white'
+        }`}>
+          <div className="flex items-center gap-3">
+            {notification.type === 'success' ? (
+              <CheckCircle className="h-5 w-5" />
+            ) : (
+              <XCircle className="h-5 w-5" />
+            )}
+            <p className="text-sm font-medium">{notification.message}</p>
+            <button
+              onClick={() => setNotification(null)}
+              className="ml-auto text-white hover:opacity-80"
+            >
+              <XCircle className="h-4 w-4" />
+            </button>
           </div>
         </div>
       )}

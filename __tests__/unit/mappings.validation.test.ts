@@ -747,97 +747,7 @@ describe('Mapping Validation Logic', () => {
       });
     });
 
-    describe('必填字段验证', () => {
-      it('应该拒绝必填但源字段不可为空且未设置默认值的情况', () => {
-        const formData = {
-          name: 'test',
-          selectedDatabase: 'db1',
-          selectedTable: 'table1',
-          selectedWeComAccount: 'account1',
-          selectedDocument: 'doc1',
-          selectedSheet: 'sheet1',
-          fieldMappings: [
-            {
-              id: '1',
-              sourceField: 'field1',
-              targetField: 'target1',
-              dataType: 'string',
-              required: true,
-              transformRule: '',
-              defaultValue: ''
-            }
-          ],
-          databaseFields: [
-            { name: 'field1', type: 'varchar', nullable: false }
-          ],
-          documentFields: [
-            { id: 'target1', name: 'Target 1', type: 'text' }
-          ]
-        };
-        
-        expect(validateFormMock(formData)).toEqual({ valid: false, error: '第 1 个字段映射标记为必填，但源字段不可为空且未设置默认值' });
-      });
 
-      it('应该接受必填但源字段可为空的情况', () => {
-        const formData = {
-          name: 'test',
-          selectedDatabase: 'db1',
-          selectedTable: 'table1',
-          selectedWeComAccount: 'account1',
-          selectedDocument: 'doc1',
-          selectedSheet: 'sheet1',
-          fieldMappings: [
-            {
-              id: '1',
-              sourceField: 'field1',
-              targetField: 'target1',
-              dataType: 'string',
-              required: true,
-              transformRule: '',
-              defaultValue: ''
-            }
-          ],
-          databaseFields: [
-            { name: 'field1', type: 'varchar', nullable: true }
-          ],
-          documentFields: [
-            { id: 'target1', name: 'Target 1', type: 'text' }
-          ]
-        };
-        
-        expect(validateFormMock(formData)).toEqual({ valid: true, error: null });
-      });
-
-      it('应该接受必填但设置了默认值的情况', () => {
-        const formData = {
-          name: 'test',
-          selectedDatabase: 'db1',
-          selectedTable: 'table1',
-          selectedWeComAccount: 'account1',
-          selectedDocument: 'doc1',
-          selectedSheet: 'sheet1',
-          fieldMappings: [
-            {
-              id: '1',
-              sourceField: 'field1',
-              targetField: 'target1',
-              dataType: 'string',
-              required: true,
-              transformRule: '',
-              defaultValue: 'default'
-            }
-          ],
-          databaseFields: [
-            { name: 'field1', type: 'varchar', nullable: false }
-          ],
-          documentFields: [
-            { id: 'target1', name: 'Target 1', type: 'text' }
-          ]
-        };
-        
-        expect(validateFormMock(formData)).toEqual({ valid: true, error: null });
-      });
-    });
 
     describe('完整验证测试', () => {
       it('应该接受完整的有效映射配置', () => {
@@ -963,8 +873,8 @@ describe('Mapping Validation Logic', () => {
           targetSheetId: 'sheet1',
           fieldMappings: [
             {
-              sourceField: 'field1',
-              targetField: 'target1',
+              databaseColumn: 'field1',
+              documentField: 'target1',
               dataType: 'string'
             }
           ],
@@ -1196,9 +1106,7 @@ function validateFormMock(formData: any): { valid: boolean; error: string | null
       return { valid: false, error: `第 ${i + 1} 个字段映射的数据类型 "${mapping.dataType}" 无效` };
     }
 
-    if (mapping.required && !dbField.nullable && !mapping.defaultValue) {
-      return { valid: false, error: `第 ${i + 1} 个字段映射标记为必填，但源字段不可为空且未设置默认值` };
-    }
+
 
     if (mapping.transformRule) {
       const validTransforms = ['trim', 'toUpperCase', 'toLowerCase', 'toDate', 'toNumber', 'toString', 'toBoolean'];

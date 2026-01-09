@@ -2,7 +2,9 @@
 
 ## 开始使用
 
-首先，运行开发服务器：
+### 本地开发
+
+运行开发服务器：
 
 ```bash
 npm run dev
@@ -19,6 +21,12 @@ bun dev
 你可以通过修改 `app/page.tsx` 来开始编辑页面。当你编辑文件时，页面会自动更新。
 
 本项目使用 [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) 自动优化和加载 [Geist](https://vercel.com/font) 字体，这是 Vercel 推出的新字体系列。
+
+### 部署
+
+推荐使用 Docker 进行部署，这样可以确保环境一致性和简化部署流程。
+
+📖 [Docker 部署指南](docs/项目Docker部署指南.md)
 
 ## ⚠️ 重要：部署后立即创建用户账户
 

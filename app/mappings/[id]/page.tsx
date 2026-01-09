@@ -348,11 +348,7 @@ export default function MappingDetailPage() {
                               {fieldMapping.dataType}
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
-                              {fieldMapping.required ? (
-                                <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400 mx-auto" />
-                              ) : (
-                                <span className="text-gray-400">-</span>
-                              )}
+                              <span className="text-gray-400">-</span>
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
                               {fieldMapping.defaultValue || '-'}
@@ -374,12 +370,7 @@ export default function MappingDetailPage() {
                       {mapping.fieldMappings.length}
                     </p>
                   </div>
-                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
-                    <p className="text-sm text-gray-600 dark:text-gray-400">必填字段</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
-                      {mapping.fieldMappings.filter(f => f.required).length}
-                    </p>
-                  </div>
+
                   <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
                     <p className="text-sm text-gray-600 dark:text-gray-400">带转换规则</p>
                     <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">

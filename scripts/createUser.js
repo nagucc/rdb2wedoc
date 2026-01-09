@@ -2,7 +2,7 @@ const bcrypt = require('bcrypt');
 const fs = require('fs');
 const path = require('path');
 
-const USERS_FILE = path.join(__dirname, '..', 'data', 'users.json');
+const USERS_DIR = path.join(__dirname, '..', 'data', 'users');
 const SALT_ROUNDS = 10;
 
 function printUsage() {
@@ -59,26 +59,35 @@ function validatePassword(password) {
 
 function loadUsers() {
   try {
-    if (!fs.existsSync(USERS_FILE)) {
+    if (!fs.existsSync(USERS_DIR)) {
       return [];
     }
 
-    const data = fs.readFileSync(USERS_FILE, 'utf8');
-    return JSON.parse(data);
+    const files = fs.readdirSync(USERS_DIR).filter(file => file.endsWith('.json'));
+    const users = [];
+
+    files.forEach(file => {
+      const filePath = path.join(USERS_DIR, file);
+      const data = fs.readFileSync(filePath, 'utf8');
+      const user = JSON.parse(data);
+      users.push(user);
+    });
+
+    return users;
   } catch (error) {
     console.error('读取用户数据失败:', error.message);
     return [];
   }
 }
 
-function saveUsers(users) {
+function saveUser(user) {
   try {
-    const dir = path.dirname(USERS_FILE);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
+    if (!fs.existsSync(USERS_DIR)) {
+      fs.mkdirSync(USERS_DIR, { recursive: true });
     }
 
-    fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2), 'utf8');
+    const filePath = path.join(USERS_DIR, `${user.id}.json`);
+    fs.writeFileSync(filePath, JSON.stringify(user, null, 2), 'utf8');
     return true;
   } catch (error) {
     console.error('保存用户数据失败:', error.message);
@@ -118,15 +127,14 @@ async function createUser(username, password) {
     const newUser = {
       id: `user_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`,
       username,
-      password: hashedPassword,
+      email: `${username}@example.com`,
+      passwordHash: hashedPassword,
       role: 'user',
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     };
 
-    const users = loadUsers();
-    users.push(newUser);
-
-    if (!saveUsers(users)) {
+    if (!saveUser(newUser)) {
       console.error('错误: 保存用户数据失败');
       return false;
     }

@@ -48,6 +48,11 @@ class AuthService {
       // 保存会话到本地存储
       this.saveSession(session);
 
+      // 触发自定义事件通知登录状态变化
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('auth-state-changed', { detail: { user } }));
+      }
+
       return session;
     } catch (error) {
       console.error('登录失败:', error);
@@ -62,6 +67,9 @@ class AuthService {
     try {
       if (typeof window !== 'undefined') {
         localStorage.removeItem(this.SESSION_KEY);
+        
+        // 触发自定义事件通知登录状态变化
+        window.dispatchEvent(new CustomEvent('auth-state-changed', { detail: { user: null } }));
       }
       
       console.log('用户已登出');
@@ -83,7 +91,10 @@ class AuthService {
 
     // 检查会话是否过期
     if (Date.now() > session.expiresAt) {
-      this.logout();
+      // 同步清除过期会话，避免在同步方法中调用异步方法
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem(this.SESSION_KEY);
+      }
       return null;
     }
 
@@ -134,42 +145,43 @@ class AuthService {
   }
 
   /**
-   * 验证用户凭证（模拟实现）
+   * 验证用户凭证
    * @param credentials 登录凭证
    * @returns Promise<User>
    */
   private async validateCredentials(credentials: LoginCredentials): Promise<User> {
-    // 模拟验证逻辑
-    // 实际项目中应该调用后端API进行验证
-    
-    // 去除用户名和密码的前后空格
     const trimmedUsername = credentials.username.trim();
     const trimmedPassword = credentials.password.trim();
     
-    // 演示用的测试账号
-    const testUsers = [
-      { username: 'admin', password: 'admin123', role: 'admin' as const },
-      { username: 'user', password: 'user123', role: 'user' as const }
-    ];
-
-    const testUser = testUsers.find(
-      u => u.username === trimmedUsername && u.password === trimmedPassword
-    );
-
-    if (!testUser) {
-      throw new Error('用户名或密码错误');
+    if (!trimmedUsername || !trimmedPassword) {
+      throw new Error('用户名和密码不能为空');
     }
 
-    // 返回用户信息
-    return {
-      id: `user_${Date.now()}`,
-      username: testUser.username,
-      email: `${testUser.username}@example.com`,
-      passwordHash: 'test_hash',
-      role: testUser.role,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: trimmedUsername,
+          password: trimmedPassword,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || '用户名或密码错误');
+      }
+
+      return data.data as User;
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('验证用户凭证失败');
+    }
   }
 
   /**

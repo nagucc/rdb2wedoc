@@ -1,9 +1,11 @@
 'use client';
 
-import { User, LogOut, RefreshCw } from 'lucide-react';
+import { User, LogOut, RefreshCw, LogIn } from 'lucide-react';
 import Link from 'next/link';
 import { authService } from '@/lib/services/authService';
 import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import type { User as UserType } from '@/types';
 
 interface HeaderProps {
   showPageTitle?: boolean;
@@ -12,11 +14,44 @@ interface HeaderProps {
 
 export default function Header({ showPageTitle = false, pageTitle = '' }: HeaderProps) {
   const router = useRouter();
-  const currentUser = authService.getCurrentUser();
+  const [currentUser, setCurrentUser] = useState<UserType | null>(null);
+  const [isChecking, setIsChecking] = useState(true);
+
+  useEffect(() => {
+    checkUserStatus();
+
+    const handleStorageChange = () => {
+      checkUserStatus();
+    };
+
+    const handleAuthStateChange = () => {
+      checkUserStatus();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('auth-state-changed', handleAuthStateChange);
+    
+    const intervalId = setInterval(() => {
+      checkUserStatus();
+    }, 5000);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('auth-state-changed', handleAuthStateChange);
+      clearInterval(intervalId);
+    };
+  }, []);
+
+  const checkUserStatus = () => {
+    const user = authService.getCurrentUser();
+    setCurrentUser(user);
+    setIsChecking(false);
+  };
 
   const handleLogout = async () => {
     try {
       await authService.logout();
+      setCurrentUser(null);
       router.push('/login');
     } catch (error) {
       console.error('登出失败:', error);
@@ -49,19 +84,38 @@ export default function Header({ showPageTitle = false, pageTitle = '' }: Header
               </div>
             )}
             <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 rounded-lg bg-gray-100 px-3 py-2 dark:bg-gray-700">
-                <User className="h-4 w-4 text-gray-600 dark:text-gray-300" />
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {currentUser?.username || 'admin'}
-                </span>
-              </div>
-              <button
-                onClick={handleLogout}
-                className="flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700"
-              >
-                <LogOut className="h-4 w-4" />
-                退出
-              </button>
+              {isChecking ? (
+                <div className="flex items-center gap-2 rounded-lg bg-gray-100 px-3 py-2 dark:bg-gray-700">
+                  <RefreshCw className="h-4 w-4 text-gray-600 dark:text-gray-300 animate-spin" />
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    检查中...
+                  </span>
+                </div>
+              ) : currentUser ? (
+                <>
+                  <div className="flex items-center gap-2 rounded-lg bg-gray-100 px-3 py-2 dark:bg-gray-700">
+                    <User className="h-4 w-4 text-gray-600 dark:text-gray-300" />
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      {currentUser.username}
+                    </span>
+                  </div>
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    退出
+                  </button>
+                </>
+              ) : (
+                <Link
+                  href="/login"
+                  className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+                >
+                  <LogIn className="h-4 w-4" />
+                  登录
+                </Link>
+              )}
             </div>
           </nav>
         </div>

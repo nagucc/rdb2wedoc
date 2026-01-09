@@ -161,7 +161,6 @@ export interface FieldMapping {
   documentField: string;
   documentFieldId?: string;
   transform?: string;
-  required?: boolean;
   conflictStrategy?: FieldConflictStrategy; // 字段级别的冲突策略
   dataType?: string;
   defaultValue?: string;
