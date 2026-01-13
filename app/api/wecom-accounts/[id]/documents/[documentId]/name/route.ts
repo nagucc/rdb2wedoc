@@ -188,7 +188,8 @@ export async function GET(
         success: true,
         data: {
           id: documentId,
-          name: result.name
+          name: result.name,
+          error: result.error
         },
         message: '获取文档名称失败，使用默认名称'
       });
