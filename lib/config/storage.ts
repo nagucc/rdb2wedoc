@@ -42,6 +42,11 @@ export function readJsonFile<T>(filePath: string): T | null {
 
 export function writeJsonFile<T>(filePath: string, data: T): boolean {
   try {
+    // 确保目标目录存在
+    const dir = path.dirname(filePath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
     fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
     return true;
   } catch (error) {

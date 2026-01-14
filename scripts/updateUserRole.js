@@ -4,6 +4,12 @@ const path = require('path');
 const USERS_DIR = path.join(__dirname, '../data/users');
 
 function updateUserRole(username, newRole) {
+  // 确保用户目录存在
+  if (!fs.existsSync(USERS_DIR)) {
+    console.log(`✗ 用户目录 ${USERS_DIR} 不存在`);
+    return false;
+  }
+  
   const files = fs.readdirSync(USERS_DIR);
   
   for (const file of files) {
