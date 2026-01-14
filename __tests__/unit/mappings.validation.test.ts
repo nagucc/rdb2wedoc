@@ -18,7 +18,7 @@ describe('Mapping Validation Logic', () => {
               sourceField: 'field1',
               targetField: 'target1',
               dataType: 'string',
-              required: false,
+
               transformRule: '',
               defaultValue: ''
             }
@@ -44,7 +44,6 @@ describe('Mapping Validation Logic', () => {
               sourceField: 'field1',
               targetField: 'target1',
               dataType: 'string',
-              required: false,
               transformRule: '',
               defaultValue: ''
             }
@@ -68,7 +67,6 @@ describe('Mapping Validation Logic', () => {
               sourceField: 'field1',
               targetField: 'target1',
               dataType: 'string',
-              required: false,
               transformRule: '',
               defaultValue: ''
             }
@@ -92,7 +90,6 @@ describe('Mapping Validation Logic', () => {
               sourceField: 'field1',
               targetField: 'target1',
               dataType: 'string',
-              required: false,
               transformRule: '',
               defaultValue: ''
             }
@@ -116,7 +113,6 @@ describe('Mapping Validation Logic', () => {
               sourceField: 'field1',
               targetField: 'target1',
               dataType: 'string',
-              required: false,
               transformRule: '',
               defaultValue: ''
             }
@@ -140,7 +136,6 @@ describe('Mapping Validation Logic', () => {
               sourceField: 'field1',
               targetField: 'target1',
               dataType: 'string',
-              required: false,
               transformRule: '',
               defaultValue: ''
             }
@@ -180,7 +175,6 @@ describe('Mapping Validation Logic', () => {
               sourceField: '',
               targetField: 'target1',
               dataType: 'string',
-              required: false,
               transformRule: '',
               defaultValue: ''
             }
@@ -210,7 +204,6 @@ describe('Mapping Validation Logic', () => {
               sourceField: 'field1',
               targetField: '',
               dataType: 'string',
-              required: false,
               transformRule: '',
               defaultValue: ''
             }
@@ -240,7 +233,6 @@ describe('Mapping Validation Logic', () => {
               sourceField: 'field1',
               targetField: 'target1',
               dataType: 'string',
-              required: false,
               transformRule: '',
               defaultValue: ''
             },
@@ -249,7 +241,6 @@ describe('Mapping Validation Logic', () => {
               sourceField: 'field1',
               targetField: 'target2',
               dataType: 'string',
-              required: false,
               transformRule: '',
               defaultValue: ''
             }
@@ -281,7 +272,6 @@ describe('Mapping Validation Logic', () => {
               sourceField: 'field1',
               targetField: 'target1',
               dataType: 'string',
-              required: false,
               transformRule: '',
               defaultValue: ''
             },
@@ -290,7 +280,6 @@ describe('Mapping Validation Logic', () => {
               sourceField: 'field2',
               targetField: 'target1',
               dataType: 'string',
-              required: false,
               transformRule: '',
               defaultValue: ''
             }
@@ -322,7 +311,6 @@ describe('Mapping Validation Logic', () => {
               sourceField: 'nonexistent',
               targetField: 'target1',
               dataType: 'string',
-              required: false,
               transformRule: '',
               defaultValue: ''
             }
@@ -352,7 +340,6 @@ describe('Mapping Validation Logic', () => {
               sourceField: 'field1',
               targetField: 'nonexistent',
               dataType: 'string',
-              required: false,
               transformRule: '',
               defaultValue: ''
             }
@@ -384,7 +371,6 @@ describe('Mapping Validation Logic', () => {
               sourceField: 'field1',
               targetField: 'target1',
               dataType: 'invalid_type',
-              required: false,
               transformRule: '',
               defaultValue: ''
             }
@@ -417,7 +403,6 @@ describe('Mapping Validation Logic', () => {
                 sourceField: 'field1',
                 targetField: 'target1',
                 dataType: dataType,
-                required: false,
                 transformRule: '',
                 defaultValue: ''
               }
@@ -450,7 +435,6 @@ describe('Mapping Validation Logic', () => {
               sourceField: 'field1',
               targetField: 'target1',
               dataType: 'string',
-              required: false,
               transformRule: 'invalid_transform',
               defaultValue: ''
             }
@@ -483,7 +467,6 @@ describe('Mapping Validation Logic', () => {
                 sourceField: 'field1',
                 targetField: 'target1',
                 dataType: 'string',
-                required: false,
                 transformRule: transform,
                 defaultValue: ''
               }
@@ -516,7 +499,6 @@ describe('Mapping Validation Logic', () => {
               sourceField: 'field1',
               targetField: 'target1',
               dataType: 'number',
-              required: false,
               transformRule: '',
               defaultValue: 'not_a_number'
             }
@@ -546,7 +528,6 @@ describe('Mapping Validation Logic', () => {
               sourceField: 'field1',
               targetField: 'target1',
               dataType: 'boolean',
-              required: false,
               transformRule: '',
               defaultValue: 'not_a_boolean'
             }
@@ -576,7 +557,6 @@ describe('Mapping Validation Logic', () => {
               sourceField: 'field1',
               targetField: 'target1',
               dataType: 'date',
-              required: false,
               transformRule: '',
               defaultValue: 'not_a_date'
             }
@@ -606,7 +586,6 @@ describe('Mapping Validation Logic', () => {
               sourceField: 'field1',
               targetField: 'target1',
               dataType: 'json',
-              required: false,
               transformRule: '',
               defaultValue: 'not_json'
             }
@@ -636,7 +615,6 @@ describe('Mapping Validation Logic', () => {
               sourceField: 'field1',
               targetField: 'target1',
               dataType: 'number',
-              required: false,
               transformRule: '',
               defaultValue: '123'
             }
@@ -669,7 +647,6 @@ describe('Mapping Validation Logic', () => {
                 sourceField: 'field1',
                 targetField: 'target1',
                 dataType: 'boolean',
-                required: false,
                 transformRule: '',
                 defaultValue: value
               }
@@ -700,7 +677,6 @@ describe('Mapping Validation Logic', () => {
               sourceField: 'field1',
               targetField: 'target1',
               dataType: 'date',
-              required: false,
               transformRule: '',
               defaultValue: '2024-01-01'
             }
@@ -730,7 +706,6 @@ describe('Mapping Validation Logic', () => {
               sourceField: 'field1',
               targetField: 'target1',
               dataType: 'json',
-              required: false,
               transformRule: '',
               defaultValue: '{"key":"value"}'
             }
@@ -764,7 +739,6 @@ describe('Mapping Validation Logic', () => {
               sourceField: 'field1',
               targetField: 'target1',
               dataType: 'string',
-              required: false,
               transformRule: 'trim',
               defaultValue: ''
             },
@@ -773,7 +747,7 @@ describe('Mapping Validation Logic', () => {
               sourceField: 'field2',
               targetField: 'target2',
               dataType: 'number',
-              required: true,
+
               transformRule: 'toNumber',
               defaultValue: '0'
             }
