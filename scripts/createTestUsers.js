@@ -37,6 +37,11 @@ async function createTestUsers() {
       updatedAt: new Date().toISOString()
     };
 
+    // 确保用户目录存在
+    if (!fs.existsSync(USERS_DIR)) {
+      fs.mkdirSync(USERS_DIR, { recursive: true });
+    }
+    
     const filePath = path.join(USERS_DIR, `${newUser.id}.json`);
     fs.writeFileSync(filePath, JSON.stringify(newUser, null, 2));
 
