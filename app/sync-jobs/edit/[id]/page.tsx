@@ -72,6 +72,10 @@ export default function EditSyncJobPage() {
     fetchJobData();
   }, [jobId]);
 
+  useEffect(() => {
+    document.title = '编辑同步作业 - RDB2WeDoc';
+  }, []);
+
   const fetchJobData = async () => {
     try {
       setLoading(true);

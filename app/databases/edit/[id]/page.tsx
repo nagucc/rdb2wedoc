@@ -72,6 +72,10 @@ export default function EditDatabasePage() {
     fetchDatabaseConfig();
   }, [dbId]);
 
+  useEffect(() => {
+    document.title = '编辑数据源 - RDB2WeDoc';
+  }, []);
+
   const fetchDatabaseConfig = async () => {
     try {
       setLoading(true);

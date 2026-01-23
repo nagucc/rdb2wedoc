@@ -115,6 +115,10 @@ export default function WeComAccountDetailPage() {
     fetchAccountDetails();
   }, [accountId, router]);
 
+  useEffect(() => {
+    document.title = '企业微信账户详情 - RDB2WeDoc';
+  }, []);
+
   const handleAddDocument = async () => {
     if (!newDocumentId.trim()) {
       alert('请输入智能表格ID');

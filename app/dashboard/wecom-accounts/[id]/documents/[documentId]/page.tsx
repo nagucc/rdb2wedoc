@@ -43,6 +43,10 @@ export default function WecomSmartSheetDetailPage() {
     fetchDocumentDetails();
   }, [accountId, documentId]);
 
+  useEffect(() => {
+    document.title = '智能表格详情 - RDB2WeDoc';
+  }, []);
+
   const fetchDocumentDetails = async () => {
     try {
       setLoading(true);

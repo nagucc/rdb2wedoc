@@ -171,6 +171,10 @@ export default function SyncJobsPage() {
     return () => window.removeEventListener('focus', handleRouteChange);
   }, []);
 
+  useEffect(() => {
+    document.title = '同步作业管理 - RDB2WeDoc';
+  }, []);
+
   const handleCreate = () => {
     router.push('/sync-jobs/create');
   };

@@ -56,6 +56,10 @@ export default function DatabaseDetailPage({ params }: { params: Promise<{ id: s
   }, [router]);
 
   useEffect(() => {
+    document.title = '数据源详情 - RDB2WeDoc';
+  }, []);
+
+  useEffect(() => {
     if (resolvedParams) {
       fetchDatabase(resolvedParams.id);
     }

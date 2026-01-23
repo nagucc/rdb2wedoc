@@ -103,6 +103,10 @@ export default function WeComAccountsPage() {
     fetchMappings();
   }, [router]);
 
+  useEffect(() => {
+    document.title = '企业微信账户管理 - RDB2WeDoc';
+  }, []);
+
   const handleCreate = () => {
     setEditingAccount(null);
     setFormData({

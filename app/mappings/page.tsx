@@ -192,6 +192,10 @@ export default function MappingsPage() {
     fetchJobs();
   }, [router]);
 
+  useEffect(() => {
+    document.title = '数据映射管理 - RDB2WeDoc';
+  }, []);
+
   // 删除操作已移至确认对话框中处理
 
 
@@ -313,7 +317,7 @@ export default function MappingsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-      <Header showPageTitle={false} />
+      <Header showPageTitle={true} pageTitle="数据映射管理" />
 
       <main className="container mx-auto px-4 py-8">
         <div className="space-y-6">

@@ -130,6 +130,10 @@ export default function DatabasesPage() {
     fetchMappings();
   }, [router]);
 
+  useEffect(() => {
+    document.title = '数据源管理 - RDB2WeDoc';
+  }, []);
+
   const handleCreate = () => {
     setEditingDatabase(null);
     setFormData({

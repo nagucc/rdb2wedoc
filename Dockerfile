@@ -33,6 +33,11 @@ RUN chown nextjs:nodejs .next
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
+# 创建完整的/data目录结构并设置权限
+RUN mkdir -p /data/users /data/config /data/logs /data/temp
+RUN chown -R nextjs:nodejs /data
+RUN chmod -R 755 /data
+
 USER nextjs
 
 EXPOSE 3000

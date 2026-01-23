@@ -78,6 +78,14 @@ export default function MappingDetailPage() {
   }, [router]);
 
   useEffect(() => {
+    if (mapping) {
+      document.title = `${mapping.name} - 映射详情 - RDB2WeDoc`;
+    } else {
+      document.title = '映射详情 - RDB2WeDoc';
+    }
+  }, [mapping]);
+
+  useEffect(() => {
     const fetchMapping = async () => {
       try {
         setLoading(true);
@@ -173,7 +181,7 @@ export default function MappingDetailPage() {
   if (error || !mapping) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-        <Header showPageTitle={false} />
+        <Header showPageTitle={true} pageTitle="映射详情" />
         <main className="container mx-auto px-4 py-8">
           <div className="max-w-4xl mx-auto">
             <div className="bg-white shadow rounded-lg dark:bg-gray-800 dark:border dark:border-gray-700 p-8">
