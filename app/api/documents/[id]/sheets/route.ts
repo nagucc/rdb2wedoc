@@ -30,13 +30,15 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
+    const { searchParams } = new URL(request.url);
+    const refresh = searchParams.get('refresh') === 'true';
     
-    Logger.info(`开始获取文档Sheet列表`, { docId: id });
+    Logger.info(`开始获取文档Sheet列表`, { docId: id, refresh });
 
     // 先尝试获取智能表格
     const intelligentDoc = getIntelligentDocumentById(id) as WecomSmartSheet | null;
     
-    if (intelligentDoc) {
+    if (intelligentDoc && !refresh) {
       Logger.info(`找到智能表格，直接返回缓存的Sheet列表`, { 
         docId: id, 
         docName: intelligentDoc.name,
@@ -57,7 +59,7 @@ export async function GET(
       });
     }
 
-    // 如果不是智能表格，尝试获取普通文档
+    // 如果是刷新操作或不是智能表格，尝试获取普通文档
     const document = await getDocumentById(id);
     
     if (!document) {
@@ -70,7 +72,8 @@ export async function GET(
 
     Logger.info(`找到普通文档，调用企业微信API获取Sheet列表`, { 
       docId: id, 
-      docName: document.name 
+      docName: document.name,
+      refresh 
     });
 
     const account = getWeComAccountById(document.accountId);

@@ -9,7 +9,7 @@ export class WeComDocumentService {
   constructor() {
     this.client = axios.create({
       baseURL: 'https://qyapi.weixin.qq.com',
-      timeout: 30000,
+      timeout: 60000,
       headers: {
         'Content-Type': 'application/json'
       }
@@ -40,7 +40,7 @@ export class WeComDocumentService {
 
   async getSheetFields(accessToken: string, documentId: string, sheetId: string): Promise<DocumentField[]> {
     try {
-      console.log(`[WeComService] 调用Sheet字段API`, {
+      Logger.info(`[WeComService] 调用Sheet字段API`, {
         endpoint: '/cgi-bin/wedoc/smartsheet/get_fields',
         documentId,
         sheetId,
@@ -58,7 +58,7 @@ export class WeComDocumentService {
         }
       });
 
-      console.log(`[WeComService] Sheet字段API响应`, {
+      Logger.info(`[WeComService] Sheet字段API响应`, {
         status: response.status,
         errcode: response.data.errcode,
         errmsg: response.data.errmsg,
@@ -352,7 +352,7 @@ export class WeComDocumentService {
 
   async getDocumentInfo(accessToken: string, documentId: string): Promise<any> {
     try {
-      console.log(`[WeComService] 调用文档信息API`, {
+      Logger.info(`[WeComService] 调用文档信息API`, {
         endpoint: '/cgi-bin/wedoc/get_doc_base_info',
         documentId,
         timestamp: new Date().toISOString()
@@ -366,7 +366,7 @@ export class WeComDocumentService {
         }
       });
 
-      console.log(`[WeComService] 文档信息API响应`, {
+      Logger.info(`[WeComService] 文档信息API响应`, {
         status: response.status,
         errcode: response.data.errcode,
         errmsg: response.data.errmsg,
@@ -381,7 +381,7 @@ export class WeComDocumentService {
       return response.data;
     } catch (error) {
       if ((error as any).response) {
-        console.error(`[WeComService] 文档信息API请求失败`, {
+        Logger.error(`[WeComService] 文档信息API请求失败`, {
           status: (error as any).response.status,
           statusText: (error as any).response.statusText,
           data: (error as any).response.data,
@@ -395,7 +395,7 @@ export class WeComDocumentService {
 
   async getDocumentSheets(accessToken: string, documentId: string): Promise<DocumentSheet[]> {
     try {
-      console.log(`[WeComService] 调用Sheet列表API`, {
+      Logger.info(`[WeComService] 调用Sheet列表API`, {
         endpoint: '/cgi-bin/wedoc/smartsheet/get_sheet',
         documentId,
         timestamp: new Date().toISOString()
@@ -410,7 +410,7 @@ export class WeComDocumentService {
         }
       });
 
-      console.log(`[WeComService] Sheet列表API响应`, {
+      Logger.info(`[WeComService] Sheet列表API响应`, {
         status: response.status,
         errcode: response.data.errcode,
         errmsg: response.data.errmsg,
@@ -436,7 +436,7 @@ export class WeComDocumentService {
         }
       }
 
-      console.log(`[WeComService] 筛选后的Sheet列表`, {
+      Logger.info(`[WeComService] 筛选后的Sheet列表`, {
         totalSheets: response.data.sheet_list?.length || 0,
         filteredSheets: sheets.length,
         timestamp: new Date().toISOString()
@@ -445,7 +445,7 @@ export class WeComDocumentService {
       return sheets;
     } catch (error) {
       if ((error as any).response) {
-        console.error(`[WeComService] Sheet列表API请求失败`, {
+        Logger.error(`[WeComService] Sheet列表API请求失败`, {
           status: (error as any).response.status,
           statusText: (error as any).response.statusText,
           data: (error as any).response.data,
