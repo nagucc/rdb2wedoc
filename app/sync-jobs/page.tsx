@@ -39,6 +39,8 @@ export default function SyncJobsPage() {
   const [showLogsModal, setShowLogsModal] = useState(false);
   const [selectedJobLogs, setSelectedJobLogs] = useState<ExecutionLog[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
+  const [logsCurrentPage, setLogsCurrentPage] = useState(1);
+  const [logsPageSize] = useState(10);
   const [expandedJobs, setExpandedJobs] = useState<Set<string>>(new Set());
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [jobToDelete, setJobToDelete] = useState<SyncJob | null>(null);
@@ -385,6 +387,7 @@ export default function SyncJobsPage() {
   const handleViewLogs = async (jobId: string) => {
     try {
       setLoadingLogs(true);
+      setLogsCurrentPage(1);
       const response = await fetch(`/api/jobs/${jobId}/logs`);
       
       if (!response.ok) {
@@ -879,6 +882,174 @@ export default function SyncJobsPage() {
           </div>
         </div>
       )}
+
+      {showLogsModal && (() => {
+        const totalPages = Math.ceil(selectedJobLogs.length / logsPageSize);
+        const startIndex = (logsCurrentPage - 1) * logsPageSize;
+        const endIndex = startIndex + logsPageSize;
+        const currentLogs = selectedJobLogs.slice(startIndex, endIndex);
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+            <div className="mx-4 w-full max-w-4xl max-h-[80vh] rounded-2xl bg-white shadow-2xl dark:bg-gray-800 flex flex-col">
+              <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/20">
+                    <History className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                      执行日志
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      共 {selectedJobLogs.length} 条记录
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowLogsModal(false)}
+                  className="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                >
+                  关闭
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-auto p-6">
+                {loadingLogs ? (
+                  <div className="flex items-center justify-center h-full">
+                    <RefreshCw className="h-8 w-8 animate-spin text-blue-600" />
+                  </div>
+                ) : selectedJobLogs.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-full text-gray-500 dark:text-gray-400">
+                    <FileText className="h-16 w-16 mb-4" />
+                    <p>暂无日志记录</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {currentLogs.map((log, index) => (
+                      <div
+                        key={startIndex + index}
+                        className={`rounded-lg p-4 border ${
+                          log.status === 'success'
+                            ? 'bg-green-50 border-green-200 dark:bg-green-900/10 dark:border-green-800'
+                            : log.status === 'failed'
+                            ? 'bg-red-50 border-red-200 dark:bg-red-900/10 dark:border-red-800'
+                            : 'bg-gray-50 border-gray-200 dark:bg-gray-900/10 dark:border-gray-800'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                              #{startIndex + index + 1} · {log.startTime ? new Date(log.startTime).toLocaleString('zh-CN') : '-'}
+                            </span>
+                            <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${
+                              log.status === 'success'
+                                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                                : log.status === 'failed'
+                                ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                                : 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400'
+                            }`}>
+                              {log.status === 'success' ? '成功' : log.status === 'failed' ? '失败' : '运行中'}
+                            </span>
+                          </div>
+                          {log.duration && (
+                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                              耗时: {(log.duration / 1000).toFixed(2)}s
+                            </span>
+                          )}
+                        </div>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs text-gray-600 dark:text-gray-400 mb-2">
+                          <div>
+                            <span className="font-medium">处理记录:</span> {log.recordsProcessed}
+                          </div>
+                          <div>
+                            <span className="font-medium text-green-600">成功:</span> {log.recordsSucceeded}
+                          </div>
+                          <div>
+                            <span className="font-medium text-red-600">失败:</span> {log.recordsFailed}
+                          </div>
+                          {log.recordsSkipped !== undefined && (
+                            <div>
+                              <span className="font-medium text-gray-500">跳过:</span> {log.recordsSkipped}
+                            </div>
+                          )}
+                        </div>
+                        {log.errorMessage && (
+                          <div className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/10 rounded p-2 mt-2">
+                            {log.errorMessage}
+                          </div>
+                        )}
+                        {(log.syncMode || log.pageSize || log.currentPage) && (
+                          <div className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-900/50 rounded p-2 mt-2">
+                            {log.syncMode && <span>同步模式: {log.syncMode === 'full' ? '全量' : log.syncMode === 'incremental' ? '增量' : '分页'} </span>}
+                            {log.pageSize && <span> | 每页: {log.pageSize}条 </span>}
+                            {log.currentPage && log.totalPages && <span> | 进度: {log.currentPage}/{log.totalPages}</span>}
+                            {log.conflictCount !== undefined && log.conflictCount > 0 && <span> | 冲突: {log.conflictCount}</span>}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between p-4 border-t border-gray-200 dark:border-gray-700">
+                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                    第 {logsCurrentPage} / {totalPages} 页
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setLogsCurrentPage(prev => Math.max(1, prev - 1))}
+                      disabled={logsCurrentPage === 1}
+                      className="flex items-center gap-1 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                    >
+                      <ChevronRight className="h-4 w-4 rotate-180" />
+                      上一页
+                    </button>
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                        let pageNum;
+                        if (totalPages <= 5) {
+                          pageNum = i + 1;
+                        } else if (logsCurrentPage <= 3) {
+                          pageNum = i + 1;
+                        } else if (logsCurrentPage >= totalPages - 2) {
+                          pageNum = totalPages - 4 + i;
+                        } else {
+                          pageNum = logsCurrentPage - 2 + i;
+                        }
+
+                        return (
+                          <button
+                            key={pageNum}
+                            onClick={() => setLogsCurrentPage(pageNum)}
+                            className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
+                              logsCurrentPage === pageNum
+                                ? 'bg-blue-600 text-white'
+                                : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
+                            }`}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <button
+                      onClick={() => setLogsCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                      disabled={logsCurrentPage === totalPages}
+                      className="flex items-center gap-1 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                    >
+                      下一页
+                      <ChevronRight className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
