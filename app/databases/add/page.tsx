@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter } 
+from 'next/navigation';
 import { 
   ArrowLeft, 
   Database, 
@@ -31,14 +32,12 @@ interface DatabaseConfig {
     maxConnections?: number;
   };
 }
-
 const databaseTypes = [
   { value: 'mysql', label: 'MySQL', icon: '🐬', defaultPort: '3306' },
   { value: 'postgresql', label: 'PostgreSQL', icon: '🐘', defaultPort: '5432' },
   { value: 'sqlserver', label: 'SQL Server', icon: '🔷', defaultPort: '1433' },
   { value: 'oracle', label: 'Oracle', icon: '🔴', defaultPort: '1521' }
 ];
-
 export default function AddDatabasePage() {
   const router = useRouter();
   const [config, setConfig] = useState<DatabaseConfig>({
@@ -61,6 +60,12 @@ export default function AddDatabasePage() {
   const [saving, setSaving] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.title = '添加数据源 - RDB2WeDoc';
+    }
+  }, []);
 
   const handleTypeChange = (type: DatabaseConfig['type']) => {
     const selectedType = databaseTypes.find(t => t.value === type);

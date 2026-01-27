@@ -79,7 +79,7 @@ export default function WeComAccountDetailPage() {
     try {
       setRefreshingDocumentId(documentId);
 
-      const response = await fetch(`/api/wecom-accounts/${accountId}/documents/${documentId}/name`);
+      const response = await fetch(`/api/documents/${documentId}/sheets?refresh=true`);
       const data = await response.json();
 
       if (data.success && data.data) {
@@ -88,8 +88,13 @@ export default function WeComAccountDetailPage() {
             doc.id === documentId 
               ? { 
                   ...doc, 
-                  name: data.data.name,
-                  lastSyncTime: data.data.lastSyncTime
+                  sheets: data.data.map((sheet: any) => ({
+                    id: sheet.id,
+                    name: sheet.name,
+                    fields: sheet.fields || []
+                  })),
+                  sheetCount: data.data.length,
+                  lastSyncTime: new Date().toISOString()
                 }
               : doc
           )
@@ -114,6 +119,12 @@ export default function WeComAccountDetailPage() {
     setCurrentUser(user);
     fetchAccountDetails();
   }, [accountId, router]);
+
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.title = '企业微信账户详情 - RDB2WeDoc';
+    }
+  }, []);
 
   const handleAddDocument = async () => {
     if (!newDocumentId.trim()) {

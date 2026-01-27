@@ -64,6 +64,12 @@ export default function CreateSyncJobPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.title = '创建同步作业 - RDB2WeDoc';
+    }
+  }, []);
+
   const handleMappingChange = (mappingId: string) => {
     setFormData(prev => ({ ...prev, mappingConfigId: mappingId }));
   };

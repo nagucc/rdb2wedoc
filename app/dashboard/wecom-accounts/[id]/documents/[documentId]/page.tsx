@@ -25,7 +25,7 @@ export default function WecomSmartSheetDetailPage() {
 
   const [currentUser, setCurrentUser] = useState<{ username: string } | null>(null);
   const [account, setAccount] = useState<WeComAccount | null>(null);
-  const [document, setDocument] = useState<WecomSmartSheet | null>(null);
+  const [wecomDocument, setWecomDocument] = useState<WecomSmartSheet | null>(null);
   const [sheets, setSheets] = useState<DocumentSheet[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -42,6 +42,12 @@ export default function WecomSmartSheetDetailPage() {
     setCurrentUser(user);
     fetchDocumentDetails();
   }, [accountId, documentId]);
+
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.title = '智能表格详情 - RDB2WeDoc';
+    }
+  }, []);
 
   const fetchDocumentDetails = async () => {
     try {
@@ -70,7 +76,7 @@ export default function WecomSmartSheetDetailPage() {
         
         if (docData.success) {
           const doc = docData.data?.find((d: WecomSmartSheet) => d.id === documentId);
-          setDocument(doc || null);
+          setWecomDocument(doc || null);
         }
       } else {
         throw new Error(sheetsData.error || '获取工作表列表失败');
@@ -161,7 +167,7 @@ export default function WecomSmartSheetDetailPage() {
           <div className="flex items-start justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                {document?.name || '智能表格详情'}
+                {wecomDocument?.name || '智能表格详情'}
               </h1>
               <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
                 所属账号: {account?.name}
@@ -318,17 +324,17 @@ export default function WecomSmartSheetDetailPage() {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-600 dark:text-gray-400">智能表格名称</p>
-                  <p className="mt-1 text-sm text-gray-900 dark:text-white">{document?.name || '-'}</p>
+                  <p className="mt-1 text-sm text-gray-900 dark:text-white">{wecomDocument?.name || '-'}</p>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-600 dark:text-gray-400">工作表数量</p>
-                  <p className="mt-1 text-sm text-gray-900 dark:text-white">{document?.sheetCount || 0}</p>
+                  <p className="mt-1 text-sm text-gray-900 dark:text-white">{wecomDocument?.sheetCount || 0}</p>
                 </div>
-                {document?.lastSyncTime && (
+                {wecomDocument?.lastSyncTime && (
                   <div>
                     <p className="text-sm font-medium text-gray-600 dark:text-gray-400">最后同步时间</p>
                     <p className="mt-1 text-sm text-gray-900 dark:text-white">
-                      {new Date(document.lastSyncTime).toLocaleString('zh-CN', {
+                      {new Date(wecomDocument.lastSyncTime).toLocaleString('zh-CN', {
                         year: 'numeric',
                         month: '2-digit',
                         day: '2-digit',
@@ -338,11 +344,11 @@ export default function WecomSmartSheetDetailPage() {
                     </p>
                   </div>
                 )}
-                {document?.createdAt && (
+                {wecomDocument?.createdAt && (
                   <div>
                     <p className="text-sm font-medium text-gray-600 dark:text-gray-400">创建时间</p>
                     <p className="mt-1 text-sm text-gray-900 dark:text-white">
-                      {new Date(document.createdAt).toLocaleString('zh-CN', {
+                      {new Date(wecomDocument.createdAt).toLocaleString('zh-CN', {
                         year: 'numeric',
                         month: '2-digit',
                         day: '2-digit',

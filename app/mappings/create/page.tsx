@@ -109,6 +109,7 @@ export default function CreateMappingPage() {
   const [loadingWeComAccounts, setLoadingWeComAccounts] = useState(false);
   const [loadingDocuments, setLoadingDocuments] = useState(false);
   const [loadingSheets, setLoadingSheets] = useState(false);
+  const [refreshingSheets, setRefreshingSheets] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -119,6 +120,12 @@ export default function CreateMappingPage() {
     }
     setCurrentUser(user);
   }, [router]);
+
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.title = '创建数据映射 - RDB2WeDoc';
+    }
+  }, []);
 
   useEffect(() => {
     const fetchDatabases = async () => {
@@ -187,6 +194,31 @@ export default function CreateMappingPage() {
       setError('刷新表格数据失败');
     } finally {
       setRefreshingTables(false);
+    }
+  };
+
+  const handleRefreshSheets = async () => {
+    if (!selectedDocument) return;
+    
+    try {
+      setRefreshingSheets(true);
+      const response = await fetch(`/api/documents/${selectedDocument}/sheets?refresh=true`);
+      const result = await response.json();
+      if (result.success) {
+        setSheets(result.data);
+      } else {
+        throw new Error(result.error || '刷新子表数据失败');
+      }
+    } catch (error) {
+      console.error('Failed to refresh sheets:', error);
+      const errorMessage = error instanceof Error ? error.message : '刷新子表数据失败';
+      if (errorMessage.includes('timeout')) {
+        setError('刷新子表数据超时，请检查网络连接后重试');
+      } else {
+        setError(errorMessage);
+      }
+    } finally {
+      setRefreshingSheets(false);
     }
   };
 
@@ -586,7 +618,7 @@ export default function CreateMappingPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-      <Header showPageTitle={false} />
+      <Header showPageTitle={true} pageTitle="创建数据映射" />
 
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
@@ -654,6 +686,8 @@ export default function CreateMappingPage() {
               onSheetChange={setSelectedSheet}
               sheets={sheets}
               loadingSheets={loadingSheets}
+              refreshingSheets={refreshingSheets}
+              onRefreshSheets={handleRefreshSheets}
             />
 
             <div>

@@ -77,6 +77,12 @@ function DashboardContent() {
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.title = '控制台 - RDB2WeDoc';
+    }
+  }, []);
+
   const fetchDashboardData = async () => {
     try {
       setLoading(true);

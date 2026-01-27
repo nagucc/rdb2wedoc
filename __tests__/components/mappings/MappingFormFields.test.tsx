@@ -32,7 +32,7 @@ const mockSheets = [
 const defaultProps = {
   name: '测试映射',
   onNameChange: jest.fn(),
-  status: 'draft',
+  status: 'draft' as 'draft' | 'active' | 'inactive',
   onStatusChange: jest.fn(),
   selectedDatabase: '',
   onDatabaseChange: jest.fn(),
@@ -55,7 +55,9 @@ const defaultProps = {
   selectedSheet: '',
   onSheetChange: jest.fn(),
   sheets: mockSheets,
-  loadingSheets: false
+  loadingSheets: false,
+  refreshingSheets: false,
+  onRefreshSheets: jest.fn()
 };
 
 describe('MappingFormFields Component', () => {

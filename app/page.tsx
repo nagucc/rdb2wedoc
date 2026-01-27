@@ -26,6 +26,12 @@ export default function Home() {
     setCurrentUser(authService.getCurrentUser());
   }, []);
 
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.title = '首页 - RDB2WeDoc';
+    }
+  }, []);
+
   const handleLogout = async () => {
     try {
       await authService.logout();
