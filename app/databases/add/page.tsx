@@ -62,7 +62,9 @@ export default function AddDatabasePage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    document.title = '添加数据源 - RDB2WeDoc';
+    if (typeof document !== 'undefined') {
+      document.title = '添加数据源 - RDB2WeDoc';
+    }
   }, []);
 
   const handleTypeChange = (type: DatabaseConfig['type']) => {

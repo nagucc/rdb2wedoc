@@ -73,7 +73,9 @@ export default function EditDatabasePage() {
   }, [dbId]);
 
   useEffect(() => {
-    document.title = '编辑数据源 - RDB2WeDoc';
+    if (typeof document !== 'undefined') {
+      document.title = '编辑数据源 - RDB2WeDoc';
+    }
   }, []);
 
   const fetchDatabaseConfig = async () => {

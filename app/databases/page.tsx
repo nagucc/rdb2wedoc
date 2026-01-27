@@ -131,7 +131,9 @@ export default function DatabasesPage() {
   }, [router]);
 
   useEffect(() => {
-    document.title = '数据源管理 - RDB2WeDoc';
+    if (typeof document !== 'undefined') {
+      document.title = '数据源管理 - RDB2WeDoc';
+    }
   }, []);
 
   const handleCreate = () => {

@@ -40,7 +40,9 @@ export default function EditWeComAccountPage() {
   }, [accountId]);
 
   useEffect(() => {
-    document.title = '编辑企业微信账户 - RDB2WeDoc';
+    if (typeof document !== 'undefined') {
+      document.title = '编辑企业微信账户 - RDB2WeDoc';
+    }
   }, []);
 
   const fetchAccountDetails = async () => {

@@ -18,7 +18,9 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    document.title = '登录 - RDB2WeDoc';
+    if (typeof document !== 'undefined') {
+      document.title = '登录 - RDB2WeDoc';
+    }
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {

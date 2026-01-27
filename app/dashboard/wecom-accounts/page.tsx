@@ -104,7 +104,9 @@ export default function WeComAccountsPage() {
   }, [router]);
 
   useEffect(() => {
-    document.title = '企业微信账户管理 - RDB2WeDoc';
+    if (typeof document !== 'undefined') {
+      document.title = '企业微信账户管理 - RDB2WeDoc';
+    }
   }, []);
 
   const handleCreate = () => {

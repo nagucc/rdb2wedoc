@@ -65,7 +65,9 @@ export default function CreateSyncJobPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    document.title = '创建同步作业 - RDB2WeDoc';
+    if (typeof document !== 'undefined') {
+      document.title = '创建同步作业 - RDB2WeDoc';
+    }
   }, []);
 
   const handleMappingChange = (mappingId: string) => {

@@ -122,7 +122,9 @@ export default function CreateMappingPage() {
   }, [router]);
 
   useEffect(() => {
-    document.title = '创建数据映射 - RDB2WeDoc';
+    if (typeof document !== 'undefined') {
+      document.title = '创建数据映射 - RDB2WeDoc';
+    }
   }, []);
 
   useEffect(() => {

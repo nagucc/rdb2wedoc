@@ -193,7 +193,9 @@ export default function MappingsPage() {
   }, [router]);
 
   useEffect(() => {
-    document.title = '数据映射管理 - RDB2WeDoc';
+    if (typeof document !== 'undefined') {
+      document.title = '数据映射管理 - RDB2WeDoc';
+    }
   }, []);
 
   // 删除操作已移至确认对话框中处理

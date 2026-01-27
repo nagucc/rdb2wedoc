@@ -27,7 +27,9 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    document.title = '首页 - RDB2WeDoc';
+    if (typeof document !== 'undefined') {
+      document.title = '首页 - RDB2WeDoc';
+    }
   }, []);
 
   const handleLogout = async () => {

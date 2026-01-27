@@ -172,7 +172,9 @@ export default function SyncJobsPage() {
   }, []);
 
   useEffect(() => {
-    document.title = '同步作业管理 - RDB2WeDoc';
+    if (typeof document !== 'undefined') {
+      document.title = '同步作业管理 - RDB2WeDoc';
+    }
   }, []);
 
   const handleCreate = () => {

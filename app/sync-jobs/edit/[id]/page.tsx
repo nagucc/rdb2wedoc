@@ -73,7 +73,9 @@ export default function EditSyncJobPage() {
   }, [jobId]);
 
   useEffect(() => {
-    document.title = '编辑同步作业 - RDB2WeDoc';
+    if (typeof document !== 'undefined') {
+      document.title = '编辑同步作业 - RDB2WeDoc';
+    }
   }, []);
 
   const fetchJobData = async () => {

@@ -59,7 +59,7 @@ export default function MappingDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [mapping, setMapping] = useState<MappingConfigUI | null>(null);
   const [database, setDatabase] = useState<DatabaseConnection | null>(null);
-  const [document, setDocument] = useState<WecomSmartSheet | null>(null);
+  const [wecomDocument, setWecomDocument] = useState<WecomSmartSheet | null>(null);
   const [wecomAccount, setWeComAccount] = useState<WeComAccount | null>(null);
   const [sheet, setSheet] = useState<Sheet | null>(null);
   const [databaseFields, setDatabaseFields] = useState<DatabaseField[]>([]);
@@ -78,10 +78,12 @@ export default function MappingDetailPage() {
   }, [router]);
 
   useEffect(() => {
-    if (mapping) {
-      document.title = `${mapping.name} - 映射详情 - RDB2WeDoc`;
-    } else {
-      document.title = '映射详情 - RDB2WeDoc';
+    if (typeof document !== 'undefined') {
+      if (mapping) {
+        document.title = `${mapping.name} - 映射详情 - RDB2WeDoc`;
+      } else {
+        document.title = '映射详情 - RDB2WeDoc';
+      }
     }
   }, [mapping]);
 
@@ -110,7 +112,7 @@ export default function MappingDetailPage() {
           if (dbResult.success) setDatabase(dbResult.data);
 
           const docResult = await docRes.json();
-          if (docResult.success) setDocument(docResult.data);
+          if (docResult.success) setWecomDocument(docResult.data);
 
           const accountResult = await accountRes.json();
           if (accountResult.success) {
@@ -287,7 +289,7 @@ export default function MappingDetailPage() {
                   </div>
                   <div className="ml-8">
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                      文档: <span className="font-medium text-gray-900 dark:text-white">{document?.name || mapping.targetDocId}</span>
+                      文档: <span className="font-medium text-gray-900 dark:text-white">{wecomDocument?.name || mapping.targetDocId}</span>
                     </p>
                   </div>
                   <div className="ml-8">

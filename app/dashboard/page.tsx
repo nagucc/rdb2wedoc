@@ -78,7 +78,9 @@ function DashboardContent() {
   }, []);
 
   useEffect(() => {
-    document.title = '控制台 - RDB2WeDoc';
+    if (typeof document !== 'undefined') {
+      document.title = '控制台 - RDB2WeDoc';
+    }
   }, []);
 
   const fetchDashboardData = async () => {
