@@ -5,9 +5,6 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: false,
   },
   output: 'standalone',
-  experimental: {
-    instrumentationHook: true,
-  },
 };
 
 export default nextConfig;
