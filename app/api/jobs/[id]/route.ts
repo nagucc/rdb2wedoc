@@ -50,9 +50,21 @@ export async function PUT(
     const body = await request.json();
     const { 
       name, 
+      description,
       mappingConfigId,
       schedule,
+      scheduleTemplate,
       conflictStrategy,
+      syncMode,
+      incrementalType,
+      incrementalField,
+      pageSize,
+      enableResume,
+      lastSyncPosition,
+      fieldConflictStrategies,
+      syncTimeout,
+      maxRecordsPerSync,
+      enableDataValidation,
       enabled 
     } = body;
 
@@ -82,10 +94,22 @@ export async function PUT(
     // 更新作业配置
     const updatedJob = {
       ...existingJob,
-      name: name || existingJob.name,
-      mappingConfigId: mappingConfigId || existingJob.mappingConfigId,
-      schedule: schedule || existingJob.schedule,
-      conflictStrategy: conflictStrategy || existingJob.conflictStrategy,
+      name: name !== undefined ? name : existingJob.name,
+      description: description !== undefined ? description : existingJob.description,
+      mappingConfigId: mappingConfigId !== undefined ? mappingConfigId : existingJob.mappingConfigId,
+      schedule: schedule !== undefined ? schedule : existingJob.schedule,
+      scheduleTemplate: scheduleTemplate !== undefined ? scheduleTemplate : existingJob.scheduleTemplate,
+      conflictStrategy: conflictStrategy !== undefined ? conflictStrategy : existingJob.conflictStrategy,
+      syncMode: syncMode !== undefined ? syncMode : existingJob.syncMode,
+      incrementalType: incrementalType !== undefined ? incrementalType : existingJob.incrementalType,
+      incrementalField: incrementalField !== undefined ? incrementalField : existingJob.incrementalField,
+      pageSize: pageSize !== undefined ? pageSize : existingJob.pageSize,
+      enableResume: enableResume !== undefined ? enableResume : existingJob.enableResume,
+      lastSyncPosition: lastSyncPosition !== undefined ? lastSyncPosition : existingJob.lastSyncPosition,
+      fieldConflictStrategies: fieldConflictStrategies !== undefined ? fieldConflictStrategies : existingJob.fieldConflictStrategies,
+      syncTimeout: syncTimeout !== undefined ? syncTimeout : existingJob.syncTimeout,
+      maxRecordsPerSync: maxRecordsPerSync !== undefined ? maxRecordsPerSync : existingJob.maxRecordsPerSync,
+      enableDataValidation: enableDataValidation !== undefined ? enableDataValidation : existingJob.enableDataValidation,
       enabled: enabled !== undefined ? enabled : existingJob.enabled,
       updatedAt: new Date().toISOString()
     };
