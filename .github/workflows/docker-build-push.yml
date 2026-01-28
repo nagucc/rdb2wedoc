@@ -55,6 +55,8 @@ jobs:
           tags: |
             type=raw,value=latest
             type=raw,value=${{ steps.version.outputs.version }}
+            type=raw,value=${{ steps.version.outputs.version }}-amd64,enable=linux/amd64
+            type=raw,value=${{ steps.version.outputs.version }}-arm64,enable=linux/arm64
             type=sha,prefix=
 
       - name: Build and push Docker image
