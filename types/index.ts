@@ -314,8 +314,6 @@ export interface JobTemplate {
 }
 
 // 数据映射相关类型
-export type MappingStatus = 'active' | 'inactive' | 'draft';
-
 export interface MappingConfig {
   id: string;
   name: string;
