@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getJobById, updateJob, deleteJob, saveHistory } from '@/lib/config/storage';
 import { generateId, validateCronExpression, Logger } from '@/lib/utils/helpers';
+import { schedulerManager } from '@/lib/services/scheduler';
 
 // 获取单个同步作业
 export async function GET(
@@ -116,6 +117,19 @@ export async function PUT(
 
     await updateJob(updatedJob);
 
+    // 更新调度器中的作业
+    if (schedulerManager.isReady()) {
+      try {
+        await schedulerManager.updateJob(updatedJob.id);
+        Logger.info(`调度器已更新作业: ${updatedJob.name}`, { jobId: updatedJob.id });
+      } catch (error) {
+        Logger.error(`更新调度器作业失败: ${updatedJob.name}`, { 
+          jobId: updatedJob.id, 
+          error: (error as Error).message 
+        });
+      }
+    }
+
     // 记录历史
     await saveHistory({
       id: generateId(),
@@ -212,6 +226,19 @@ export async function POST(
 
     await updateJob(updatedJob);
 
+    // 更新调度器中的作业
+    if (schedulerManager.isReady()) {
+      try {
+        await schedulerManager.updateJob(updatedJob.id);
+        Logger.info(`调度器已更新作业: ${updatedJob.name}`, { jobId: updatedJob.id });
+      } catch (error) {
+        Logger.error(`更新调度器作业失败: ${updatedJob.name}`, { 
+          jobId: updatedJob.id, 
+          error: (error as Error).message 
+        });
+      }
+    }
+
     Logger.info(`同步作业启动成功: ${job.name}`, { jobId: job.id });
 
     return NextResponse.json({
@@ -251,6 +278,19 @@ export async function PATCH(
     };
 
     await updateJob(updatedJob);
+
+    // 更新调度器中的作业
+    if (schedulerManager.isReady()) {
+      try {
+        await schedulerManager.updateJob(updatedJob.id);
+        Logger.info(`调度器已更新作业: ${updatedJob.name}`, { jobId: updatedJob.id });
+      } catch (error) {
+        Logger.error(`更新调度器作业失败: ${updatedJob.name}`, { 
+          jobId: updatedJob.id, 
+          error: (error as Error).message 
+        });
+      }
+    }
 
     Logger.info(`同步作业停止成功: ${job.name}`, { jobId: job.id });
 
