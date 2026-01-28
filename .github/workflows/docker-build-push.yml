@@ -57,7 +57,7 @@ jobs:
             type=raw,value=${{ steps.version.outputs.version }}
             type=sha,prefix=
 
-      - name: Build and push Docker image
+      - name: Build and push Docker image (amd64)
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -65,6 +65,23 @@ jobs:
           tags: |
             ${{ steps.meta.outputs.tags }}
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }}-amd64
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            NODE_ENV=production
+            NEXT_TELEMETRY_DISABLED=1
+          platforms: linux/amd64
+          provenance: true
+          sbom: true
+
+      - name: Build and push Docker image (arm64)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ steps.meta.outputs.tags }}
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }}-arm64
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
@@ -72,11 +89,9 @@ jobs:
           build-args: |
             NODE_ENV=production
             NEXT_TELEMETRY_DISABLED=1
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/arm64
           provenance: true
           sbom: true
-          outputs: |
-            type=image,push=true
 
       - name: Run container image validation
         run: |
