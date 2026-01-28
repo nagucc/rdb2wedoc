@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getJobById, updateJob, deleteJob, saveHistory } from '@/lib/config/storage';
 import { generateId, validateCronExpression, Logger } from '@/lib/utils/helpers';
+import { schedulerManager } from '@/lib/services/scheduler';
 
 // 获取单个同步作业
 export async function GET(
@@ -50,9 +51,21 @@ export async function PUT(
     const body = await request.json();
     const { 
       name, 
+      description,
       mappingConfigId,
       schedule,
+      scheduleTemplate,
       conflictStrategy,
+      syncMode,
+      incrementalType,
+      incrementalField,
+      pageSize,
+      enableResume,
+      lastSyncPosition,
+      fieldConflictStrategies,
+      syncTimeout,
+      maxRecordsPerSync,
+      enableDataValidation,
       enabled 
     } = body;
 
@@ -82,15 +95,40 @@ export async function PUT(
     // 更新作业配置
     const updatedJob = {
       ...existingJob,
-      name: name || existingJob.name,
-      mappingConfigId: mappingConfigId || existingJob.mappingConfigId,
-      schedule: schedule || existingJob.schedule,
-      conflictStrategy: conflictStrategy || existingJob.conflictStrategy,
+      name: name !== undefined ? name : existingJob.name,
+      description: description !== undefined ? description : existingJob.description,
+      mappingConfigId: mappingConfigId !== undefined ? mappingConfigId : existingJob.mappingConfigId,
+      schedule: schedule !== undefined ? schedule : existingJob.schedule,
+      scheduleTemplate: scheduleTemplate !== undefined ? scheduleTemplate : existingJob.scheduleTemplate,
+      conflictStrategy: conflictStrategy !== undefined ? conflictStrategy : existingJob.conflictStrategy,
+      syncMode: syncMode !== undefined ? syncMode : existingJob.syncMode,
+      incrementalType: incrementalType !== undefined ? incrementalType : existingJob.incrementalType,
+      incrementalField: incrementalField !== undefined ? incrementalField : existingJob.incrementalField,
+      pageSize: pageSize !== undefined ? pageSize : existingJob.pageSize,
+      enableResume: enableResume !== undefined ? enableResume : existingJob.enableResume,
+      lastSyncPosition: lastSyncPosition !== undefined ? lastSyncPosition : existingJob.lastSyncPosition,
+      fieldConflictStrategies: fieldConflictStrategies !== undefined ? fieldConflictStrategies : existingJob.fieldConflictStrategies,
+      syncTimeout: syncTimeout !== undefined ? syncTimeout : existingJob.syncTimeout,
+      maxRecordsPerSync: maxRecordsPerSync !== undefined ? maxRecordsPerSync : existingJob.maxRecordsPerSync,
+      enableDataValidation: enableDataValidation !== undefined ? enableDataValidation : existingJob.enableDataValidation,
       enabled: enabled !== undefined ? enabled : existingJob.enabled,
       updatedAt: new Date().toISOString()
     };
 
     await updateJob(updatedJob);
+
+    // 更新调度器中的作业
+    if (schedulerManager.isReady()) {
+      try {
+        await schedulerManager.updateJob(updatedJob.id);
+        Logger.info(`调度器已更新作业: ${updatedJob.name}`, { jobId: updatedJob.id });
+      } catch (error) {
+        Logger.error(`更新调度器作业失败: ${updatedJob.name}`, { 
+          jobId: updatedJob.id, 
+          error: (error as Error).message 
+        });
+      }
+    }
 
     // 记录历史
     await saveHistory({
@@ -188,6 +226,19 @@ export async function POST(
 
     await updateJob(updatedJob);
 
+    // 更新调度器中的作业
+    if (schedulerManager.isReady()) {
+      try {
+        await schedulerManager.updateJob(updatedJob.id);
+        Logger.info(`调度器已更新作业: ${updatedJob.name}`, { jobId: updatedJob.id });
+      } catch (error) {
+        Logger.error(`更新调度器作业失败: ${updatedJob.name}`, { 
+          jobId: updatedJob.id, 
+          error: (error as Error).message 
+        });
+      }
+    }
+
     Logger.info(`同步作业启动成功: ${job.name}`, { jobId: job.id });
 
     return NextResponse.json({
@@ -227,6 +278,19 @@ export async function PATCH(
     };
 
     await updateJob(updatedJob);
+
+    // 更新调度器中的作业
+    if (schedulerManager.isReady()) {
+      try {
+        await schedulerManager.updateJob(updatedJob.id);
+        Logger.info(`调度器已更新作业: ${updatedJob.name}`, { jobId: updatedJob.id });
+      } catch (error) {
+        Logger.error(`更新调度器作业失败: ${updatedJob.name}`, { 
+          jobId: updatedJob.id, 
+          error: (error as Error).message 
+        });
+      }
+    }
 
     Logger.info(`同步作业停止成功: ${job.name}`, { jobId: job.id });
 

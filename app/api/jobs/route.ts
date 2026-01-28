@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { SyncJob } from '@/types';
 import { getJobs, getJobById, saveJob, deleteJob, saveHistory } from '@/lib/config/storage';
 import { generateId, validateCronExpression, Logger } from '@/lib/utils/helpers';
+import { schedulerManager } from '@/lib/services/scheduler';
 
 // 获取所有同步作业
 export async function GET(request: NextRequest) {
@@ -76,6 +77,19 @@ export async function POST(request: NextRequest) {
     // 保存作业配置
     await saveJob(job);
 
+    // 添加作业到调度器
+    if (schedulerManager.isReady()) {
+      try {
+        await schedulerManager.addJob(job.id);
+        Logger.info(`调度器已添加作业: ${job.name}`, { jobId: job.id });
+      } catch (error) {
+        Logger.error(`添加作业到调度器失败: ${job.name}`, { 
+          jobId: job.id, 
+          error: (error as Error).message 
+        });
+      }
+    }
+
     // 记录历史
     await saveHistory({
       id: generateId(),
@@ -126,6 +140,19 @@ export async function DELETE(request: NextRequest) {
     }
 
     await deleteJob(id);
+
+    // 从调度器中移除作业
+    if (schedulerManager.isReady()) {
+      try {
+        schedulerManager.removeJob(job.id);
+        Logger.info(`调度器已移除作业: ${job.name}`, { jobId: job.id });
+      } catch (error) {
+        Logger.error(`从调度器移除作业失败: ${job.name}`, { 
+          jobId: job.id, 
+          error: (error as Error).message 
+        });
+      }
+    }
 
     // 记录历史
     await saveHistory({

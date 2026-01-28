@@ -164,7 +164,9 @@ export default function CreateSyncJobPage() {
 
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
-        setErrors({ submit: '服务器返回了非JSON响应' });
+        const text = await response.text();
+        console.error('服务器返回了非JSON响应:', text);
+        setErrors({ submit: `服务器返回了非JSON响应 (HTTP ${response.status}): ${text.substring(0, 200)}` });
         return;
       }
 

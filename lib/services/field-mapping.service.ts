@@ -53,7 +53,8 @@ export class FieldMappingService {
         type: column.type,
         nullable: column.nullable,
         primaryKey: column.primaryKey,
-        defaultValue: column.defaultValue
+        defaultValue: column.defaultValue,
+        comment: column.comment
       }));
     } catch (error) {
       Logger.error('获取数据库字段失败', {

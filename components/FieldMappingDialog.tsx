@@ -145,7 +145,7 @@ export default function FieldMappingDialog({
                 ) : (
                   databaseFields.map((field) => (
                     <option key={field.name} value={field.name}>
-                      {field.name} ({field.type})
+                      {field.name}({field.comment || field.type})
                     </option>
                   ))
                 )}
@@ -175,7 +175,7 @@ export default function FieldMappingDialog({
                 ) : (
                   documentFields.map((field) => (
                     <option key={field.id} value={field.id}>
-                      {field.name} ({field.type})
+                      {field.name}({field.description || field.type})
                     </option>
                   ))
                 )}
