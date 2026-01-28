@@ -60,6 +60,7 @@ export interface DatabaseColumn {
   nullable: boolean;
   primaryKey: boolean;
   defaultValue?: any;
+  comment?: string;
 }
 
 export type DatabaseField = DatabaseColumn;

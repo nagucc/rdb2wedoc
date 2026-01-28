@@ -150,7 +150,7 @@ export class DatabaseService {
 
   private async getMySQLTables(): Promise<DatabaseTable[]> {
     const [rows] = await this.pool.query(`
-      SELECT TABLE_NAME, COLUMN_NAME, DATA_TYPE, IS_NULLABLE, COLUMN_KEY, COLUMN_DEFAULT
+      SELECT TABLE_NAME, COLUMN_NAME, DATA_TYPE, IS_NULLABLE, COLUMN_KEY, COLUMN_DEFAULT, COLUMN_COMMENT
       FROM INFORMATION_SCHEMA.COLUMNS
       WHERE TABLE_SCHEMA = DATABASE()
       ORDER BY TABLE_NAME, ORDINAL_POSITION
@@ -167,7 +167,8 @@ export class DatabaseService {
         c.data_type,
         c.is_nullable,
         CASE WHEN pk.column_name IS NOT NULL THEN 'PRI' ELSE '' END as column_key,
-        c.column_default
+        c.column_default,
+        pgd.description as column_comment
       FROM information_schema.tables t
       LEFT JOIN information_schema.columns c ON t.table_name = c.table_name
       LEFT JOIN (
@@ -177,6 +178,8 @@ export class DatabaseService {
           ON tc.constraint_name = ku.constraint_name
         WHERE tc.constraint_type = 'PRIMARY KEY'
       ) pk ON c.table_name = pk.table_name AND c.column_name = pk.column_name
+      LEFT JOIN pg_catalog.pg_statio_all_tables psat ON psat.schemaname = t.table_schema AND psat.relname = t.table_name
+      LEFT JOIN pg_catalog.pg_description pgd ON pgd.objoid = psat.relid AND pgd.objsubid = c.ordinal_position
       WHERE t.table_schema = 'public'
         AND t.table_type = 'BASE TABLE'
       ORDER BY t.table_name, c.ordinal_position
@@ -193,7 +196,8 @@ export class DatabaseService {
         c.DATA_TYPE,
         c.IS_NULLABLE,
         CASE WHEN pk.COLUMN_NAME IS NOT NULL THEN 'PRI' ELSE '' END as COLUMN_KEY,
-        c.COLUMN_DEFAULT
+        c.COLUMN_DEFAULT,
+        ep.value as COLUMN_COMMENT
       FROM INFORMATION_SCHEMA.TABLES t
       LEFT JOIN INFORMATION_SCHEMA.COLUMNS c ON t.TABLE_NAME = c.TABLE_NAME
       LEFT JOIN (
@@ -203,6 +207,8 @@ export class DatabaseService {
           ON tc.CONSTRAINT_NAME = ku.CONSTRAINT_NAME
         WHERE tc.CONSTRAINT_TYPE = 'PRIMARY KEY'
       ) pk ON c.TABLE_NAME = pk.TABLE_NAME AND c.COLUMN_NAME = pk.COLUMN_NAME
+      LEFT JOIN sys.extended_properties ep ON ep.major_id = OBJECT_ID(t.TABLE_SCHEMA + '.' + t.TABLE_NAME) 
+        AND ep.minor_id = c.ORDINAL_POSITION AND ep.name = 'MS_Description'
       WHERE t.TABLE_TYPE = 'BASE TABLE'
       ORDER BY t.TABLE_NAME, c.ORDINAL_POSITION
     `);
@@ -221,7 +227,8 @@ export class DatabaseService {
           c.DATA_TYPE,
           c.NULLABLE,
           CASE WHEN pk.COLUMN_NAME IS NOT NULL THEN 'PRI' ELSE '' END as COLUMN_KEY,
-          c.DATA_DEFAULT
+          c.DATA_DEFAULT,
+          cc.COMMENTS as COLUMN_COMMENT
         FROM USER_TABLES t
         LEFT JOIN USER_TAB_COLUMNS c ON t.TABLE_NAME = c.TABLE_NAME
         LEFT JOIN (
@@ -230,6 +237,7 @@ export class DatabaseService {
           JOIN USER_CONS_COLUMNS cc ON cons.CONSTRAINT_NAME = cc.CONSTRAINT_NAME
           WHERE cons.CONSTRAINT_TYPE = 'P'
         ) pk ON c.TABLE_NAME = pk.TABLE_NAME AND c.COLUMN_NAME = pk.COLUMN_NAME
+        LEFT JOIN USER_COL_COMMENTS cc ON c.TABLE_NAME = cc.TABLE_NAME AND c.COLUMN_NAME = cc.COLUMN_NAME
         ORDER BY t.TABLE_NAME, c.COLUMN_ID
       `);
       
@@ -259,7 +267,8 @@ export class DatabaseService {
         type: row.DATA_TYPE || row.data_type,
         nullable: (row.IS_NULLABLE || row.nullable || 'NO') === 'YES',
         primaryKey: (row.COLUMN_KEY || row.column_key) === 'PRI',
-        defaultValue: row.COLUMN_DEFAULT || row.column_default
+        defaultValue: row.COLUMN_DEFAULT || row.column_default,
+        comment: row.COLUMN_COMMENT || row.column_comment
       });
     });
     
