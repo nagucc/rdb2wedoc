@@ -57,41 +57,25 @@ jobs:
             type=raw,value=${{ steps.version.outputs.version }}
             type=sha,prefix=
 
-      - name: Build and push Docker image (amd64)
+      - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
           context: .
           push: true
-          tags: |
-            ${{ steps.meta.outputs.tags }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }}-amd64
+          tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
             NODE_ENV=production
             NEXT_TELEMETRY_DISABLED=1
-          platforms: linux/amd64
+          platforms: linux/amd64,linux/arm64
           provenance: true
           sbom: true
-
-      - name: Build and push Docker image (arm64)
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          push: true
-          tags: |
-            ${{ steps.meta.outputs.tags }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }}-arm64
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          build-args: |
-            NODE_ENV=production
-            NEXT_TELEMETRY_DISABLED=1
-          platforms: linux/arm64
-          provenance: true
-          sbom: true
+          outputs: |
+            type=image,push=true
+            type=image,push=true,name=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }}-amd64,platform=linux/amd64
+            type=image,push=true,name=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }}-arm64,platform=linux/arm64
 
       - name: Run container image validation
         run: |
