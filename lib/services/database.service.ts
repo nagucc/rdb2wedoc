@@ -37,6 +37,36 @@ export class DatabaseService {
   }
 
   private async connectMySQL(config: DatabaseConnection): Promise<void> {
+    const options = { ...config.options };
+    
+    if (options.connectionTimeout !== undefined) {
+      options.connectTimeout = options.connectionTimeout * 1000;
+      delete options.connectionTimeout;
+    }
+    
+    if (options.maxConnections !== undefined) {
+      options.connectionLimit = options.maxConnections;
+      delete options.maxConnections;
+    }
+    
+    if (options.timezone !== undefined) {
+      const timezoneMap: Record<string, string> = {
+        'UTC': '+00:00',
+        'GMT': '+00:00',
+        'EST': '-05:00',
+        'CST': '-06:00',
+        'MST': '-07:00',
+        'PST': '-08:00',
+        'CET': '+01:00',
+        'EET': '+02:00',
+        'JST': '+09:00',
+        'KST': '+09:00',
+        'CST_CHINA': '+08:00',
+        'SGT': '+08:00'
+      };
+      options.timezone = timezoneMap[options.timezone] || options.timezone;
+    }
+    
     this.pool = mysql.createPool({
       host: config.host,
       port: config.port,
@@ -46,7 +76,7 @@ export class DatabaseService {
       waitForConnections: true,
       connectionLimit: 10,
       queueLimit: 0,
-      ...config.options
+      ...options
     });
     
     // 测试连接
