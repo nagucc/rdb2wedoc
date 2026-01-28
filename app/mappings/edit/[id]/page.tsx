@@ -75,6 +75,7 @@ export default function EditMappingPage() {
   });
 
   const [fieldMappings, setFieldMappings] = useState<FieldMappingUI[]>([]);
+  const [isConfigLocked, setIsConfig] = useState(false);
 
   // 字段映射对话框状态
   const [showFieldMappingDialog, setShowFieldMappingDialog] = useState<boolean>(false);
@@ -153,6 +154,10 @@ export default function EditMappingPage() {
           setSelectedDocument(mapping.targetDocId);
           setSelectedSheet(mapping.targetSheetId);
           setFieldMappings(processedFieldMappings);
+          // 如果已有字段映射，自动锁定配置
+          if (processedFieldMappings.length > 0) {
+            setIsConfig(true);
+          }
         } else {
           setError('加载映射配置失败');
         }
@@ -709,6 +714,7 @@ export default function EditMappingPage() {
                 loadingSheets={loadingSheets}
                 refreshingSheets={refreshingSheets}
                 onRefreshSheets={handleRefreshSheets}
+                isConfigLocked={isConfigLocked}
               />
 
               <div className="border-t border-gray-200 pt-6 dark:border-gray-700">

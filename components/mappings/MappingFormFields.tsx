@@ -69,6 +69,9 @@ export interface MappingFormFieldsProps {
   loadingSheets: boolean;
   refreshingSheets: boolean;
   onRefreshSheets: () => void;
+  
+  // 配置锁定状态
+  isConfigLocked: boolean;
 }
 
 const MappingFormFields: React.FC<MappingFormFieldsProps> = ({
@@ -99,7 +102,8 @@ const MappingFormFields: React.FC<MappingFormFieldsProps> = ({
   sheets,
   loadingSheets,
   refreshingSheets,
-  onRefreshSheets
+  onRefreshSheets,
+  isConfigLocked
 }) => {
   return (
     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
@@ -142,13 +146,23 @@ const MappingFormFields: React.FC<MappingFormFieldsProps> = ({
       <div>
         <label htmlFor="sourceDatabase" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
           源名称 <span className="text-red-500">*</span>
+          {isConfigLocked && (
+            <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
+              已锁定
+            </span>
+          )}
         </label>
         <select
           id="sourceDatabase"
           name="sourceDatabase"
           value={selectedDatabase}
           onChange={(e) => onDatabaseChange(e.target.value)}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:border-indigo-500 dark:focus:ring-indigo-500"
+          disabled={isConfigLocked}
+          className={`mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border dark:focus:border-indigo-500 dark:focus:ring-indigo-500 ${
+            isConfigLocked 
+              ? 'border-gray-200 bg-gray-50 text-gray-500 cursor-not-allowed dark:border-gray-600 dark:bg-gray-800 dark:text-gray-500' 
+              : 'border-gray-300 bg-white text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white'
+          }`}
           required
         >
           <option value="">请选择数据库</option>
@@ -174,7 +188,12 @@ const MappingFormFields: React.FC<MappingFormFieldsProps> = ({
               aria-label="源表"
               value={selectedTable}
               onChange={(e) => onTableChange(e.target.value)}
-              className="mt-2 flex-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:border-indigo-500 dark:focus:ring-indigo-500"
+              disabled={isConfigLocked}
+              className={`mt-2 flex-1 block w-full rounded-md shadow-sm focus:border:indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border dark:focus:border-indigo-500 dark:focus:ring-indigo-500 ${
+                isConfigLocked 
+                  ? 'border-gray-200 bg-gray-50 text-gray-500 cursor-not-allowed dark:border-gray-600 dark:bg-gray-800 dark:text-gray-500' 
+                  : 'border-gray-300 bg-white text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white'
+              }`}
               required
             >
               <option value="">请选择表</option>
@@ -193,7 +212,7 @@ const MappingFormFields: React.FC<MappingFormFieldsProps> = ({
             <button
               type="button"
               onClick={onRefreshTables}
-              disabled={refreshingTables || !selectedDatabase}
+              disabled={refreshingTables || !selectedDatabase || isConfigLocked}
               className="mt-2 flex items-center justify-center w-10 h-10 rounded-md border border-gray-300 bg-white text-gray-600 hover:bg-gray-50 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white dark:focus:ring-offset-gray-800"
               aria-label="刷新表格数据"
             >
@@ -209,13 +228,23 @@ const MappingFormFields: React.FC<MappingFormFieldsProps> = ({
       <div>
         <label htmlFor="targetWeComAccount" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
           目标名称 <span className="text-red-500">*</span>
+          {isConfigLocked && (
+            <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
+              已锁定
+            </span>
+          )}
         </label>
         <select
           id="targetWeComAccount"
           name="targetWeComAccount"
           value={selectedWeComAccount}
           onChange={(e) => onWeComAccountChange(e.target.value)}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:border-indigo-500 dark:focus:ring-indigo-500"
+          disabled={isConfigLocked}
+          className={`mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border dark:focus:border-indigo-500 dark:focus:ring-indigo-500 ${
+            isConfigLocked 
+              ? 'border-gray-200 bg-gray-50 text-gray-500 cursor-not-allowed dark:border-gray-600 dark:bg-gray-800 dark:text-gray-500' 
+              : 'border-gray-300 bg-white text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white'
+          }`}
           required
         >
           <option value="">请选择企业微信账户</option>
@@ -240,7 +269,12 @@ const MappingFormFields: React.FC<MappingFormFieldsProps> = ({
             aria-label="目标文档"
             value={selectedDocument}
             onChange={(e) => onDocumentChange(e.target.value)}
-            className="mt-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:border-indigo-500 dark:focus:ring-indigo-500"
+            disabled={isConfigLocked}
+            className={`mt-2 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border dark:focus:border-indigo-500 dark:focus:ring-indigo-500 ${
+              isConfigLocked 
+                ? 'border-gray-200 bg-gray-50 text-gray-500 cursor-not-allowed dark:border-gray-600 dark:bg-gray-800 dark:text-gray-500' 
+                : 'border-gray-300 bg-white text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white'
+            }`}
             required
           >
             <option value="">请选择智能表格</option>
@@ -267,7 +301,12 @@ const MappingFormFields: React.FC<MappingFormFieldsProps> = ({
               aria-label="目标子表"
               value={selectedSheet}
               onChange={(e) => onSheetChange(e.target.value)}
-              className="mt-2 flex-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:border-indigo-500 dark:focus:ring-indigo-500"
+              disabled={isConfigLocked}
+              className={`mt-2 flex-1 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border dark:focus:border-indigo-500 dark:focus:ring-indigo-500 ${
+                isConfigLocked 
+                  ? 'border-gray-200 bg-gray-50 text-gray-500 cursor-not-allowed dark:border-gray-600 dark:bg-gray-800 dark:text-gray-500' 
+                  : 'border-gray-300 bg-white text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white'
+              }`}
               required
             >
               <option value="">请选择子表</option>
@@ -286,7 +325,7 @@ const MappingFormFields: React.FC<MappingFormFieldsProps> = ({
             <button
               type="button"
               onClick={onRefreshSheets}
-              disabled={refreshingSheets || !selectedDocument}
+              disabled={refreshingSheets || !selectedDocument || isConfigLocked}
               className="mt-2 flex items-center justify-center w-10 h-10 rounded-md border border-gray-300 bg-white text-gray-600 hover:bg-gray-50 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white dark:focus:ring-offset-gray-800"
               aria-label="刷新子表数据"
             >

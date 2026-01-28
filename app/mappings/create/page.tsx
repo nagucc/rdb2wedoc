@@ -78,6 +78,7 @@ export default function CreateMappingPage() {
   });
 
   const [fieldMappings, setFieldMappings] = useState<FieldMappingUI[]>([]);
+  const [isConfigLocked, setIsConfig] = useState(false);
 
   // 字段映射对话框状态
   const [showFieldMappingDialog, setShowFieldMappingDialog] = useState<boolean>(false);
@@ -370,7 +371,14 @@ export default function CreateMappingPage() {
       ));
     } else {
       // 添加新映射
-      setFieldMappings(prev => [...prev, mapping]);
+      setFieldMappings(prev => {
+        const newMappings = [...prev, mapping];
+        // 当添加第一个字段映射时，自动锁定配置
+        if (prev.length === 0) {
+          setIsConfig(true);
+        }
+        return newMappings;
+      });
     }
   };
 
@@ -688,6 +696,7 @@ export default function CreateMappingPage() {
               loadingSheets={loadingSheets}
               refreshingSheets={refreshingSheets}
               onRefreshSheets={handleRefreshSheets}
+              isConfigLocked={isConfigLocked}
             />
 
             <div>
