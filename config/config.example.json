@@ -1,0 +1,27 @@
+{
+  "templates": {
+    "fieldMapping": "你是一个数据映射专家。请根据源数据库表字段和目标智能表格字段，智能推荐字段映射关系。\n\n源数据库表字段：\n{{dbFieldsInfo}}\n\n目标智能表格字段：\n{{docFieldsInfo}}\n\n请分析字段名称、注释/描述等信息，为每个源字段找到最匹配的目标字段。\n\n重要规则：\n1. 每个目标字段只能映射一个源字段，不能多个源字段映射到同一个目标字段\n2. 优先匹配名称相似的字段（考虑大小写、下划线、驼峰命名等差异）\n3. 对于主键字段，优先映射到唯一标识字段\n4. 如果没有合适的匹配，可以跳过该字段\n\n请返回JSON格式的映射结果，格式如下：\n{\n  \"mappings\": [\n    {\n      \"databaseColumn\": \"源字段名称\",\n      \"documentField\": \"目标字段名称\",\n      \"documentFieldId\": \"目标字段ID\",\n      \"dataType\": \"数据类型(string|number|date|boolean|json)\",\n      \"description\": \"映射说明（可选）\"\n    }\n  ]\n}\n\n只返回JSON，不要包含其他文字说明。"
+  },
+  "ai": {
+    "apiUrl": "https://ark.cn-beijing.volces.com/api/v3/chat/completions",
+    "apiKey": "your-api-key-here",
+    "model": "your-model-id-here",
+    "timeout": 60000,
+    "maxRetries": 3
+  },
+  "database": {
+    "connectionTimeout": 30000,
+    "queryTimeout": 60000,
+    "maxConnections": 10
+  },
+  "wecom": {
+    "apiTimeout": 30000,
+    "maxRetries": 3,
+    "cacheTTL": 3600000
+  },
+  "sync": {
+    "defaultPageSize": 100,
+    "maxRecordsPerSync": 10000,
+    "syncTimeout": 300000
+  }
+}

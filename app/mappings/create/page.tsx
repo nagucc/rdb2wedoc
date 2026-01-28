@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { RefreshCw, AlertCircle, XCircle, CheckCircle, Edit2, Trash2, AlertTriangle } from 'lucide-react';
+import { RefreshCw, AlertCircle, Edit2, Trash2, AlertTriangle, Sparkles } from 'lucide-react';
 import { authService } from '@/lib/services/authService';
 import Header from '@/components/layout/Header';
 import { FieldMappingUI, DatabaseField, DocumentField } from '@/types';
@@ -48,7 +48,6 @@ interface MappingFormData {
   sourceTableName: string;
   targetDocId: string;
   targetSheetId: string;
-  status: 'active' | 'inactive' | 'draft';
   fieldMappings: FieldMappingUI[];
 }
 
@@ -73,7 +72,6 @@ export default function CreateMappingPage() {
     sourceTableName: '',
     targetDocId: '',
     targetSheetId: '',
-    status: 'draft',
     fieldMappings: []
   });
 
@@ -100,6 +98,11 @@ export default function CreateMappingPage() {
   const [documentFields, setDocumentFields] = useState<DocumentField[]>([]);
   const [loadingDatabaseFields, setLoadingDatabaseFields] = useState(false);
   const [loadingDocumentFields, setLoadingDocumentFields] = useState(false);
+  const loadingDocumentFieldsRef = useRef(loadingDocumentFields);
+
+  useEffect(() => {
+    loadingDocumentFieldsRef.current = loadingDocumentFields;
+  }, [loadingDocumentFields]);
 
   const [wecomAccounts, setWeComAccounts] = useState<WeComAccount[]>([]);
   const [documents, setDocuments] = useState<WecomSmartSheet[]>([]);
@@ -111,6 +114,12 @@ export default function CreateMappingPage() {
   const [loadingDocuments, setLoadingDocuments] = useState(false);
   const [loadingSheets, setLoadingSheets] = useState(false);
   const [refreshingSheets, setRefreshingSheets] = useState(false);
+
+  const [aiMatching, setAiMatching] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [countdown, setCountdown] = useState<number | null>(null);
+  const countdownRef = useRef<NodeJS.Timeout | null>(null);
+  const [aiTimeout, setAiTimeout] = useState<number>(90000); // 默认值，与config.json一致
 
   useEffect(() => {
     setMounted(true);
@@ -126,6 +135,24 @@ export default function CreateMappingPage() {
     if (typeof document !== 'undefined') {
       document.title = '创建数据映射 - RDB2WeDoc';
     }
+  }, []);
+
+  // 获取AI配置
+  useEffect(() => {
+    const fetchAIConfig = async () => {
+      try {
+        const response = await fetch('/api/config/ai');
+        const result = await response.json();
+        if (result.success && result.data && result.data.timeout) {
+          setAiTimeout(result.data.timeout);
+        }
+      } catch (error) {
+        console.error('获取AI配置失败:', error);
+        // 使用默认值
+      }
+    };
+
+    fetchAIConfig();
   }, []);
 
   useEffect(() => {
@@ -350,17 +377,111 @@ export default function CreateMappingPage() {
     fetchDocumentFields();
   }, [selectedDocument, selectedSheet]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
   const addFieldMapping = () => {
     setEditingMapping(null);
     setShowFieldMappingDialog(true);
+  };
+
+  const handleAIMatch = async () => {
+    if (!selectedDatabase || !selectedTable) {
+      setError('请先选择源数据库和表');
+      return;
+    }
+
+    if (!selectedDocument || !selectedSheet) {
+      setError('请先选择目标文档和子表');
+      return;
+    }
+
+    if (databaseFields.length === 0) {
+      setError('源数据库字段为空，无法进行AI匹配');
+      return;
+    }
+
+    setAiMatching(true);
+    setAiError(null);
+    setError(null);
+
+    try {
+      // 直接从远程读取最新的文档字段（不依赖本地状态）
+      setLoadingDocumentFields(true);
+      const docFieldsResponse = await fetch(`/api/field-mapping/document-fields?documentId=${selectedDocument}&sheetId=${selectedSheet}`);
+      const docFieldsResult = await docFieldsResponse.json();
+      
+      if (!docFieldsResult.success) {
+        throw new Error('加载文档字段失败');
+      }
+      
+      const documentFieldsFromAPI = docFieldsResult.data;
+      
+      if (documentFieldsFromAPI.length === 0) {
+        throw new Error('目标文档字段为空，无法进行AI匹配');
+      }
+      
+      const validDocumentFields = documentFieldsFromAPI.filter((f: any) => f.name && f.name.trim() !== '');
+      if (validDocumentFields.length === 0) {
+        throw new Error('目标文档字段名称为空，无法进行AI匹配');
+      }
+      
+      // 更新本地状态（可选，但有助于UI显示）
+      setDocumentFields(documentFieldsFromAPI);
+      
+      // 启动倒计时（从调用AI API开始）
+      const timeout = aiTimeout; // 使用从配置中获取的timeout值
+      setCountdown(Math.ceil(timeout / 1000));
+      
+      // 清除之前的倒计时
+      if (countdownRef.current) {
+        clearInterval(countdownRef.current);
+      }
+      
+      // 设置新的倒计时
+      countdownRef.current = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev && prev > 1) {
+            return prev - 1;
+          }
+          clearInterval(countdownRef.current!);
+          return null;
+        });
+      }, 1000);
+
+      // 调用AI匹配API
+      const response = await fetch('/api/ai/field-mapping', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          databaseFields,
+          documentFields: validDocumentFields
+        })
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setFieldMappings(result.data);
+        if (result.data.length > 0) {
+          setIsConfig(true);
+        }
+      } else {
+        setAiError(result.error || 'AI匹配失败');
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'AI匹配请求失败';
+      setAiError(errorMessage);
+      console.error('AI匹配失败:', err);
+    } finally {
+      setAiMatching(false);
+      setLoadingDocumentFields(false);
+      // 清除倒计时
+      if (countdownRef.current) {
+        clearInterval(countdownRef.current);
+        countdownRef.current = null;
+      }
+      setCountdown(null);
+    }
   };
 
   const handleSaveMapping = (mapping: FieldMappingUI) => {
@@ -558,7 +679,6 @@ export default function CreateMappingPage() {
         sourceTableName: selectedTable,
         targetDocId: selectedDocument,
         targetSheetId: selectedSheet,
-        status: formData.status,
         fieldMappings: fieldMappings,
         corpId: selectedWeComAccountData?.corpId,
         targetName: selectedWeComAccountData?.name,
@@ -579,7 +699,6 @@ export default function CreateMappingPage() {
         throw new Error(errorData.error || '创建映射配置失败');
       }
 
-      const result = await response.json();
       setSuccess(true);
       setTimeout(() => {
         router.push('/dashboard');
@@ -591,11 +710,7 @@ export default function CreateMappingPage() {
     }
   };
 
-  const handleCancel = () => {
-    router.back();
-  };
-
-  const handleConnectionError = (error: any) => {
+  const handleConnectionError = (error: unknown) => {
     const errorMessage = error instanceof Error ? error.message : String(error);
     
     let errorType = '连接错误';
@@ -670,8 +785,6 @@ export default function CreateMappingPage() {
             <MappingFormFields
               name={formData.name}
               onNameChange={(value) => setFormData(prev => ({ ...prev, name: value }))}
-              status={formData.status}
-              onStatusChange={(value) => setFormData(prev => ({ ...prev, status: value }))}
               selectedDatabase={selectedDatabase}
               onDatabaseChange={setSelectedDatabase}
               databases={databases}
@@ -702,17 +815,41 @@ export default function CreateMappingPage() {
             <div>
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white">字段映射</h3>
-                <button
-                  type="button"
-                  onClick={addFieldMapping}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                >
-                  <svg className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
-                  </svg>
-                  添加字段映射
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={handleAIMatch}
+                    disabled={aiMatching || !selectedDatabase || !selectedTable || !selectedDocument || !selectedSheet}
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Sparkles className="h-5 w-5 mr-2" />
+                    {aiMatching && countdown ? `AI匹配中... (${countdown}s)` : aiMatching ? 'AI匹配中...' : 'AI智能匹配'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={addFieldMapping}
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  >
+                    <svg className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+                    </svg>
+                    添加字段映射
+                  </button>
+                </div>
               </div>
+
+              {aiError && (
+                <div className="rounded-md bg-amber-50 p-4 mb-4">
+                  <div className="flex">
+                    <div className="flex-shrink-0">
+                      <AlertCircle className="h-5 w-5 text-amber-400" />
+                    </div>
+                    <div className="ml-3">
+                      <p className="text-sm font-medium text-amber-800">{aiError}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {fieldMappings.length === 0 ? (
                 <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 dark:bg-gray-700 dark:border-gray-600 transition-all duration-300">

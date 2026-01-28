@@ -32,8 +32,6 @@ const mockSheets = [
 const defaultProps = {
   name: '测试映射',
   onNameChange: jest.fn(),
-  status: 'draft' as 'draft' | 'active' | 'inactive',
-  onStatusChange: jest.fn(),
   selectedDatabase: '',
   onDatabaseChange: jest.fn(),
   databases: mockDatabases,
@@ -57,7 +55,8 @@ const defaultProps = {
   sheets: mockSheets,
   loadingSheets: false,
   refreshingSheets: false,
-  onRefreshSheets: jest.fn()
+  onRefreshSheets: jest.fn(),
+  isConfigLocked: false
 };
 
 describe('MappingFormFields Component', () => {
@@ -70,7 +69,6 @@ describe('MappingFormFields Component', () => {
     
     // 检查基本元素是否渲染
     expect(screen.getByLabelText(/映射名称/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/状态/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/源名称/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/目标名称/i)).toBeInTheDocument();
   });
@@ -82,15 +80,6 @@ describe('MappingFormFields Component', () => {
     fireEvent.change(nameInput, { target: { value: '新映射名称' } });
     
     expect(defaultProps.onNameChange).toHaveBeenCalledWith('新映射名称');
-  });
-
-  test('calls onStatusChange when status select changes', () => {
-    render(<MappingFormFields {...defaultProps} />);
-    
-    const statusSelect = screen.getByLabelText(/状态/i);
-    fireEvent.change(statusSelect, { target: { value: 'active' } });
-    
-    expect(defaultProps.onStatusChange).toHaveBeenCalledWith('active');
   });
 
   test('calls onDatabaseChange when database select changes', () => {
