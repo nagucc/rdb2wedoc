@@ -55,16 +55,30 @@ jobs:
           tags: |
             type=raw,value=latest
             type=raw,value=${{ steps.version.outputs.version }}
-            type=raw,value=${{ steps.version.outputs.version }}-amd64,enable=linux/amd64
-            type=raw,value=${{ steps.version.outputs.version }}-arm64,enable=linux/arm64
             type=sha,prefix=
+
+      - name: Generate platform-specific tags
+        id: platform-tags
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
+          
+          TAGS="${{ steps.meta.outputs.tags }}"
+          
+          TAGS="$TAGS
+          $IMAGE:$VERSION-amd64
+          $IMAGE:$VERSION-arm64"
+          
+          echo "tags=$TAGS" >> $GITHUB_OUTPUT
+          echo "Generated tags:"
+          echo "$TAGS"
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
           context: .
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: ${{ steps.platform-tags.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
