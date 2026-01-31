@@ -6,7 +6,7 @@ import { Logger } from '@/lib/utils/helpers';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, type, host, port, username, password, database, options } = body;
+    const { name, type, host, port, username, password, database, charset, options } = body;
 
     // 验证必填字段
     if (!name || !type || !host || !port || !username || !password || !database) {
@@ -52,6 +52,7 @@ export async function POST(request: NextRequest) {
       username: username.trim(),
       password,
       database: database.trim(),
+      charset,
       options,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()

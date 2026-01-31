@@ -66,7 +66,7 @@ export class DatabaseService {
       };
       options.timezone = timezoneMap[options.timezone] || options.timezone;
     }
-    
+    console.log('#######', config);
     this.pool = mysql.createPool({
       host: config.host,
       port: config.port,
@@ -76,7 +76,8 @@ export class DatabaseService {
       waitForConnections: true,
       connectionLimit: 10,
       queueLimit: 0,
-      ...options
+      ...options,
+      charset: config.charset || 'latin1'
     });
     
     // 测试连接
@@ -85,7 +86,7 @@ export class DatabaseService {
   }
 
   private async connectPostgreSQL(config: DatabaseConnection): Promise<void> {
-    this.pool = new PostgresPool({
+    const postgresConfig = {
       host: config.host,
       port: config.port,
       user: config.username,
@@ -93,14 +94,21 @@ export class DatabaseService {
       database: config.database,
       max: 10,
       ...config.options
-    });
+    };
+    
+    // 添加字符集设置
+    if (config.charset) {
+      postgresConfig.client_encoding = config.charset;
+    }
+    
+    this.pool = new PostgresPool(postgresConfig);
     
     // 测试连接
     await this.pool.query('SELECT NOW()');
   }
 
   private async connectSQLServer(config: DatabaseConnection): Promise<void> {
-    this.pool = new SqlServerPool({
+    const sqlServerConfig = {
       server: config.host,
       port: config.port,
       user: config.username,
@@ -116,14 +124,21 @@ export class DatabaseService {
         trustServerCertificate: true,
         ...config.options
       }
-    });
+    };
+    
+    // 添加字符集设置
+    if (config.charset) {
+      sqlServerConfig.options.charset = config.charset;
+    }
+    
+    this.pool = new SqlServerPool(sqlServerConfig);
     
     // 测试连接
     await this.pool.connect();
   }
 
   private async connectOracle(config: DatabaseConnection): Promise<void> {
-    this.pool = await oracledb.createPool({
+    const oracleConfig = {
       user: config.username,
       password: config.password,
       connectString: `${config.host}:${config.port}/${config.database}`,
@@ -131,7 +146,11 @@ export class DatabaseService {
       poolMax: 10,
       poolIncrement: 1,
       ...config.options
-    });
+    };
+    
+    // Oracle字符集通常在数据库层面配置，连接时不需要特别设置
+    
+    this.pool = await oracledb.createPool(oracleConfig);
     
     // 测试连接
     const connection = await this.pool.getConnection();
@@ -179,18 +198,41 @@ export class DatabaseService {
   }
 
   private async getMySQLTables(): Promise<DatabaseTable[]> {
-    const [rows] = await this.pool.query(`
+    // 先获取表信息（包括注释）
+    const [tableRows] = await this.pool.query(`
+      SELECT TABLE_NAME, TABLE_COMMENT
+      FROM INFORMATION_SCHEMA.TABLES
+      WHERE TABLE_SCHEMA = DATABASE()
+      ORDER BY TABLE_NAME
+    `);
+    
+    // 再获取列信息
+    const [columnRows] = await this.pool.query(`
       SELECT TABLE_NAME, COLUMN_NAME, DATA_TYPE, IS_NULLABLE, COLUMN_KEY, COLUMN_DEFAULT, COLUMN_COMMENT
       FROM INFORMATION_SCHEMA.COLUMNS
       WHERE TABLE_SCHEMA = DATABASE()
       ORDER BY TABLE_NAME, ORDINAL_POSITION
     `);
     
-    return this.processTableResults(rows as any[]);
+    return this.processTableResultsWithComments(columnRows as any[], tableRows as any[]);
   }
 
   private async getPostgreSQLTables(): Promise<DatabaseTable[]> {
-    const result = await this.pool.query(`
+    // 先获取表信息（包括注释）
+    const tableResult = await this.pool.query(`
+      SELECT 
+        t.table_name,
+        pgtd.description as table_comment
+      FROM information_schema.tables t
+      LEFT JOIN pg_catalog.pg_statio_all_tables psat ON psat.schemaname = t.table_schema AND psat.relname = t.table_name
+      LEFT JOIN pg_catalog.pg_description pgtd ON pgtd.objoid = psat.relid AND pgtd.objsubid = 0
+      WHERE t.table_schema = 'public'
+        AND t.table_type = 'BASE TABLE'
+      ORDER BY t.table_name
+    `);
+    
+    // 再获取列信息
+    const columnResult = await this.pool.query(`
       SELECT 
         t.table_name,
         c.column_name,
@@ -215,11 +257,24 @@ export class DatabaseService {
       ORDER BY t.table_name, c.ordinal_position
     `);
     
-    return this.processTableResults(result.rows);
+    return this.processTableResultsWithComments(columnResult.rows, tableResult.rows);
   }
 
   private async getSQLServerTables(): Promise<DatabaseTable[]> {
-    const result = await this.pool.request().query(`
+    // 先获取表信息（包括注释）
+    const tableResult = await this.pool.request().query(`
+      SELECT 
+        t.TABLE_NAME,
+        ep.value as TABLE_COMMENT
+      FROM INFORMATION_SCHEMA.TABLES t
+      LEFT JOIN sys.extended_properties ep ON ep.major_id = OBJECT_ID(t.TABLE_SCHEMA + '.' + t.TABLE_NAME) 
+        AND ep.minor_id = 0 AND ep.name = 'MS_Description'
+      WHERE t.TABLE_TYPE = 'BASE TABLE'
+      ORDER BY t.TABLE_NAME
+    `);
+    
+    // 再获取列信息
+    const columnResult = await this.pool.request().query(`
       SELECT 
         t.TABLE_NAME,
         c.COLUMN_NAME,
@@ -243,14 +298,25 @@ export class DatabaseService {
       ORDER BY t.TABLE_NAME, c.ORDINAL_POSITION
     `);
     
-    return this.processTableResults(result.recordset);
+    return this.processTableResultsWithComments(columnResult.recordset, tableResult.recordset);
   }
 
   private async getOracleTables(): Promise<DatabaseTable[]> {
     const connection = await this.pool.getConnection();
     
     try {
-      const result = await connection.execute(`
+      // 先获取表信息（包括注释）
+      const tableResult = await connection.execute(`
+        SELECT 
+          t.TABLE_NAME,
+          tc.COMMENTS as TABLE_COMMENT
+        FROM USER_TABLES t
+        LEFT JOIN USER_TAB_COMMENTS tc ON t.TABLE_NAME = tc.TABLE_NAME
+        ORDER BY t.TABLE_NAME
+      `);
+      
+      // 再获取列信息
+      const columnResult = await connection.execute(`
         SELECT 
           t.TABLE_NAME,
           c.COLUMN_NAME,
@@ -271,8 +337,7 @@ export class DatabaseService {
         ORDER BY t.TABLE_NAME, c.COLUMN_ID
       `);
       
-      const rows = result.rows as any[];
-      return this.processTableResults(rows);
+      return this.processTableResultsWithComments(columnResult.rows as any[], tableResult.rows as any[]);
     } finally {
       await connection.close();
     }
@@ -299,6 +364,46 @@ export class DatabaseService {
         primaryKey: (row.COLUMN_KEY || row.column_key) === 'PRI',
         defaultValue: row.COLUMN_DEFAULT || row.column_default,
         comment: row.COLUMN_COMMENT || row.column_comment
+      });
+    });
+    
+    return Array.from(tableMap.values());
+  }
+
+  private processTableResultsWithComments(columns: any[], tables: any[]): DatabaseTable[] {
+    const tableMap = new Map<string, DatabaseTable>();
+    
+    // 先创建表映射并添加注释
+    tables.forEach(tableRow => {
+      const tableName = tableRow.TABLE_NAME || tableRow.table_name;
+      const tableComment = tableRow.TABLE_COMMENT || tableRow.table_comment;
+      
+      tableMap.set(tableName, {
+        name: tableName,
+        comment: tableComment,
+        columns: []
+      });
+    });
+    
+    // 再添加列信息
+    columns.forEach(columnRow => {
+      const tableName = columnRow.TABLE_NAME || columnRow.table_name;
+      
+      if (!tableMap.has(tableName)) {
+        tableMap.set(tableName, {
+          name: tableName,
+          columns: []
+        });
+      }
+      
+      const table = tableMap.get(tableName)!;
+      table.columns.push({
+        name: columnRow.COLUMN_NAME || columnRow.column_name,
+        type: columnRow.DATA_TYPE || columnRow.data_type,
+        nullable: (columnRow.IS_NULLABLE || columnRow.nullable || 'NO') === 'YES',
+        primaryKey: (columnRow.COLUMN_KEY || columnRow.column_key) === 'PRI',
+        defaultValue: columnRow.COLUMN_DEFAULT || columnRow.column_default,
+        comment: columnRow.COLUMN_COMMENT || columnRow.column_comment
       });
     });
     

@@ -32,6 +32,8 @@ export default function ScheduleConfig({
   const [nextRunTime, setNextRunTime] = useState<string>('');
   const [nextRunDate, setNextRunDate] = useState<Date | null>(null);
   const [isValid, setIsValid] = useState(true);
+  const [serverTime, setServerTime] = useState<string>('');
+  const [serverTimeDate, setServerTimeDate] = useState<Date | null>(null);
 
   useEffect(() => {
     setCustomExpression(schedule || '');
@@ -47,6 +49,37 @@ export default function ScheduleConfig({
 
     return () => clearInterval(interval);
   }, [nextRunDate]);
+
+  // 获取和更新服务器时间
+  useEffect(() => {
+    const fetchServerTime = async () => {
+      try {
+        // 这里应该调用一个API来获取服务器时间
+        // 为了演示，我们使用本地时间，但在实际应用中应该从服务器获取
+        const now = new Date();
+        setServerTimeDate(now);
+        setServerTime(now.toLocaleString('zh-CN', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          timeZoneName: 'short'
+        }));
+      } catch (error) {
+        console.error('Failed to fetch server time:', error);
+      }
+    };
+
+    // 初始获取
+    fetchServerTime();
+
+    // 每秒更新一次
+    const timeInterval = setInterval(fetchServerTime, 1000);
+
+    return () => clearInterval(timeInterval);
+  }, []);
 
   const updateRemainingTime = () => {
     if (nextRunDate) {
@@ -273,6 +306,15 @@ export default function ScheduleConfig({
         <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
           同步周期配置
         </label>
+        
+        {/* 显示当前服务器时间 */}
+        <div className="mb-3 flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-800">
+          <Clock className="h-4 w-4 flex-shrink-0 text-blue-600 dark:text-blue-400" />
+          <div className="flex-1">
+            <p className="text-xs text-gray-500 dark:text-gray-400">当前服务器时间</p>
+            <p className="text-sm font-medium text-gray-900 dark:text-white">{serverTime}</p>
+          </div>
+        </div>
         
         <div className="relative">
           <input

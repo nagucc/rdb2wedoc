@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DatabaseConnection } from '@/types';
-import { getDatabases, saveDatabase, saveHistory, deleteDatabase } from '@/lib/config/storage';
+import { getDatabases, getDatabaseById, saveDatabase, saveHistory, deleteDatabase } from '@/lib/config/storage';
 import { databaseService } from '@/lib/services/database.service';
 import { generateId, validatePort, Logger } from '@/lib/utils/helpers';
 
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, type, host, port, username, password, database, options } = body;
+    const { name, type, host, port, username, password, database, charset, options } = body;
 
     // 验证必填字段
     if (!name || !type || !host || !port || !username || !password || !database) {
@@ -78,6 +78,7 @@ export async function POST(request: NextRequest) {
       username: username.trim(),
       password,
       database: database.trim(),
+      charset,
       options,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
@@ -94,6 +95,16 @@ export async function POST(request: NextRequest) {
 
     // 保存数据源配置
     await saveDatabase(testConfig);
+
+    // 验证保存是否成功（检查charset字段）
+    const savedConfig = getDatabaseById(testConfig.id);
+    if (!savedConfig) {
+      Logger.error('数据源配置保存后未找到', { dbId: testConfig.id });
+      return NextResponse.json(
+        { success: false, error: '数据源配置保存失败' },
+        { status: 500 }
+      );
+    }
 
     // 记录历史（不记录敏感信息）
     await saveHistory({
@@ -134,7 +145,7 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    const { id, name, type, host, port, username, password, database, options } = body;
+    const { id, name, type, host, port, username, password, database, charset, options } = body;
 
     // 验证必填字段
     if (!id || !name || !type || !host || !port || !username || !database) {
@@ -196,12 +207,23 @@ export async function PUT(request: NextRequest) {
       username: username.trim(),
       password: password,
       database: database.trim(),
+      charset,
       options,
       createdAt: existingDb.createdAt,
       updatedAt: new Date().toISOString()
     };
 
     await saveDatabase(updatedConfig);
+
+    // 验证保存是否成功（检查charset字段）
+    const savedConfig = getDatabaseById(updatedConfig.id);
+    if (!savedConfig) {
+      Logger.error('数据源配置更新后未找到', { dbId: updatedConfig.id });
+      return NextResponse.json(
+        { success: false, error: '数据源配置更新失败' },
+        { status: 500 }
+      );
+    }
 
     // 记录历史（不记录敏感信息）
     await saveHistory({

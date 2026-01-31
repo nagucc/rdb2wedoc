@@ -3,6 +3,13 @@ import { getDocumentById, getIntelligentDocumentById, getWeComAccountById } from
 import { weComDocumentService } from '@/lib/services/wecom-document.service';
 import { Logger } from '@/lib/utils/helpers';
 
+interface SheetField {
+  id: string;
+  name: string;
+  type: string;
+  [key: string]: unknown;
+}
+
 interface WecomSmartSheet {
   id: string;
   name: string;
@@ -14,13 +21,8 @@ interface WecomSmartSheet {
   sheets: Array<{
     id: string;
     name: string;
-    fields: any[];
+    fields: SheetField[];
   }>;
-}
-
-interface DocumentSheet {
-  sheet_id: string;
-  title: string;
 }
 
 // 获取文档的所有Sheet
@@ -100,6 +102,22 @@ export async function GET(
       docId: document.id, 
       sheetCount: formattedSheets.length 
     });
+
+    if (refresh) {
+      const { saveIntelligentDocument } = await import('@/lib/config/storage');
+      const updatedDocument = {
+        ...document,
+        sheets: formattedSheets.map(sheet => ({
+          id: sheet.id,
+          name: sheet.name,
+          fields: sheet.fields || []
+        })),
+        sheetCount: formattedSheets.length,
+        lastSyncTime: new Date().toISOString()
+      };
+      saveIntelligentDocument(updatedDocument);
+      Logger.info(`已将刷新后的Sheet数据保存到配置文件`, { docId: document.id });
+    }
 
     return NextResponse.json({
       success: true,

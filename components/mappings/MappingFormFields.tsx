@@ -41,7 +41,7 @@ export interface MappingFormFieldsProps {
   // 源表
   selectedTable: string;
   onTableChange: (value: string) => void;
-  tables: { name: string; type: string }[];
+  tables: { name: string; type: string; comment?: string }[];
   loadingTables: boolean;
   refreshingTables: boolean;
   onRefreshTables: () => void;
@@ -179,7 +179,7 @@ const MappingFormFields: React.FC<MappingFormFieldsProps> = ({
               ) : (
                 tables.map((table) => (
                   <option key={table.name} value={table.name}>
-                    {table.name} ({table.type})
+                    {table.name}{table.comment ? `(${table.comment})` : ''}
                   </option>
                 ))
               )}

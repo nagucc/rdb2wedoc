@@ -624,11 +624,16 @@ export default function SyncJobsPage() {
                                 </span>
                               )}
                             </div>
-                            {job.lastRun && (
-                              <div className="text-xs text-gray-500 dark:text-gray-500">
-                                最后执行: {new Date(job.lastRun).toLocaleString('zh-CN')}
-                              </div>
-                            )}
+                            <div className="flex flex-wrap gap-3 text-xs text-gray-500 dark:text-gray-500">
+                              {job.lastRun && (
+                                <span>
+                                  最后执行: {new Date(job.lastRun).toLocaleString('zh-CN')}
+                                </span>
+                              )}
+                              <span>
+                                同步周期: {job.scheduleTemplate || job.schedule}
+                              </span>
+                            </div>
                           </div>
                           <div className="flex items-center gap-2">
                             <button

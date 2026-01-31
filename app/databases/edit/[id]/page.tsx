@@ -25,6 +25,7 @@ interface DatabaseConfig {
   username: string;
   password: string;
   database: string;
+  charset?: string;
   options?: {
     ssl?: boolean;
     timezone?: string;
@@ -54,6 +55,7 @@ export default function EditDatabasePage() {
     username: '',
     password: '',
     database: '',
+    charset: 'utf8mb4',
     options: {
       ssl: false,
       timezone: 'UTC',
@@ -95,6 +97,7 @@ export default function EditDatabasePage() {
           username: db.username,
           password: db.password,
           database: db.database,
+          charset: db.charset,
           options: db.options || {
             ssl: false,
             timezone: 'UTC',
@@ -528,6 +531,23 @@ export default function EditDatabasePage() {
                   >
                     <option value="false">禁用</option>
                     <option value="true">启用</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    字符集
+                  </label>
+                  <select
+                    value={config.charset || 'latin1'}
+                    onChange={(e) => handleInputChange('charset', e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                  >
+                    <option value="latin1">latin1 (MySQL默认)</option>
+                    <option value="utf8">utf8</option>
+                    <option value="utf8mb4">utf8mb4 (推荐)</option>
+                    <option value="gb2312">gb2312</option>
+                    <option value="gbk">gbk</option>
                   </select>
                 </div>
 

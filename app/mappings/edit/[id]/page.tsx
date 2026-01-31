@@ -23,6 +23,7 @@ interface DatabaseConnection {
 interface Table {
   name: string;
   type: string;
+  comment?: string;
 }
 
 interface WeComAccount {
@@ -164,7 +165,8 @@ export default function EditMappingPage() {
           
           const processedFieldMappings = mapping.fieldMappings.map(fm => ({
             ...fm,
-            documentField: fm.documentFieldId || fm.documentField
+            documentField: fm.documentField || fm.documentFieldId,
+            documentFieldId: fm.documentFieldId || fm.documentField
           }));
           
           setFormData({
@@ -178,11 +180,55 @@ export default function EditMappingPage() {
           setSelectedDatabase(mapping.sourceDatabaseId);
           setSelectedTable(mapping.sourceTableName);
           setSelectedDocument(mapping.targetDocId);
-          setSelectedSheet(mapping.targetSheetId);
           setFieldMappings(processedFieldMappings);
           // 如果已有字段映射，自动锁定配置
           if (processedFieldMappings.length > 0) {
             setIsConfig(true);
+          }
+          
+          // 获取目标文档信息，以确定对应的企业微信账户
+          if (mapping.targetDocId) {
+            try {
+              const documentsResponse = await fetch('/api/documents');
+              const documentsResult = await documentsResponse.json();
+              if (documentsResult.success && documentsResult.data) {
+                const targetDocument = documentsResult.data.find((doc: any) => doc.id === mapping.targetDocId);
+                if (targetDocument && targetDocument.accountId) {
+                  setSelectedWeComAccount(targetDocument.accountId);
+                  
+                  // 加载对应企业微信账户的文档列表
+                  try {
+                    const accountDocumentsResponse = await fetch(`/api/wecom-accounts/${targetDocument.accountId}/documents`);
+                    const accountDocumentsResult = await accountDocumentsResponse.json();
+                    if (accountDocumentsResult.success) {
+                      setDocuments(accountDocumentsResult.data);
+                      
+                      // 加载对应文档的子表列表
+                      if (mapping.targetDocId) {
+                        try {
+                          const sheetsResponse = await fetch(`/api/documents/${mapping.targetDocId}/sheets`);
+                          const sheetsResult = await sheetsResponse.json();
+                          if (sheetsResult.success) {
+                            setSheets(sheetsResult.data);
+                            // 在设置 sheets 后再设置 selectedSheet，确保下拉列表中有对应的选项
+                            setSelectedSheet(mapping.targetSheetId);
+                          }
+                        } catch (error) {
+                          console.error('Failed to fetch sheets:', error);
+                          // 忽略错误，继续执行
+                        }
+                      }
+                    }
+                  } catch (error) {
+                    console.error('Failed to fetch account documents:', error);
+                    // 忽略错误，继续执行
+                  }
+                }
+              }
+            } catch (error) {
+              console.error('Failed to fetch documents:', error);
+              // 忽略错误，继续执行
+            }
           }
         } else {
           setError('加载映射配置失败');
@@ -556,6 +602,8 @@ export default function EditMappingPage() {
     } else {
       // 添加新映射
       setFieldMappings(prev => [...prev, mapping]);
+      // 当添加新映射时，锁定配置
+      setIsConfig(true);
     }
   };
 
@@ -571,9 +619,15 @@ export default function EditMappingPage() {
 
   const confirmDeleteMapping = () => {
     if (mappingToDelete !== null) {
-      setFieldMappings(prev => prev.filter((_, i) => i !== mappingToDelete));
+      const updatedMappings = fieldMappings.filter((_, i) => i !== mappingToDelete);
+      setFieldMappings(updatedMappings);
       setShowDeleteConfirm(false);
       setMappingToDelete(null);
+      
+      // 当所有字段映射都被删除时，取消配置锁定
+      if (updatedMappings.length === 0) {
+        setIsConfig(false);
+      }
     }
   };
 

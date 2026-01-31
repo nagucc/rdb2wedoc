@@ -43,6 +43,7 @@ export interface DatabaseConnection {
   username: string;
   password: string;
   database: string;
+  charset?: string;
   options?: Record<string, any>;
   createdAt: string;
   updatedAt: string;
@@ -51,6 +52,7 @@ export interface DatabaseConnection {
 export interface DatabaseTable {
   name: string;
   schema?: string;
+  comment?: string;
   columns: DatabaseColumn[];
 }
 

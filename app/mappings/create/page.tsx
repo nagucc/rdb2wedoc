@@ -23,6 +23,7 @@ interface DatabaseConnection {
 interface Table {
   name: string;
   type: string;
+  comment?: string;
 }
 
 interface WeComAccount {
@@ -418,9 +419,20 @@ export default function CreateMappingPage() {
         throw new Error('目标文档字段为空，无法进行AI匹配');
       }
       
-      const validDocumentFields = documentFieldsFromAPI.filter((f: any) => f.name && f.name.trim() !== '');
+      // 提取已存在的目标字段ID
+      const existingTargetFieldIds = new Set(fieldMappings.map(mapping => mapping.documentFieldId));
+      
+      // 过滤掉已存在的目标字段，只对未存在的字段进行AI推荐
+      const validDocumentFields = documentFieldsFromAPI.filter((f: any) => {
+        if (!f.name || f.name.trim() === '') {
+          return false;
+        }
+        return !existingTargetFieldIds.has(f.id);
+      });
+      
       if (validDocumentFields.length === 0) {
-        throw new Error('目标文档字段名称为空，无法进行AI匹配');
+        setAiError('所有目标字段都已存在映射，无需AI推荐');
+        return;
       }
       
       // 更新本地状态（可选，但有助于UI显示）
@@ -461,8 +473,20 @@ export default function CreateMappingPage() {
       const result = await response.json();
 
       if (result.success) {
-        setFieldMappings(result.data);
-        if (result.data.length > 0) {
+        // 合并AI推荐结果与已有映射，确保没有重复的目标字段
+        const newMappings = [...fieldMappings];
+        const allTargetFieldIds = new Set([...existingTargetFieldIds]);
+        
+        // 只添加不存在的目标字段映射
+        result.data.forEach((mapping: any) => {
+          if (!allTargetFieldIds.has(mapping.documentFieldId)) {
+            newMappings.push(mapping);
+            allTargetFieldIds.add(mapping.documentFieldId);
+          }
+        });
+        
+        setFieldMappings(newMappings);
+        if (newMappings.length > 0) {
           setIsConfig(true);
         }
       } else {
