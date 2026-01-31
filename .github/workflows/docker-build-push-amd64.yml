@@ -13,7 +13,7 @@ jobs:
   build-and-push-amd64:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
     outputs:
       version: ${{ steps.version.outputs.version }}
 
@@ -96,36 +96,18 @@ jobs:
           echo "IMAGE_TAR_FILE=$IMAGE_TAR_FILE" >> $GITHUB_ENV
           echo "IMAGE_TAR_FILE_SHA256=$IMAGE_TAR_FILE.sha256" >> $GITHUB_ENV
 
-      - name: Create GitHub Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create GitHub Release and upload assets
+        uses: softprops/action-gh-release@v1
         with:
           tag_name: v${{ steps.version.outputs.version }}
-          release_name: Release v${{ steps.version.outputs.version }}
+          name: Release v${{ steps.version.outputs.version }}
           draft: false
           prerelease: false
-
-      - name: Upload Docker image tar to GitHub Release
-        uses: actions/upload-release-asset@v1
+          files: |
+            ${{ env.IMAGE_TAR_FILE }}
+            ${{ env.IMAGE_TAR_FILE_SHA256 }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./${{ env.IMAGE_TAR_FILE }}
-          asset_name: ${{ env.IMAGE_TAR_FILE }}
-          asset_content_type: application/x-tar
-
-      - name: Upload SHA256 hash to GitHub Release
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./${{ env.IMAGE_TAR_FILE_SHA256 }}
-          asset_name: ${{ env.IMAGE_TAR_FILE_SHA256 }}
-          asset_content_type: text/plain
 
       - name: Clean up Docker build cache
         if: always()
