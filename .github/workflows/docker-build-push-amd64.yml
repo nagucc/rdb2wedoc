@@ -77,6 +77,56 @@ jobs:
           docker run --rm $IMAGE_TAG npm -v
           echo "Docker image validation successful"
 
+      - name: Build and save Docker image as tar file
+        run: |
+          # Define the image tag
+          IMAGE_TAG=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }}-amd64
+          
+          # Build the image for amd64
+          docker build --platform linux/amd64 -t $IMAGE_TAG .
+          
+          # Save the image as tar file
+          IMAGE_TAR_FILE="rdb2wedoc-${{ steps.version.outputs.version }}-amd64.tar"
+          docker save -o $IMAGE_TAR_FILE $IMAGE_TAG
+          
+          # Calculate SHA256 hash
+          sha256sum $IMAGE_TAR_FILE > $IMAGE_TAR_FILE.sha256
+          
+          # Output the file paths
+          echo "IMAGE_TAR_FILE=$IMAGE_TAR_FILE" >> $GITHUB_ENV
+          echo "IMAGE_TAR_FILE_SHA256=$IMAGE_TAR_FILE.sha256" >> $GITHUB_ENV
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          release_name: Release v${{ steps.version.outputs.version }}
+          draft: false
+          prerelease: false
+
+      - name: Upload Docker image tar to GitHub Release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./${{ env.IMAGE_TAR_FILE }}
+          asset_name: ${{ env.IMAGE_TAR_FILE }}
+          asset_content_type: application/x-tar
+
+      - name: Upload SHA256 hash to GitHub Release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./${{ env.IMAGE_TAR_FILE_SHA256 }}
+          asset_name: ${{ env.IMAGE_TAR_FILE_SHA256 }}
+          asset_content_type: text/plain
+
       - name: Clean up Docker build cache
         if: always()
         run: |

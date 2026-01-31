@@ -1,6 +1,10 @@
 import fs from 'fs';
 import path from 'path';
 import { DatabaseConnection, WeComAccount, WeComDocument, SyncJob, User, ConfigHistory, NotificationConfig, JobTemplate, ExecutionLog, MappingConfig, DocumentSheet } from '@/types';
+import { getLogStorageConfig } from './index';
+import { getMySQLLogStorage, MySQLLogStorage } from './mysql-log-storage';
+
+let mysqlLogStorage: MySQLLogStorage | null = null;
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 
@@ -315,15 +319,31 @@ export function getLogFilePath(logId: string): string {
   return path.join(DATA_DIR, 'logs', `${logId}.json`);
 }
 
-export function getJobLogs(jobId: string, limit: number = 100) {
+export async function getJobLogs(jobId: string, limit: number = 100): Promise<ExecutionLog[]> {
   return getLogsByJob(jobId, limit);
 }
 
-export function saveJobLog(log: any): boolean {
+export async function saveJobLog(log: ExecutionLog): Promise<boolean> {
   return saveLog(log);
 }
 
-export function getLogsByJob(jobId: string, limit: number = 100) {
+export async function getLogsByJob(jobId: string, limit: number = 100): Promise<ExecutionLog[]> {
+  const logStorageConfig = getLogStorageConfig();
+  
+  if (logStorageConfig.type === 'mysql') {
+    try {
+      if (!mysqlLogStorage) {
+        mysqlLogStorage = getMySQLLogStorage(logStorageConfig.mysql);
+      }
+      const mysqlLogs = await mysqlLogStorage.getLogsByJob(jobId, limit);
+      return mysqlLogs;
+    } catch (error) {
+      console.error('Failed to get logs from MySQL, falling back to file storage:', error);
+      // 失败时回退到文件存储
+    }
+  }
+  
+  // 默认使用文件存储
   const files = listFiles(path.join(DATA_DIR, 'logs'));
   const logs: ExecutionLog[] = [];
   
@@ -340,8 +360,34 @@ export function getLogsByJob(jobId: string, limit: number = 100) {
   return logs.slice(0, limit);
 }
 
-export function saveLog(log: any): boolean {
-  return writeJsonFile(getLogFilePath(log.id), log);
+export async function saveLog(log: ExecutionLog): Promise<boolean> {
+  console.log('开始保存日志...');
+  const logStorageConfig = getLogStorageConfig();
+  console.log('日志存储配置:', logStorageConfig);
+  
+  if (logStorageConfig.type === 'mysql') {
+    console.log('使用MySQL存储日志');
+    try {
+      console.log('检查MySQL日志存储实例...');
+      if (!mysqlLogStorage) {
+        console.log('创建MySQL日志存储实例...');
+        mysqlLogStorage = getMySQLLogStorage(logStorageConfig.mysql);
+        console.log('MySQL日志存储实例创建成功');
+      }
+      console.log('保存日志到MySQL...');
+      const result = await mysqlLogStorage.saveLog(log);
+      console.log('MySQL日志保存结果:', result);
+      return result;
+    } catch (error) {
+      console.error('Failed to save log to MySQL, falling back to file storage:', error);
+      // 失败时回退到文件存储
+      return writeJsonFile(getLogFilePath(log.id), log);
+    }
+  } else {
+    console.log('使用文件存储日志');
+    // 默认使用文件存储
+    return writeJsonFile(getLogFilePath(log.id), log);
+  }
 }
 
 // 配置历史管理

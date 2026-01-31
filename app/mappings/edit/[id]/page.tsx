@@ -169,20 +169,23 @@ export default function EditMappingPage() {
             documentFieldId: fm.documentFieldId || fm.documentField || ''
           }));
           
+          // 过滤掉documentField为空的映射
+          const validFieldMappings = processedFieldMappings.filter(fm => fm.documentField && fm.documentFieldId);
+          
           setFormData({
             name: mapping.name,
             sourceDatabaseId: mapping.sourceDatabaseId,
             sourceTableName: mapping.sourceTableName,
             targetDocId: mapping.targetDocId,
             targetSheetId: mapping.targetSheetId,
-            fieldMappings: processedFieldMappings
+            fieldMappings: validFieldMappings
           });
           setSelectedDatabase(mapping.sourceDatabaseId);
           setSelectedTable(mapping.sourceTableName);
           setSelectedDocument(mapping.targetDocId);
-          setFieldMappings(processedFieldMappings);
+          setFieldMappings(validFieldMappings);
           // 如果已有字段映射，自动锁定配置
-          if (processedFieldMappings.length > 0) {
+          if (validFieldMappings.length > 0) {
             setIsConfig(true);
           }
           

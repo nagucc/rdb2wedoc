@@ -23,5 +23,17 @@
     "defaultPageSize": 100,
     "maxRecordsPerSync": 10000,
     "syncTimeout": 300000
+  },
+  "logStorage": {
+    "type": "file",
+    "mysql": {
+      "host": "localhost",
+      "port": 3306,
+      "user": "root",
+      "password": "your-password-here",
+      "database": "rdb2wedoc",
+      "connectionTimeout": 30000,
+      "queryTimeout": 60000
+    }
   }
 }

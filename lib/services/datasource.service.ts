@@ -65,10 +65,10 @@ export class DataSourceService {
       let lastSyncTime = new Date().toISOString();
       let connectionStatus: 'connected' | 'disconnected' | 'error' = 'connected';
 
-      jobs.forEach(job => {
-        const logs = getJobLogs(job.id);
+      for (const job of jobs) {
+        const logs = await getJobLogs(job.id);
         
-        logs.forEach(log => {
+        for (const log of logs) {
           totalQueries++;
           totalDataTransferred += log.recordsProcessed || 0;
           
@@ -84,13 +84,14 @@ export class DataSourceService {
             }
           } else if (log.status === 'failed') {
             connectionSuccessRate -= 2;
+            connectionStatus = 'error';
           }
-        });
-
+        }
+        
         if (job.status === 'failed') {
           connectionStatus = 'error';
         }
-      });
+      }
 
       connectionSuccessRate = Math.max(0, Math.min(100, connectionSuccessRate));
       
