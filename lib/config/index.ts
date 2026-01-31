@@ -31,12 +31,28 @@ export interface SyncConfig {
   syncTimeout: number;
 }
 
+export interface MySQLConfig {
+  host: string;
+  port: number;
+  user: string;
+  password: string;
+  database: string;
+  connectionTimeout: number;
+  queryTimeout: number;
+}
+
+export interface LogStorageConfig {
+  type: 'file' | 'mysql';
+  mysql: MySQLConfig;
+}
+
 export interface AppConfig {
   templates: TemplatesConfig;
   ai: AIConfig;
   database: DatabaseConfig;
   wecom: WeComConfig;
   sync: SyncConfig;
+  logStorage: LogStorageConfig;
 }
 
 const DEFAULT_CONFIG: AppConfig = {
@@ -64,32 +80,55 @@ const DEFAULT_CONFIG: AppConfig = {
     defaultPageSize: 100,
     maxRecordsPerSync: 10000,
     syncTimeout: 300000
+  },
+  logStorage: {
+    type: 'file',
+    mysql: {
+      host: 'localhost',
+      port: 3306,
+      user: 'root',
+      password: '',
+      database: 'rdb2wedoc',
+      connectionTimeout: 30000,
+      queryTimeout: 60000
+    }
   }
 };
 
 let configCache: AppConfig | null = null;
 
 function loadConfigFile(): AppConfig {
+  console.log('开始加载配置文件...');
   try {
     const configPath = path.join(process.cwd(), 'config', 'config.json');
+    console.log('配置文件路径:', configPath);
     
     if (!fs.existsSync(configPath)) {
-      console.warn('Config file not found, using default config');
+      console.warn('配置文件不存在，使用默认配置');
       return DEFAULT_CONFIG;
     }
 
+    console.log('配置文件存在，读取内容...');
     const configContent = fs.readFileSync(configPath, 'utf-8');
+    console.log('配置文件内容读取成功，解析内容...');
     const config = JSON.parse(configContent) as Partial<AppConfig>;
+    console.log('配置文件解析成功');
 
-    return {
+    const mergedConfig = {
       templates: { ...DEFAULT_CONFIG.templates, ...config.templates },
       ai: { ...DEFAULT_CONFIG.ai, ...config.ai },
       database: { ...DEFAULT_CONFIG.database, ...config.database },
       wecom: { ...DEFAULT_CONFIG.wecom, ...config.wecom },
-      sync: { ...DEFAULT_CONFIG.sync, ...config.sync }
+      sync: { ...DEFAULT_CONFIG.sync, ...config.sync },
+      logStorage: { ...DEFAULT_CONFIG.logStorage, ...config.logStorage }
     };
+
+    console.log('合并后的配置:', mergedConfig);
+    console.log('日志存储配置:', mergedConfig.logStorage);
+
+    return mergedConfig;
   } catch (error) {
-    console.error('Failed to load config file, using default config:', error);
+    console.error('加载配置文件失败，使用默认配置:', error);
     return DEFAULT_CONFIG;
   }
 }
@@ -115,6 +154,10 @@ export function getWeComConfig(): WeComConfig {
 
 export function getSyncConfig(): SyncConfig {
   return getConfig().sync;
+}
+
+export function getLogStorageConfig(): LogStorageConfig {
+  return getConfig().logStorage;
 }
 
 export function reloadConfig(): void {

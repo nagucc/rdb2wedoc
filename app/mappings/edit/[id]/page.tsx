@@ -165,9 +165,12 @@ export default function EditMappingPage() {
           
           const processedFieldMappings = mapping.fieldMappings.map(fm => ({
             ...fm,
-            documentField: fm.documentField || fm.documentFieldId,
-            documentFieldId: fm.documentFieldId || fm.documentField
+            documentField: fm.documentField || fm.documentFieldId || '',
+            documentFieldId: fm.documentFieldId || fm.documentField || ''
           }));
+          
+          // 过滤掉documentField为空的映射
+          const validFieldMappings = processedFieldMappings.filter(fm => fm.documentField && fm.documentFieldId);
           
           setFormData({
             name: mapping.name,
@@ -175,14 +178,14 @@ export default function EditMappingPage() {
             sourceTableName: mapping.sourceTableName,
             targetDocId: mapping.targetDocId,
             targetSheetId: mapping.targetSheetId,
-            fieldMappings: processedFieldMappings
+            fieldMappings: validFieldMappings
           });
           setSelectedDatabase(mapping.sourceDatabaseId);
           setSelectedTable(mapping.sourceTableName);
           setSelectedDocument(mapping.targetDocId);
-          setFieldMappings(processedFieldMappings);
+          setFieldMappings(validFieldMappings);
           // 如果已有字段映射，自动锁定配置
-          if (processedFieldMappings.length > 0) {
+          if (validFieldMappings.length > 0) {
             setIsConfig(true);
           }
           

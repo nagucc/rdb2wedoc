@@ -117,7 +117,7 @@ export class MonitoringService {
 
       // 统计作业执行情况
       for (const job of jobs) {
-        const logs = getJobLogs(job.id);
+        const logs = await getJobLogs(job.id);
         const recentLogs = logs.slice(-10); // 最近10次执行
 
         if (recentLogs.length > 0) {
@@ -196,7 +196,7 @@ export class MonitoringService {
         throw new Error('作业不存在');
       }
 
-      const logs = getJobLogs(jobId);
+      const logs = await getJobLogs(jobId);
       let executionCount = logs.length;
       let successCount = 0;
       let failureCount = 0;

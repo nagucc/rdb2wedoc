@@ -19,7 +19,7 @@ export async function GET(
       );
     }
 
-    const logs = getJobLogs(id);
+    const logs = await getJobLogs(id);
 
     return NextResponse.json({
       success: true,
@@ -65,8 +65,12 @@ export async function POST(
         status: 'success',
         startTime: startTime.toISOString(),
         endTime: new Date().toISOString(),
+        duration: new Date().getTime() - startTime.getTime(),
         recordsProcessed: 0,
-        errorMessage: null
+        recordsSucceeded: 0,
+        recordsFailed: 0,
+        retryAttempt: 0,
+        errorMessage: undefined
       });
 
       Logger.info(`同步作业手动执行成功: ${job.name}`, { jobId: job.id, logId });
@@ -84,7 +88,11 @@ export async function POST(
         status: 'failed',
         startTime: startTime.toISOString(),
         endTime: new Date().toISOString(),
+        duration: new Date().getTime() - startTime.getTime(),
         recordsProcessed: 0,
+        recordsSucceeded: 0,
+        recordsFailed: 0,
+        retryAttempt: 0,
         errorMessage: (error as Error).message
       });
 

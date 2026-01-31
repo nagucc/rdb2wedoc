@@ -96,10 +96,8 @@ export class DatabaseService {
       ...config.options
     };
     
-    // 添加字符集设置
-    if (config.charset) {
-      postgresConfig.client_encoding = config.charset;
-    }
+    // PostgreSQL的字符集设置通过环境变量或连接字符串参数指定
+    // 这里我们不设置options，因为它应该是一个字符串而不是对象
     
     this.pool = new PostgresPool(postgresConfig);
     
@@ -126,10 +124,8 @@ export class DatabaseService {
       }
     };
     
-    // 添加字符集设置
-    if (config.charset) {
-      sqlServerConfig.options.charset = config.charset;
-    }
+    // SQL Server的字符集设置通过连接字符串参数指定
+    // 这里不添加charset属性，因为mssql库的options对象中没有这个属性
     
     this.pool = new SqlServerPool(sqlServerConfig);
     

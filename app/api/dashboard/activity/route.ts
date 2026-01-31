@@ -21,7 +21,7 @@ export async function GET() {
     }
 
     for (const job of jobs) {
-      const logs = getJobLogs(job.id, 50);
+      const logs = await getJobLogs(job.id, 50);
 
       for (const log of logs) {
         if (log.status !== 'success') {
