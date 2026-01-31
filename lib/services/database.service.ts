@@ -86,7 +86,7 @@ export class DatabaseService {
   }
 
   private async connectPostgreSQL(config: DatabaseConnection): Promise<void> {
-    const postgresConfig = {
+    const postgresConfig: any = {
       host: config.host,
       port: config.port,
       user: config.username,
@@ -108,7 +108,7 @@ export class DatabaseService {
   }
 
   private async connectSQLServer(config: DatabaseConnection): Promise<void> {
-    const sqlServerConfig = {
+    const sqlServerConfig: any = {
       server: config.host,
       port: config.port,
       user: config.username,

@@ -165,8 +165,8 @@ export default function EditMappingPage() {
           
           const processedFieldMappings = mapping.fieldMappings.map(fm => ({
             ...fm,
-            documentField: fm.documentField || fm.documentFieldId,
-            documentFieldId: fm.documentFieldId || fm.documentField
+            documentField: fm.documentField || fm.documentFieldId || '',
+            documentFieldId: fm.documentFieldId || fm.documentField || ''
           }));
           
           setFormData({
