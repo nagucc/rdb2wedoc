@@ -96,6 +96,19 @@ jobs:
           echo "IMAGE_TAR_FILE=$IMAGE_TAR_FILE" >> $GITHUB_ENV
           echo "IMAGE_TAR_FILE_SHA256=$IMAGE_TAR_FILE.sha256" >> $GITHUB_ENV
 
+      - name: Create git tag
+        run: |
+          TAG_NAME="v${{ steps.version.outputs.version }}"
+          
+          # Check if tag already exists
+          if git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
+            echo "Tag $TAG_NAME already exists, skipping tag creation"
+          else
+            echo "Creating tag $TAG_NAME"
+            git tag -a "$TAG_NAME" -m "Release $TAG_NAME"
+            git push origin "$TAG_NAME"
+          fi
+
       - name: Create GitHub Release and upload assets
         uses: softprops/action-gh-release@v1
         with:
