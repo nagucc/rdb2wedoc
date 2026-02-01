@@ -26,12 +26,22 @@ export default function JobExecutionRecords({
   const [records, setRecords] = useState<JobExecutionRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [isPaused, setIsPaused] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const observerRef = useRef<IntersectionObserver | null>(null);
+  const lastRecordRef = useRef<HTMLDivElement | null>(null);
 
-  const fetchRecords = async () => {
+  const fetchRecords = async (isInitialLoad = false) => {
     try {
+      if (records.length >= 100) {
+        setHasMore(false);
+        return;
+      }
+
       setLoading(true);
-      const response = await fetch('/api/jobs/execution-logs?limit=20');
+      const limit = isInitialLoad ? 100 : 20;
+      const response = await fetch(`/api/jobs/execution-logs?limit=${limit}&page=${page}`);
       const result = await response.json();
 
       if (result.success) {
@@ -52,7 +62,20 @@ export default function JobExecutionRecords({
             };
           })
         );
-        setRecords(formattedRecords);
+
+        if (isInitialLoad) {
+          // 初始加载时去重
+          const uniqueRecords = Array.from(new Map(formattedRecords.map(record => [record.id, record])).values());
+          setRecords(uniqueRecords.slice(0, 100));
+        } else {
+          // 添加新记录时去重
+          const existingIds = new Set(records.map(record => record.id));
+          const newUniqueRecords = formattedRecords.filter(record => !existingIds.has(record.id));
+          const updatedRecords = [...records, ...newUniqueRecords];
+          setRecords(updatedRecords.slice(0, 100));
+        }
+
+        setHasMore(formattedRecords.length > 0 && records.length < 100);
       }
     } catch (error) {
       console.error('获取作业执行记录失败:', error);
@@ -62,7 +85,7 @@ export default function JobExecutionRecords({
   };
 
   useEffect(() => {
-    fetchRecords();
+    fetchRecords(true);
   }, []);
 
   useEffect(() => {
@@ -101,12 +124,14 @@ export default function JobExecutionRecords({
           if (container.scrollTop + container.clientHeight < container.scrollHeight) {
             container.scrollTop += scrollAmount;
           } else {
+            // 无限循环滚动：滚动到最后一条后，平滑过渡到第一条
             container.scrollTop = 0;
           }
         } else {
           if (container.scrollTop > 0) {
             container.scrollTop -= scrollAmount;
           } else {
+            // 无限循环滚动：滚动到第一条后，平滑过渡到最后一条
             container.scrollTop = container.scrollHeight - container.clientHeight;
           }
         }
@@ -126,6 +151,31 @@ export default function JobExecutionRecords({
       }
     };
   }, [records, isPaused, scrollSpeed, scrollDirection]);
+
+  // 实现无限加载
+  useEffect(() => {
+    if (!hasMore || loading) return;
+
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loading) {
+          setPage(prev => prev + 1);
+          fetchRecords();
+        }
+      },
+      { threshold: 1.0 }
+    );
+
+    if (lastRecordRef.current) {
+      observerRef.current.observe(lastRecordRef.current);
+    }
+
+    return () => {
+      if (observerRef.current && lastRecordRef.current) {
+        observerRef.current.unobserve(lastRecordRef.current);
+      }
+    };
+  }, [hasMore, loading, page]);
 
   const getStatusIcon = (status: 'success' | 'failed' | 'running') => {
     switch (status) {
@@ -197,8 +247,7 @@ export default function JobExecutionRecords({
     );
   }
 
-  const displayRecords = records.slice(0, 20);
-  const showScrollIndicator = displayRecords.length > 5;
+  const showScrollIndicator = records.length > 5;
 
   const handleMouseEnter = () => {
     setIsPaused(true);
@@ -222,9 +271,10 @@ export default function JobExecutionRecords({
         onMouseLeave={handleMouseLeave}
       >
         <div className="divide-y divide-gray-200 dark:divide-gray-700">
-          {displayRecords.map((record) => (
+          {records.map((record, index) => (
             <div
               key={record.id}
+              ref={index === records.length - 1 ? lastRecordRef : null}
               className={`flex items-center gap-3 px-4 py-3 text-sm transition-colors ${
                 record.status === 'running' 
                   ? 'bg-yellow-50/50 dark:bg-yellow-900/10 hover:bg-yellow-50 dark:hover:bg-yellow-900/20' 

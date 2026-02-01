@@ -41,7 +41,17 @@ export default function FieldMappingDialog({
   // 当编辑的映射项变化时，更新表单数据
   useEffect(() => {
     if (mapping) {
-      setFormData(mapping);
+      // 确保所有字段都有默认值，避免受控输入变为非受控输入
+      setFormData({
+        id: mapping.id || `field_${Date.now()}`,
+        databaseColumn: mapping.databaseColumn || '',
+        documentField: mapping.documentField || '',
+        documentFieldId: mapping.documentFieldId || '',
+        dataType: mapping.dataType || 'string',
+        transform: mapping.transform || '',
+        defaultValue: mapping.defaultValue || '',
+        description: mapping.description || ''
+      });
     } else {
       setFormData({
         id: `field_${Date.now()}`,

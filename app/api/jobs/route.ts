@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { SyncJob } from '@/types';
-import { getJobs, getJobById, saveJob, deleteJob, saveHistory } from '@/lib/config/storage';
+import { getJobs, getJobById, saveJob, deleteJob, saveHistory, deleteLogsByJob } from '@/lib/config/storage';
 import { generateId, validateCronExpression, Logger } from '@/lib/utils/helpers';
 import { schedulerManager } from '@/lib/services/scheduler';
 
@@ -152,6 +152,17 @@ export async function DELETE(request: NextRequest) {
           error: (error as Error).message 
         });
       }
+    }
+
+    // 删除相关日志记录
+    try {
+      await deleteLogsByJob(job.id);
+      Logger.info(`作业日志删除成功: ${job.name}`, { jobId: job.id });
+    } catch (error) {
+      Logger.error(`删除作业日志失败: ${job.name}`, { 
+        jobId: job.id, 
+        error: (error as Error).message 
+      });
     }
 
     // 记录历史

@@ -504,7 +504,13 @@ export default function SyncJobsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-      <Header showPageTitle={false} />
+      <Header 
+        showPageTitle={false} 
+        breadcrumbItems={[
+          { title: '控制台', href: '/dashboard' },
+          { title: '同步作业管理', href: '/sync-jobs', isActive: true }
+        ]} 
+      />
 
       <main className="container mx-auto px-4 py-8">
         <div className="space-y-6">

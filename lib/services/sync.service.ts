@@ -56,16 +56,19 @@ export class SyncService {
       const dbData = await this.readFromDatabase(database, mappingConfig.sourceTableName);
       log.recordsProcessed = dbData.length;
 
+      // 获取文档字段类型映射
+      const fieldTypeMap = await this.getDocumentFields(document, mappingConfig.targetSheetId);
+
       // 转换数据格式
-      const transformedData = this.transformData(dbData, mappingConfig.fieldMappings);
+      const transformedData = this.transformData(dbData, mappingConfig.fieldMappings, fieldTypeMap);
 
       // 根据冲突策略写入文档
       if (job.conflictStrategy === 'overwrite') {
-        await this.overwriteToDocument(document, mappingConfig.targetSheetId, transformedData);
+        await this.overwriteToDocument(document, mappingConfig.targetSheetId, transformedData, fieldTypeMap);
       } else if (job.conflictStrategy === 'append') {
-        await this.appendToDocument(document, mappingConfig.targetSheetId, transformedData);
+        await this.appendToDocument(document, mappingConfig.targetSheetId, transformedData, fieldTypeMap);
       } else {
-        await this.mergeToDocument(document, mappingConfig.targetSheetId, transformedData);
+        await this.mergeToDocument(document, mappingConfig.targetSheetId, transformedData, fieldTypeMap);
       }
 
       log.recordsSucceeded = transformedData.length;
@@ -153,12 +156,35 @@ export class SyncService {
     return await databaseService.query(database, sql);
   }
 
-  private transformData(data: any[], mappings: FieldMapping[]): any[] {
+  private async getDocumentFields(document: WeComDocument, sheetId: string): Promise<Map<string, string>> {
+    try {
+      const account = getWeComAccountById(document.accountId);
+      if (!account) {
+        throw new Error(`关联的企业微信账号不存在，accountId: ${document.accountId}`);
+      }
+
+      const accessToken = await weComDocumentService.getAccessToken(account.corpId, account.corpSecret);
+      const fields = await weComDocumentService.getSheetFields(accessToken, document.id, sheetId);
+      
+      const fieldTypeMap = new Map<string, string>();
+      fields.forEach(field => {
+        fieldTypeMap.set(field.name, field.type);
+      });
+      
+      return fieldTypeMap;
+    } catch (error) {
+      Logger.error('获取文档字段失败', { error: (error as Error).message });
+      return new Map<string, string>();
+    }
+  }
+
+  private transformData(data: any[], mappings: FieldMapping[], fieldTypeMap: Map<string, string>): any[] {
     return data.map(row => {
       const transformed: any = {};
       
       mappings.forEach(mapping => {
         const value = row[mapping.databaseColumn];
+        const fieldType = fieldTypeMap.get(mapping.documentField);
         
         if (mapping.transform) {
           try {
@@ -168,13 +194,58 @@ export class SyncService {
             Logger.warn('数据转换失败', { value, transform: mapping.transform });
             transformed[mapping.documentField] = value;
           }
+        } else if (fieldType) {
+          // 根据目标字段类型自动转换
+          transformed[mapping.documentField] = this.autoConvertType(value, fieldType);
         } else {
+          // 字段类型未知，保持原值
           transformed[mapping.documentField] = value;
         }
       });
       
       return transformed;
     });
+  }
+
+  private autoConvertType(value: any, fieldType: string): any {
+    if (value === null || value === undefined) {
+      return value;
+    }
+
+    try {
+      switch (fieldType) {
+        case 'number':
+        case 'currency':
+        case 'percentage':
+          return Number(value);
+        case 'datetime':
+          return new Date(value).toISOString();
+        case 'boolean':
+          return Boolean(value);
+        case 'text':
+        case 'phone':
+        case 'email':
+        case 'url':
+        case 'select':
+        case 'multi_select':
+        case 'user':
+        case 'group':
+        case 'reference':
+        case 'location':
+        case 'formula':
+        case 'image':
+        case 'file':
+        case 'barcode':
+          return String(value);
+        default:
+          // 不支持的类型，保持原值
+          Logger.warn('不支持的字段类型，保持原值', { fieldType, value });
+          return value;
+      }
+    } catch (error) {
+      Logger.warn('类型转换失败，保持原值', { fieldType, value, error: (error as Error).message });
+      return value;
+    }
   }
 
   private applyTransform(value: any, transform: string): any {
@@ -197,7 +268,7 @@ export class SyncService {
     return value;
   }
 
-  private async overwriteToDocument(document: WeComDocument, sheetId: string, data: any[]): Promise<void> {
+  private async overwriteToDocument(document: WeComDocument, sheetId: string, data: any[], fieldTypeMap?: Map<string, string>): Promise<void> {
     // 根据document.accountId获取corpid和corpsecret
     const account = getWeComAccountById(document.accountId);
     if (!account) {
@@ -209,10 +280,10 @@ export class SyncService {
       throw new Error(`获取企业微信access token失败, corpId: ${account.corpId}`);
     }
     await weComDocumentService.clearSheetData(accessToken, document.id, sheetId);
-    await weComDocumentService.writeSheetData(accessToken, document.id, sheetId, data);
+    await weComDocumentService.writeSheetData(accessToken, document.id, sheetId, data, fieldTypeMap);
   }
 
-  private async appendToDocument(document: WeComDocument, sheetId: string, data: any[]): Promise<void> {
+  private async appendToDocument(document: WeComDocument, sheetId: string, data: any[], fieldTypeMap?: Map<string, string>): Promise<void> {
     const account = getWeComAccountById(document.accountId);
     if (!account) {
       throw new Error(`关联的企业微信账号不存在，accountId: ${document.accountId}`);
@@ -222,11 +293,11 @@ export class SyncService {
     if (!accessToken) {
       throw new Error(`获取企业微信access token失败, corpId: ${account.corpId}`);
     }
-    await weComDocumentService.appendSheetData(accessToken, document.id, sheetId, data);
+    await weComDocumentService.appendSheetData(accessToken, document.id, sheetId, data, fieldTypeMap);
   }
 
-  private async mergeToDocument(document: WeComDocument, sheetId: string, data: any[]): Promise<void> {
-    await this.overwriteToDocument(document, sheetId, data);
+  private async mergeToDocument(document: WeComDocument, sheetId: string, data: any[], fieldTypeMap?: Map<string, string>): Promise<void> {
+    await this.overwriteToDocument(document, sheetId, data, fieldTypeMap);
   }
 
   scheduleJob(job: SyncJob): void {
@@ -300,10 +371,18 @@ export class SyncService {
         throw new Error('数据源配置不存在');
       }
 
+      const document = await getDocumentById(mappingConfig.targetDocId);
+      if (!document) {
+        throw new Error('目标文档配置不存在');
+      }
+
       const sql = `SELECT * FROM ${mappingConfig.sourceTableName} LIMIT ${limit}`;
       const dbData = await databaseService.query(database, sql);
       
-      return this.transformData(dbData, mappingConfig.fieldMappings);
+      // 获取文档字段类型映射
+      const fieldTypeMap = await this.getDocumentFields(document, mappingConfig.targetSheetId);
+      
+      return this.transformData(dbData, mappingConfig.fieldMappings, fieldTypeMap);
     } catch (error) {
       Logger.error('预览数据失败', { error: (error as Error).message });
       throw error;
