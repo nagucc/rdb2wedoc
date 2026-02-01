@@ -107,7 +107,12 @@ function DashboardContent() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-      <Header showPageTitle={false} />
+      <Header 
+        showPageTitle={false} 
+        breadcrumbItems={[
+          { title: '控制台', href: '/dashboard', isActive: true }
+        ]} 
+      />
 
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -170,9 +175,6 @@ function DashboardContent() {
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                     活动趋势
                   </h3>
-                  <span className="text-sm text-gray-500 dark:text-gray-400">
-                    最近7天
-                  </span>
                 </div>
                 <ActivityChart />
               </div>

@@ -122,7 +122,15 @@ export default function WecomSmartSheetDetailPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <Header />
+        <Header 
+          showPageTitle={false} 
+          breadcrumbItems={[
+            { title: '控制台', href: '/dashboard' },
+            { title: '企业微信账户管理', href: '/dashboard/wecom-accounts' },
+            { title: '企业微信账户', href: `/dashboard/wecom-accounts/${accountId}` },
+            { title: '智能表格', href: `/dashboard/wecom-accounts/${accountId}/documents/${documentId}`, isActive: true }
+          ]} 
+        />
         <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
           <div className="flex items-center justify-center py-20">
             <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
@@ -135,7 +143,15 @@ export default function WecomSmartSheetDetailPage() {
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <Header />
+        <Header 
+          showPageTitle={false} 
+          breadcrumbItems={[
+            { title: '控制台', href: '/dashboard' },
+            { title: '企业微信账户管理', href: '/dashboard/wecom-accounts' },
+            { title: '企业微信账户', href: `/dashboard/wecom-accounts/${accountId}` },
+            { title: '智能表格', href: `/dashboard/wecom-accounts/${accountId}/documents/${documentId}`, isActive: true }
+          ]} 
+        />
         <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
           <div className="rounded-lg border border-red-200 bg-red-50 p-6 dark:border-red-800 dark:bg-red-900/20">
             <div className="flex items-start gap-3">
@@ -153,7 +169,15 @@ export default function WecomSmartSheetDetailPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Header />
+      <Header 
+        showPageTitle={false} 
+        breadcrumbItems={[
+          { title: '控制台', href: '/dashboard' },
+          { title: '企业微信账户管理', href: '/dashboard/wecom-accounts' },
+          { title: account?.name || '企业微信账户', href: `/dashboard/wecom-accounts/${accountId}` },
+          { title: wecomDocument?.name || '智能表格', href: `/dashboard/wecom-accounts/${accountId}/documents/${documentId}`, isActive: true }
+        ]} 
+      />
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="mb-8">
           <Link

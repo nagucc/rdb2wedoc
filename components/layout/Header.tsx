@@ -6,13 +6,21 @@ import { authService } from '@/lib/services/authService';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import type { User as UserType } from '@/types';
+import Breadcrumb from './Breadcrumb';
+
+interface BreadcrumbItem {
+  title: string;
+  href?: string;
+  isActive?: boolean;
+}
 
 interface HeaderProps {
   showPageTitle?: boolean;
   pageTitle?: string;
+  breadcrumbItems?: BreadcrumbItem[];
 }
 
-export default function Header({ showPageTitle = false, pageTitle = '' }: HeaderProps) {
+export default function Header({ showPageTitle = false, pageTitle = '', breadcrumbItems = [] }: HeaderProps) {
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState<UserType | null>(null);
   const [isChecking, setIsChecking] = useState(true);
@@ -119,6 +127,11 @@ export default function Header({ showPageTitle = false, pageTitle = '' }: Header
             </div>
           </nav>
         </div>
+        {breadcrumbItems.length > 0 && (
+          <div className="mt-4">
+            <Breadcrumb items={breadcrumbItems} />
+          </div>
+        )}
       </div>
     </header>
   );

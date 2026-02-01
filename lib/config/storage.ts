@@ -390,6 +390,39 @@ export async function saveLog(log: ExecutionLog): Promise<boolean> {
   }
 }
 
+export async function deleteLogsByJob(jobId: string): Promise<boolean> {
+  try {
+    const logStorageConfig = getLogStorageConfig();
+    
+    if (logStorageConfig.type === 'mysql') {
+      console.log('使用MySQL删除日志');
+      if (!mysqlLogStorage) {
+        mysqlLogStorage = getMySQLLogStorage(logStorageConfig.mysql);
+      }
+      // 使用mysqlLogStorage的deleteJobLogs方法
+      if (mysqlLogStorage && mysqlLogStorage.deleteJobLogs) {
+        const result = await mysqlLogStorage.deleteJobLogs(jobId);
+        console.log('MySQL日志删除结果:', result);
+        return result;
+      }
+    } else {
+      console.log('使用文件存储删除日志');
+      // 删除文件存储的日志
+      const logFiles = listFiles(path.join(DATA_DIR, 'logs'));
+      logFiles.forEach(file => {
+        const log = readJsonFile<ExecutionLog>(path.join(DATA_DIR, 'logs', file));
+        if (log && log.jobId === jobId) {
+          deleteFile(path.join(DATA_DIR, 'logs', file));
+        }
+      });
+    }
+    return true;
+  } catch (error) {
+    console.error('删除日志失败:', error);
+    return false;
+  }
+}
+
 // 配置历史管理
 export function getHistoryFilePath(historyId: string): string {
   return path.join(DATA_DIR, 'history', `${historyId}.json`);

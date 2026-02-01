@@ -144,7 +144,8 @@ export class WeComDocumentService {
     accessToken: string,
     documentId: string,
     sheetId: string,
-    data: any[]
+    data: any[],
+    fieldTypeMap?: Map<string, string>
   ): Promise<boolean> {
     try {
       const records = data.map(row => {
@@ -152,10 +153,31 @@ export class WeComDocumentService {
         Object.keys(row).forEach(key => {
           const value = row[key];
           if (value !== null && value !== undefined) {
-            values[key] = [{
-              type: 'text',
-              text: String(value)
-            }];
+            // 根据目标字段类型设置正确的数据类型
+            const fieldType = fieldTypeMap?.get(key);
+            
+            if (fieldType === 'number' || fieldType === 'currency' || fieldType === 'percentage') {
+              // 数字类型直接使用数值
+              values[key] = Number(value);
+            } else if (fieldType === 'boolean') {
+              // 布尔类型直接使用布尔值
+              values[key] = Boolean(value);
+            } else if (fieldType === 'datetime') {
+              // 日期类型使用毫秒时间戳
+              values[key] = new Date(value).getTime().toString();
+            } else if (fieldType === 'text' || fieldType === 'url' || fieldType === 'phone' || fieldType === 'email' || fieldType === 'select' || fieldType === 'multi_select' || fieldType === 'user' || fieldType === 'group' || fieldType === 'location' || fieldType === 'formula' || fieldType === 'reference' || fieldType === 'barcode') {
+              // 文本类型使用对象数组形式
+              values[key] = [{
+                type: 'text',
+                text: String(value)
+              }];
+            } else {
+              // 其他类型默认使用文本形式
+              values[key] = [{
+                type: 'text',
+                text: String(value)
+              }];
+            }
           }
         });
         return { values };
@@ -187,7 +209,8 @@ export class WeComDocumentService {
     accessToken: string,
     documentId: string,
     sheetId: string,
-    data: any[]
+    data: any[],
+    fieldTypeMap?: Map<string, string>
   ): Promise<boolean> {
     try {
       const records = data.map(row => {
@@ -195,10 +218,31 @@ export class WeComDocumentService {
         Object.keys(row).forEach(key => {
           const value = row[key];
           if (value !== null && value !== undefined) {
-            values[key] = [{
-              type: 'text',
-              text: String(value)
-            }];
+            // 根据目标字段类型设置正确的数据类型
+            const fieldType = fieldTypeMap?.get(key);
+            
+            if (fieldType === 'number' || fieldType === 'currency' || fieldType === 'percentage') {
+              // 数字类型直接使用数值
+              values[key] = Number(value);
+            } else if (fieldType === 'boolean') {
+              // 布尔类型直接使用布尔值
+              values[key] = Boolean(value);
+            } else if (fieldType === 'datetime') {
+              // 日期类型使用毫秒时间戳
+              values[key] = new Date(value).getTime().toString();
+            } else if (fieldType === 'text' || fieldType === 'url' || fieldType === 'phone' || fieldType === 'email' || fieldType === 'select' || fieldType === 'multi_select' || fieldType === 'user' || fieldType === 'group' || fieldType === 'location' || fieldType === 'formula' || fieldType === 'reference' || fieldType === 'barcode') {
+              // 文本类型使用对象数组形式
+              values[key] = [{
+                type: 'text',
+                text: String(value)
+              }];
+            } else {
+              // 其他类型默认使用文本形式
+              values[key] = [{
+                type: 'text',
+                text: String(value)
+              }];
+            }
           }
         });
         return { values };

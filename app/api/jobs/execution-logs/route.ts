@@ -11,6 +11,8 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const limit = parseInt(searchParams.get('limit') || '20');
+    const page = parseInt(searchParams.get('page') || '1');
+    const offset = (page - 1) * limit;
 
     const logStorageConfig = getLogStorageConfig();
     let logs: ExecutionLog[] = [];
@@ -18,23 +20,23 @@ export async function GET(request: NextRequest) {
     if (logStorageConfig.type === 'mysql') {
       try {
         const mysqlLogStorage = getMySQLLogStorage(logStorageConfig.mysql);
-        const mysqlLogs = await mysqlLogStorage.getAllLogs(limit);
+        const mysqlLogs = await mysqlLogStorage.getAllLogs(limit * page);
         logs = mysqlLogs;
       } catch (error) {
         console.error('从MySQL获取日志失败，回退到文件存储:', error);
         // 失败时回退到文件存储
-        logs = await getLogsFromFileStorage(limit);
+        logs = await getLogsFromFileStorage(limit * page);
       }
     } else {
       // 默认使用文件存储
-      logs = await getLogsFromFileStorage(limit);
+      logs = await getLogsFromFileStorage(limit * page);
     }
 
     logs.sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
 
     return NextResponse.json({
       success: true,
-      data: logs.slice(0, limit)
+      data: logs.slice(offset, offset + limit)
     });
   } catch (error) {
     console.error('获取作业执行日志失败:', error);
