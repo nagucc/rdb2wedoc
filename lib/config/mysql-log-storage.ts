@@ -152,6 +152,27 @@ export class MySQLLogStorage {
         database: this.config.database,
       });
       
+      // 首先检查并创建execution_logs表
+      await connection.query(`
+        CREATE TABLE IF NOT EXISTS execution_logs (
+          id VARCHAR(255) PRIMARY KEY,
+          jobId VARCHAR(255) NOT NULL,
+          status ENUM('running', 'success', 'failed') NOT NULL,
+          startTime DATETIME NOT NULL,
+          endTime DATETIME NULL,
+          duration BIGINT NULL,
+          recordsProcessed INT DEFAULT 0,
+          recordsSucceeded INT DEFAULT 0,
+          recordsFailed INT DEFAULT 0,
+          retryAttempt INT DEFAULT 0,
+          errorMessage TEXT NULL,
+          createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          INDEX idx_jobId (jobId),
+          INDEX idx_status (status),
+          INDEX idx_startTime (startTime)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `);
+      
       const query = `
         INSERT INTO execution_logs (
           id, jobId, status, startTime, endTime, duration, 

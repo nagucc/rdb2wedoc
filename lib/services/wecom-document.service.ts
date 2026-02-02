@@ -140,49 +140,49 @@ export class WeComDocumentService {
     }
   }
 
-  async writeSheetData(
+  private transformRowData(row: any, fieldTypeMap?: Map<string, string>): any {
+    const values: any = {};
+    Object.keys(row).forEach(key => {
+      const value = row[key];
+      if (value !== null && value !== undefined) {
+        // 根据目标字段类型设置正确的数据类型
+        const fieldType = fieldTypeMap?.get(key);
+        
+        if (fieldType === 'number' || fieldType === 'currency' || fieldType === 'percentage') {
+          // 数字类型直接使用数值
+          values[key] = Number(value);
+        } else if (fieldType === 'boolean') {
+          // 布尔类型直接使用布尔值，确保转换正确
+          values[key] = Boolean(value) ? 'true': 'false';
+        } else if (fieldType === 'datetime') {
+          // 日期类型使用毫秒时间戳
+          values[key] = new Date(value).getTime().toString();
+        } else if (fieldType === 'text' || fieldType === 'url' || fieldType === 'phone' || fieldType === 'email' || fieldType === 'select' || fieldType === 'multi_select' || fieldType === 'user' || fieldType === 'group' || fieldType === 'location' || fieldType === 'formula' || fieldType === 'reference' || fieldType === 'barcode') {
+          // 文本类型使用对象数组形式
+          values[key] = [{
+            type: 'text',
+            text: String(value)
+          }];
+        } else {
+          // 其他类型默认使用文本形式
+          values[key] = [{
+            type: 'text',
+            text: String(value)
+          }];
+        }
+      }
+    });
+    return { values };
+  }
+
+  private async addRecords(
     accessToken: string,
     documentId: string,
     sheetId: string,
-    data: any[],
-    fieldTypeMap?: Map<string, string>
+    records: any[],
+    operation: string
   ): Promise<boolean> {
     try {
-      const records = data.map(row => {
-        const values: any = {};
-        Object.keys(row).forEach(key => {
-          const value = row[key];
-          if (value !== null && value !== undefined) {
-            // 根据目标字段类型设置正确的数据类型
-            const fieldType = fieldTypeMap?.get(key);
-            
-            if (fieldType === 'number' || fieldType === 'currency' || fieldType === 'percentage') {
-              // 数字类型直接使用数值
-              values[key] = Number(value);
-            } else if (fieldType === 'boolean') {
-              // 布尔类型直接使用布尔值
-              values[key] = Boolean(value);
-            } else if (fieldType === 'datetime') {
-              // 日期类型使用毫秒时间戳
-              values[key] = new Date(value).getTime().toString();
-            } else if (fieldType === 'text' || fieldType === 'url' || fieldType === 'phone' || fieldType === 'email' || fieldType === 'select' || fieldType === 'multi_select' || fieldType === 'user' || fieldType === 'group' || fieldType === 'location' || fieldType === 'formula' || fieldType === 'reference' || fieldType === 'barcode') {
-              // 文本类型使用对象数组形式
-              values[key] = [{
-                type: 'text',
-                text: String(value)
-              }];
-            } else {
-              // 其他类型默认使用文本形式
-              values[key] = [{
-                type: 'text',
-                text: String(value)
-              }];
-            }
-          }
-        });
-        return { values };
-      });
-
       const response = await this.client.post('/cgi-bin/wedoc/smartsheet/add_records', {
         docid: documentId,
         sheet_id: sheetId,
@@ -195,10 +195,26 @@ export class WeComDocumentService {
       });
 
       if (response.data.errcode !== 0) {
-        throw new Error(`写入Sheet数据失败: ${response.data.errmsg}`);
+        throw new Error(`${operation}Sheet数据失败: ${response.data.errmsg}`);
       }
 
       return true;
+    } catch (error) {
+      Logger.error(`${operation}Sheet数据失败`, { error: (error as Error).message });
+      throw error;
+    }
+  }
+
+  async writeSheetData(
+    accessToken: string,
+    documentId: string,
+    sheetId: string,
+    data: any[],
+    fieldTypeMap?: Map<string, string>
+  ): Promise<boolean> {
+    try {
+      const records = data.map(row => this.transformRowData(row, fieldTypeMap));
+      return await this.addRecords(accessToken, documentId, sheetId, records, '写入');
     } catch (error) {
       Logger.error('写入Sheet数据失败', { error: (error as Error).message });
       throw error;
@@ -213,57 +229,8 @@ export class WeComDocumentService {
     fieldTypeMap?: Map<string, string>
   ): Promise<boolean> {
     try {
-      const records = data.map(row => {
-        const values: any = {};
-        Object.keys(row).forEach(key => {
-          const value = row[key];
-          if (value !== null && value !== undefined) {
-            // 根据目标字段类型设置正确的数据类型
-            const fieldType = fieldTypeMap?.get(key);
-            
-            if (fieldType === 'number' || fieldType === 'currency' || fieldType === 'percentage') {
-              // 数字类型直接使用数值
-              values[key] = Number(value);
-            } else if (fieldType === 'boolean') {
-              // 布尔类型直接使用布尔值
-              values[key] = Boolean(value);
-            } else if (fieldType === 'datetime') {
-              // 日期类型使用毫秒时间戳
-              values[key] = new Date(value).getTime().toString();
-            } else if (fieldType === 'text' || fieldType === 'url' || fieldType === 'phone' || fieldType === 'email' || fieldType === 'select' || fieldType === 'multi_select' || fieldType === 'user' || fieldType === 'group' || fieldType === 'location' || fieldType === 'formula' || fieldType === 'reference' || fieldType === 'barcode') {
-              // 文本类型使用对象数组形式
-              values[key] = [{
-                type: 'text',
-                text: String(value)
-              }];
-            } else {
-              // 其他类型默认使用文本形式
-              values[key] = [{
-                type: 'text',
-                text: String(value)
-              }];
-            }
-          }
-        });
-        return { values };
-      });
-
-      const response = await this.client.post('/cgi-bin/wedoc/smartsheet/add_records', {
-        docid: documentId,
-        sheet_id: sheetId,
-        key_type: 'CELL_VALUE_KEY_TYPE_FIELD_TITLE',
-        records: records
-      }, {
-        params: {
-          access_token: accessToken
-        }
-      });
-
-      if (response.data.errcode !== 0) {
-        throw new Error(`追加Sheet数据失败: ${response.data.errmsg}`);
-      }
-
-      return true;
+      const records = data.map(row => this.transformRowData(row, fieldTypeMap));
+      return await this.addRecords(accessToken, documentId, sheetId, records, '追加');
     } catch (error) {
       Logger.error('追加Sheet数据失败', { error: (error as Error).message });
       throw error;

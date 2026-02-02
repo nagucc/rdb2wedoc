@@ -67,7 +67,13 @@ export default function SyncJobsPage() {
       const data = await response.json();
 
       if (data.success) {
-        setJobs(data.data || []);
+        // 按创建时间倒序排序，最新的在最前面
+        const sortedJobs = (data.data || []).sort((a: any, b: any) => {
+          const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+          const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+          return dateB - dateA;
+        });
+        setJobs(sortedJobs);
       } else {
         setError(data.error || '获取同步作业列表失败');
       }
