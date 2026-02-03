@@ -50,6 +50,8 @@ interface MappingFormData {
   targetDocId: string;
   targetSheetId: string;
   fieldMappings: FieldMappingUI[];
+  mongoMappingType?: 'flatten' | 'array_expand';
+  mongoArrayField?: string;
 }
 
 export default function CreateMappingPage() {
@@ -100,6 +102,11 @@ export default function CreateMappingPage() {
   const [loadingDatabaseFields, setLoadingDatabaseFields] = useState(false);
   const [loadingDocumentFields, setLoadingDocumentFields] = useState(false);
   const loadingDocumentFieldsRef = useRef(loadingDocumentFields);
+  
+  const [mongoMappingType, setMongoMappingType] = useState<'flatten' | 'array_expand' | null>(null);
+  const [mongoArrayField, setMongoArrayField] = useState('');
+  const [mongoArrayFields, setMongoArrayFields] = useState<string[]>([]);
+  const [databaseType, setDatabaseType] = useState<string>('');
 
   useEffect(() => {
     loadingDocumentFieldsRef.current = loadingDocumentFields;
@@ -120,6 +127,7 @@ export default function CreateMappingPage() {
   const [aiError, setAiError] = useState<string | null>(null);
   const [countdown, setCountdown] = useState<number | null>(null);
   const countdownRef = useRef<NodeJS.Timeout | null>(null);
+  const aiMatchingAttemptRef = useRef<number>(0);
   const [aiTimeout, setAiTimeout] = useState<number>(90000); // 默认值，与config.json一致
 
   useEffect(() => {
@@ -179,7 +187,15 @@ export default function CreateMappingPage() {
     if (!selectedDatabase) {
       setTables([]);
       setSelectedTable('');
+      setDatabaseType('');
+      setMongoMappingType(null);
+      setMongoArrayFields([]);
       return;
+    }
+
+    const dbInfo = databases.find(d => d.id === selectedDatabase);
+    if (dbInfo) {
+      setDatabaseType(dbInfo.type);
     }
 
     const fetchTables = async () => {
@@ -331,6 +347,9 @@ export default function CreateMappingPage() {
   useEffect(() => {
     if (!selectedDatabase || !selectedTable) {
       setDatabaseFields([]);
+      setMongoMappingType(null);
+      setMongoArrayFields([]);
+      setMongoArrayField('');
       return;
     }
 
@@ -341,6 +360,14 @@ export default function CreateMappingPage() {
         const result = await response.json();
         if (result.success) {
           setDatabaseFields(result.data);
+          
+          const selectedDbInfo = databases.find(d => d.id === selectedDatabase);
+          if (selectedDbInfo?.type === 'mongodb') {
+            const arrayFields = result.data
+              .filter((f: any) => f.name.endsWith('[]'))
+              .map((f: any) => f.name);
+            setMongoArrayFields(arrayFields);
+          }
         }
       } catch (error) {
         console.error('Failed to fetch database fields:', error);
@@ -351,7 +378,7 @@ export default function CreateMappingPage() {
     };
 
     fetchDatabaseFields();
-  }, [selectedDatabase, selectedTable]);
+  }, [selectedDatabase, selectedTable, databases]);
 
   useEffect(() => {
     if (!selectedDocument || !selectedSheet) {
@@ -404,7 +431,6 @@ export default function CreateMappingPage() {
     setError(null);
 
     try {
-      // 直接从远程读取最新的文档字段（不依赖本地状态）
       setLoadingDocumentFields(true);
       const docFieldsResponse = await fetch(`/api/field-mapping/document-fields?documentId=${selectedDocument}&sheetId=${selectedSheet}`);
       const docFieldsResult = await docFieldsResponse.json();
@@ -419,10 +445,8 @@ export default function CreateMappingPage() {
         throw new Error('目标文档字段为空，无法进行AI匹配');
       }
       
-      // 提取已存在的目标字段ID
       const existingTargetFieldIds = new Set(fieldMappings.map(mapping => mapping.documentFieldId));
       
-      // 过滤掉已存在的目标字段，只对未存在的字段进行AI推荐
       const validDocumentFields = documentFieldsFromAPI.filter((f: any) => {
         if (!f.name || f.name.trim() === '') {
           return false;
@@ -435,49 +459,57 @@ export default function CreateMappingPage() {
         return;
       }
       
-      // 更新本地状态（可选，但有助于UI显示）
       setDocumentFields(documentFieldsFromAPI);
+      const timeout = aiTimeout;
+      const currentAttempt = aiMatchingAttemptRef.current + 1;
+      aiMatchingAttemptRef.current = currentAttempt;
       
-      // 启动倒计时（从调用AI API开始）
-      const timeout = aiTimeout; // 使用从配置中获取的timeout值
-      setCountdown(Math.ceil(timeout / 1000));
-      
-      // 清除之前的倒计时
       if (countdownRef.current) {
         clearInterval(countdownRef.current);
       }
+      setCountdown(Math.ceil(timeout / 1000));
       
-      // 设置新的倒计时
       countdownRef.current = setInterval(() => {
+        if (aiMatchingAttemptRef.current !== currentAttempt) {
+          return;
+        }
         setCountdown((prev) => {
           if (prev && prev > 1) {
             return prev - 1;
           }
-          clearInterval(countdownRef.current!);
+          if (countdownRef.current) {
+            clearInterval(countdownRef.current);
+          }
           return null;
         });
       }, 1000);
 
-      // 调用AI匹配API
+      const aiRequestBody: any = {
+        databaseFields,
+        documentFields: validDocumentFields
+      };
+
+      if (databaseType === 'mongodb' && mongoMappingType) {
+        aiRequestBody.mongoMappingType = mongoMappingType;
+        if (mongoMappingType === 'array_expand') {
+          aiRequestBody.mongoArrayField = mongoArrayField;
+        }
+      }
+
       const response = await fetch('/api/ai/field-mapping', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          databaseFields,
-          documentFields: validDocumentFields
-        })
+        body: JSON.stringify(aiRequestBody)
       });
 
       const result = await response.json();
 
       if (result.success) {
-        // 合并AI推荐结果与已有映射，确保没有重复的目标字段
         const newMappings = [...fieldMappings];
         const allTargetFieldIds = new Set([...existingTargetFieldIds]);
         
-        // 只添加不存在的目标字段映射
         result.data.forEach((mapping: any) => {
           if (!allTargetFieldIds.has(mapping.documentFieldId)) {
             newMappings.push(mapping);
@@ -499,7 +531,6 @@ export default function CreateMappingPage() {
     } finally {
       setAiMatching(false);
       setLoadingDocumentFields(false);
-      // 清除倒计时
       if (countdownRef.current) {
         clearInterval(countdownRef.current);
         countdownRef.current = null;
@@ -564,6 +595,17 @@ export default function CreateMappingPage() {
     if (!selectedTable) {
       setError('请选择表（当前选择：无）');
       return false;
+    }
+
+    if (databaseType === 'mongodb') {
+      if (!mongoMappingType) {
+        setError('MongoDB数据库必须选择映射方式');
+        return false;
+      }
+      if (mongoMappingType === 'array_expand' && !mongoArrayField) {
+        setError('数组展开模式必须选择要展开的数组字段');
+        return false;
+      }
     }
 
     if (!selectedWeComAccount) {
@@ -697,7 +739,7 @@ export default function CreateMappingPage() {
       const selectedDocumentData = documents.find(doc => doc.id === selectedDocument);
       const selectedSheetData = sheets.find(sheet => sheet.sheet_id === selectedSheet);
 
-      const submissionData = {
+      const submissionData: any = {
         name: formData.name,
         sourceDatabaseId: selectedDatabase,
         sourceTableName: selectedTable,
@@ -709,6 +751,13 @@ export default function CreateMappingPage() {
         documentName: selectedDocumentData?.name,
         sheetName: selectedSheetData?.title
       };
+
+      if (databaseType === 'mongodb') {
+        submissionData.mongoMappingType = mongoMappingType;
+        if (mongoMappingType === 'array_expand') {
+          submissionData.mongoArrayField = mongoArrayField;
+        }
+      }
 
       const response = await fetch('/api/mappings', {
         method: 'POST',
@@ -826,6 +875,11 @@ export default function CreateMappingPage() {
               loadingTables={loadingTables}
               refreshingTables={refreshingTables}
               onRefreshTables={handleRefreshTables}
+              mongoMappingType={mongoMappingType}
+              onMongoMappingTypeChange={setMongoMappingType}
+              mongoArrayField={mongoArrayField}
+              onMongoArrayFieldChange={setMongoArrayField}
+              mongoArrayFields={mongoArrayFields}
               selectedWeComAccount={selectedWeComAccount}
               onWeComAccountChange={setSelectedWeComAccount}
               wecomAccounts={wecomAccounts}
@@ -1053,6 +1107,7 @@ export default function CreateMappingPage() {
         documentFields={documentFields}
         loadingDatabaseFields={loadingDatabaseFields}
         loadingDocumentFields={loadingDocumentFields}
+        mongoArrayField={mongoMappingType === 'array_expand' ? mongoArrayField : undefined}
       />
 
       {/* 删除确认对话框 */}

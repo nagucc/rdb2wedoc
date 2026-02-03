@@ -3,10 +3,12 @@ import { DatabaseConnection } from '@/types';
 import { databaseService } from '@/lib/services/database.service';
 import { Logger } from '@/lib/utils/helpers';
 
+export const runtime = 'nodejs';
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, type, host, port, username, password, database, charset, options } = body;
+    const { name, type, host, port, username, password, database, charset, mongoOptions, options } = body;
 
     // 验证必填字段
     if (!name || !type || !host || !port || !username || !password || !database) {
@@ -27,9 +29,9 @@ export async function POST(request: NextRequest) {
     }
 
     // 验证数据库类型
-    if (!['mysql', 'postgresql', 'sqlserver', 'oracle'].includes(type)) {
+    if (!['mysql', 'mongodb'].includes(type)) {
       return NextResponse.json(
-        { success: false, error: '不支持的数据库类型' },
+        { success: false, error: '暂不支持该数据库类型，当前仅支持 MySQL 和 MongoDB' },
         { status: 400 }
       );
     }
@@ -52,7 +54,8 @@ export async function POST(request: NextRequest) {
       username: username.trim(),
       password,
       database: database.trim(),
-      charset,
+      charset: type === 'mongodb' ? undefined : charset,
+      mongoOptions: type === 'mongodb' ? mongoOptions : undefined,
       options,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
@@ -64,7 +67,12 @@ export async function POST(request: NextRequest) {
       database: testConfig.database 
     });
 
-    const isConnected = await databaseService.testConnection(testConfig);
+    let isConnected: boolean;
+    if (type === 'mongodb') {
+      isConnected = await databaseService.testMongoDBConnection(testConfig);
+    } else {
+      isConnected = await databaseService.testConnection(testConfig);
+    }
     
     if (isConnected) {
       Logger.info(`数据库连接测试成功: ${testConfig.name}`);

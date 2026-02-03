@@ -5,6 +5,28 @@ import {
   saveMapping, 
   deleteMapping
 } from '@/lib/config/storage';
+import { MappingConfig, FieldMapping, MongoDBMappingType } from '@/types';
+
+export const runtime = 'nodejs';
+
+interface CreateMappingRequest {
+  name: string;
+  sourceDatabaseId: string;
+  sourceTableName: string;
+  targetDocId: string;
+  targetSheetId: string;
+  fieldMappings: FieldMapping[];
+  corpId?: string;
+  targetName?: string;
+  documentName?: string;
+  sheetName?: string;
+  mongoMappingType?: MongoDBMappingType;
+  mongoArrayField?: string;
+}
+
+interface UpdateMappingRequest extends Partial<CreateMappingRequest> {
+  id: string;
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -44,8 +66,21 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { name, sourceDatabaseId, sourceTableName, targetDocId, targetSheetId, fieldMappings, corpId, targetName, documentName, sheetName } = body;
+    const body: CreateMappingRequest = await request.json();
+    const { 
+      name, 
+      sourceDatabaseId, 
+      sourceTableName, 
+      targetDocId, 
+      targetSheetId, 
+      fieldMappings, 
+      corpId, 
+      targetName, 
+      documentName, 
+      sheetName,
+      mongoMappingType,
+      mongoArrayField
+    } = body;
     
     if (!name || !sourceDatabaseId || !sourceTableName || !targetDocId || !targetSheetId || !fieldMappings) {
       return NextResponse.json(
@@ -119,13 +154,15 @@ export async function POST(request: NextRequest) {
       const sourceField = mapping.databaseColumn.trim();
       const targetField = mapping.documentField.trim();
 
-      if (sourceFieldSet.has(sourceField)) {
+      const cleanSourceField = sourceField.endsWith('[]') ? sourceField.slice(0, -2) : sourceField;
+
+      if (sourceFieldSet.has(cleanSourceField)) {
         return NextResponse.json(
-          { success: false, error: `源字段 "${sourceField}" 被重复映射` },
+          { success: false, error: `源字段 "${cleanSourceField}" 被重复映射` },
           { status: 400 }
         );
       }
-      sourceFieldSet.add(sourceField);
+      sourceFieldSet.add(cleanSourceField);
 
       if (targetFieldSet.has(targetField)) {
         return NextResponse.json(
@@ -162,15 +199,29 @@ export async function POST(request: NextRequest) {
         }
       }
     }
+
+    const cleanedFieldMappings = fieldMappings.map(m => {
+      let columnName = m.databaseColumn;
+      if (columnName.endsWith('[]')) {
+        columnName = columnName.slice(0, -2);
+      }
+      if (mongoMappingType === 'array_expand' && mongoArrayField && columnName === mongoArrayField) {
+        columnName = `${columnName}[]`;
+      }
+      return {
+        ...m,
+        databaseColumn: columnName
+      };
+    });
     
-    const newMapping = {
+    const newMapping: MappingConfig = {
       id: `mapping_${Date.now()}`,
       name,
       sourceDatabaseId,
       sourceTableName,
       targetDocId,
       targetSheetId,
-      fieldMappings,
+      fieldMappings: cleanedFieldMappings,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       corpId,
@@ -178,6 +229,13 @@ export async function POST(request: NextRequest) {
       documentName,
       sheetName
     };
+
+    if (mongoMappingType) {
+      newMapping.mongoMappingType = mongoMappingType;
+      if (mongoMappingType === 'array_expand' && mongoArrayField) {
+        newMapping.mongoArrayField = mongoArrayField;
+      }
+    }
     
     const saved = saveMapping(newMapping);
     
@@ -231,8 +289,22 @@ function validateDefaultValue(value: string, dataType: string): boolean {
 
 export async function PUT(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { id, name, sourceDatabaseId, sourceTableName, targetDocId, targetSheetId, fieldMappings, corpId, targetName, documentName, sheetName } = body;
+    const body: UpdateMappingRequest = await request.json();
+    const { 
+      id, 
+      name, 
+      sourceDatabaseId, 
+      sourceTableName, 
+      targetDocId, 
+      targetSheetId, 
+      fieldMappings, 
+      corpId, 
+      targetName, 
+      documentName, 
+      sheetName,
+      mongoMappingType,
+      mongoArrayField
+    } = body;
     
     if (!id) {
       return NextResponse.json(
@@ -250,7 +322,7 @@ export async function PUT(request: NextRequest) {
       );
     }
     
-    const updatedMapping = {
+    const updatedMapping: MappingConfig = {
       ...existingMapping,
       name: name || existingMapping.name,
       sourceDatabaseId: sourceDatabaseId || existingMapping.sourceDatabaseId,
@@ -264,6 +336,34 @@ export async function PUT(request: NextRequest) {
       documentName: documentName !== undefined ? documentName : existingMapping.documentName,
       sheetName: sheetName !== undefined ? sheetName : existingMapping.sheetName
     };
+
+    if (mongoMappingType !== undefined) {
+      updatedMapping.mongoMappingType = mongoMappingType;
+      if (mongoMappingType === 'array_expand') {
+        updatedMapping.mongoArrayField = mongoArrayField || existingMapping.mongoArrayField;
+      } else {
+        updatedMapping.mongoArrayField = undefined;
+      }
+    }
+
+    if (fieldMappings) {
+      const currentArrayField = updatedMapping.mongoArrayField || existingMapping.mongoArrayField;
+      const currentMappingType = updatedMapping.mongoMappingType || existingMapping.mongoMappingType;
+      
+      updatedMapping.fieldMappings = fieldMappings.map(m => {
+        let columnName = m.databaseColumn;
+        if (columnName.endsWith('[]')) {
+          columnName = columnName.slice(0, -2);
+        }
+        if (currentMappingType === 'array_expand' && currentArrayField && columnName === currentArrayField) {
+          columnName = `${columnName}[]`;
+        }
+        return {
+          ...m,
+          databaseColumn: columnName
+        };
+      });
+    }
     
     const saved = saveMapping(updatedMapping);
     

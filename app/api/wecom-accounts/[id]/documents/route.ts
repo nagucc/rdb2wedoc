@@ -3,6 +3,8 @@ import { getWeComAccountById, getIntelligentDocumentsByAccountId, saveIntelligen
 import { weComDocumentService } from '@/lib/services/wecom-document.service';
 import { WecomSmartSheet } from '@/types';
 
+export const runtime = 'nodejs';
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

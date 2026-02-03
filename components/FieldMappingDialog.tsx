@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import { FieldMappingUI, DatabaseField, DocumentField } from '@/types';
 
@@ -13,6 +13,20 @@ interface FieldMappingDialogProps {
   documentFields: DocumentField[];
   loadingDatabaseFields: boolean;
   loadingDocumentFields: boolean;
+  mongoArrayField?: string;
+}
+
+function isNestedField(fieldName: string): boolean {
+  if (!fieldName.includes('.')) {
+    return false;
+  }
+  
+  if (fieldName.includes('[]')) {
+    const basePath = fieldName.split('[]')[0];
+    return basePath.includes('.');
+  }
+  
+  return true;
 }
 
 export default function FieldMappingDialog({
@@ -23,49 +37,56 @@ export default function FieldMappingDialog({
   databaseFields,
   documentFields,
   loadingDatabaseFields,
-  loadingDocumentFields
+  loadingDocumentFields,
+  mongoArrayField
 }: FieldMappingDialogProps) {
-  const [formData, setFormData] = useState<FieldMappingUI>({
-    id: `field_${Date.now()}`,
-    databaseColumn: '',
-    documentField: '',
-    documentFieldId: '',
-    dataType: 'string',
-    transform: '',
-    defaultValue: '',
-    description: ''
+  const generateFieldId = () => `field_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  
+  const getDefaultFormData = (editMapping?: FieldMappingUI | null): FieldMappingUI => ({
+    id: editMapping?.id || generateFieldId(),
+    databaseColumn: editMapping?.databaseColumn || '',
+    documentField: editMapping?.documentField || '',
+    documentFieldId: editMapping?.documentFieldId || '',
+    dataType: editMapping?.dataType || 'string',
+    transform: editMapping?.transform || '',
+    defaultValue: editMapping?.defaultValue || '',
+    description: editMapping?.description || ''
   });
 
+  const [formData, setFormData] = useState<FieldMappingUI>(() => getDefaultFormData(mapping));
+  
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // 当编辑的映射项变化时，更新表单数据
-  useEffect(() => {
-    if (mapping) {
-      // 确保所有字段都有默认值，避免受控输入变为非受控输入
-      setFormData({
-        id: mapping.id || `field_${Date.now()}`,
-        databaseColumn: mapping.databaseColumn || '',
-        documentField: mapping.documentField || '',
-        documentFieldId: mapping.documentFieldId || '',
-        dataType: mapping.dataType || 'string',
-        transform: mapping.transform || '',
-        defaultValue: mapping.defaultValue || '',
-        description: mapping.description || ''
-      });
-    } else {
-      setFormData({
-        id: `field_${Date.now()}`,
-        databaseColumn: '',
-        documentField: '',
-        documentFieldId: '',
-        dataType: 'string',
-        transform: '',
-        defaultValue: '',
-        description: ''
-      });
+  const normalizedMongoArrayField = mongoArrayField?.endsWith('[]') ? mongoArrayField.slice(0, -2) : mongoArrayField;
+
+  const visibleDatabaseFields = databaseFields.filter(field => {
+    const name = field.name;
+    
+    if (name.endsWith('.buffer') || /\.buffer\.\d+$/.test(name)) {
+      return false;
     }
-    setErrors({});
-  }, [mapping]);
+    
+    if (normalizedMongoArrayField) {
+      const arrayPrefix = `${normalizedMongoArrayField}[]`;
+      if (name === arrayPrefix || name === '_id') {
+        return true;
+      }
+      if (name.startsWith(arrayPrefix)) {
+        const suffix = name.slice(arrayPrefix.length);
+        if (suffix && (suffix.startsWith('.') || suffix.startsWith('['))) {
+          const depth = (name.match(/\./g) || []).length + (name.match(/\[/g) || []).length;
+          return depth <= 2;
+        }
+      }
+      return false;
+    }
+    
+    if (isNestedField(name)) {
+      return false;
+    }
+    
+    return true;
+  });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const target = e.target as HTMLInputElement;
@@ -150,10 +171,10 @@ export default function FieldMappingDialog({
                 <option value="">请选择源字段</option>
                 {loadingDatabaseFields ? (
                   <option disabled>加载中...</option>
-                ) : databaseFields.length === 0 ? (
+                ) : visibleDatabaseFields.length === 0 ? (
                   <option disabled>暂无可用字段</option>
                 ) : (
-                  databaseFields.map((field) => (
+                  visibleDatabaseFields.map((field) => (
                     <option key={field.name} value={field.name}>
                       {field.name}({field.comment || field.type})
                     </option>

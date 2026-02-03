@@ -3,6 +3,8 @@ import { WeComAccount } from '@/types';
 import { getWeComAccounts, saveWeComAccount, saveHistory } from '@/lib/config/storage';
 import { generateId, Logger } from '@/lib/utils/helpers';
 
+export const runtime = 'nodejs';
+
 export async function GET(request: NextRequest) {
   try {
     const accounts = getWeComAccounts();

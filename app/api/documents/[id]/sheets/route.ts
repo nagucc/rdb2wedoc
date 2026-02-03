@@ -3,6 +3,8 @@ import { getDocumentById, getIntelligentDocumentById, getWeComAccountById } from
 import { weComDocumentService } from '@/lib/services/wecom-document.service';
 import { Logger } from '@/lib/utils/helpers';
 
+export const runtime = 'nodejs';
+
 interface SheetField {
   id: string;
   name: string;

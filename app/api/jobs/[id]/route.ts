@@ -3,6 +3,8 @@ import { getJobById, updateJob, deleteJob, saveHistory } from '@/lib/config/stor
 import { generateId, validateCronExpression, Logger } from '@/lib/utils/helpers';
 import { schedulerManager } from '@/lib/services/scheduler';
 
+export const runtime = 'nodejs';
+
 // 获取单个同步作业
 export async function GET(
   request: NextRequest,

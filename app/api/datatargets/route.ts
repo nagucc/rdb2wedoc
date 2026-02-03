@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Logger } from '@/lib/utils/helpers';
 import { getDocuments, getDocumentSheets, getWeComAccountById } from '@/lib/config/storage';
 
+export const runtime = 'nodejs';
+
 interface DataTargetMetrics {
   totalWeComAccounts: number;
   activeWeComAccounts: number;

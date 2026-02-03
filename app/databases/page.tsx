@@ -11,7 +11,7 @@ import MappingReferenceList from '@/components/MappingReferenceList';
 interface DatabaseConfig {
   id: string;
   name: string;
-  type: 'mysql' | 'postgresql' | 'sqlserver' | 'oracle';
+  type: 'mysql' | 'postgresql' | 'sqlserver' | 'oracle' | 'mongodb';
   host: string;
   port: string;
   username: string;
@@ -55,7 +55,7 @@ export default function DatabasesPage() {
   const [editingDatabase, setEditingDatabase] = useState<DatabaseConfig | null>(null);
   const [formData, setFormData] = useState({
     name: '',
-    type: 'mysql' as 'mysql' | 'postgresql' | 'sqlserver' | 'oracle',
+    type: 'mysql' as 'mysql' | 'postgresql' | 'sqlserver' | 'oracle' | 'mongodb',
     host: '',
     port: '3306',
     username: '',
@@ -278,7 +278,8 @@ export default function DatabasesPage() {
       mysql: 'MySQL',
       postgresql: 'PostgreSQL',
       sqlserver: 'SQL Server',
-      oracle: 'Oracle'
+      oracle: 'Oracle',
+      mongodb: 'MongoDB'
     };
     return labels[type] || type;
   };
@@ -464,14 +465,15 @@ export default function DatabasesPage() {
                     </label>
                     <select
                       value={formData.type}
-                      onChange={(e) => setFormData({ ...formData, type: e.target.value as any, port: e.target.value === 'postgresql' ? '5432' : e.target.value === 'sqlserver' ? '1433' : e.target.value === 'oracle' ? '1521' : '3306' })}
+                      onChange={(e) => setFormData({ ...formData, type: e.target.value as any, port: e.target.value === 'postgresql' ? '5432' : e.target.value === 'sqlserver' ? '1433' : e.target.value === 'oracle' ? '1521' : e.target.value === 'mongodb' ? '27017' : '3306' })}
                       className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
                       required
                     >
                       <option value="mysql">MySQL</option>
-                      <option value="postgresql">PostgreSQL</option>
-                      <option value="sqlserver">SQL Server</option>
-                      <option value="oracle">Oracle</option>
+                      <option value="postgresql" disabled>PostgreSQL (暂未开放)</option>
+                      <option value="sqlserver" disabled>SQL Server (暂未开放)</option>
+                      <option value="oracle" disabled>Oracle (暂未开放)</option>
+                      <option value="mongodb">MongoDB</option>
                     </select>
                   </div>
                   <div className="grid grid-cols-2 gap-4">

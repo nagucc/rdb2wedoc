@@ -19,13 +19,19 @@ import Header from '@/components/layout/Header';
 
 interface DatabaseConfig {
   name: string;
-  type: 'mysql' | 'postgresql' | 'sqlserver' | 'oracle';
+  type: 'mysql' | 'postgresql' | 'sqlserver' | 'oracle' | 'mongodb';
   host: string;
   port: string;
   username: string;
   password: string;
   database: string;
   charset?: string;
+  mongoOptions?: {
+    authSource?: string;
+    replicaSet?: string;
+    ssl?: boolean;
+    directConnection?: boolean;
+  };
   options?: {
     ssl?: boolean;
     timezone?: string;
@@ -37,7 +43,8 @@ const databaseTypes = [
   { value: 'mysql', label: 'MySQL', icon: '🐬', defaultPort: '3306' },
   { value: 'postgresql', label: 'PostgreSQL', icon: '🐘', defaultPort: '5432' },
   { value: 'sqlserver', label: 'SQL Server', icon: '🔷', defaultPort: '1433' },
-  { value: 'oracle', label: 'Oracle', icon: '🔴', defaultPort: '1521' }
+  { value: 'oracle', label: 'Oracle', icon: '🔴', defaultPort: '1521' },
+  { value: 'mongodb', label: 'MongoDB', icon: '🍃', defaultPort: '27017' }
 ];
 export default function AddDatabasePage() {
   const router = useRouter();
@@ -73,7 +80,8 @@ export default function AddDatabasePage() {
     setConfig(prev => ({
       ...prev,
       type,
-      port: selectedType?.defaultPort || '3306'
+      port: selectedType?.defaultPort || '3306',
+      mongoOptions: type === 'mongodb' ? { authSource: 'admin' } : undefined
     }));
     setTestResult(null);
   };
@@ -281,7 +289,7 @@ export default function AddDatabasePage() {
                 </h3>
                 <p className="mt-1 text-sm text-blue-700 dark:text-blue-300">
                   请填写数据库连接信息。系统将自动测试连接，确保配置正确后才能保存。
-                  支持的数据库类型包括 MySQL、PostgreSQL、SQL Server 和 Oracle。
+                  支持的数据库类型包括 MySQL、PostgreSQL、SQL Server、Oracle 和 MongoDB。
                 </p>
               </div>
             </div>
@@ -317,25 +325,28 @@ export default function AddDatabasePage() {
                 <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                   数据库类型 <span className="text-red-500">*</span>
                 </label>
-                <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                  {databaseTypes.map((type) => (
-                    <button
-                      key={type.value}
-                      onClick={() => type.value === 'mysql' && handleTypeChange(type.value)}
-                      disabled={type.value !== 'mysql'}
-                      title={type.value !== 'mysql' ? '功能暂未开放' : undefined}
-                      className={`flex flex-col items-center gap-2 rounded-lg border-2 p-4 transition-all ${
-                        config.type === type.value
-                          ? 'border-blue-500 bg-blue-50 dark:border-blue-500 dark:bg-blue-900/20'
-                          : 'border-gray-200 hover:border-gray-300 dark:border-gray-600 dark:hover:border-gray-500'
-                      } ${type.value !== 'mysql' ? 'disabled:opacity-50 disabled:cursor-not-allowed' : ''}`}
-                    >
-                      <span className="text-3xl">{type.icon}</span>
-                      <span className="text-sm font-medium text-gray-900 dark:text-white">
-                        {type.label}
-                      </span>
-                    </button>
-                  ))}
+                <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
+                  {databaseTypes.map((type) => {
+                    const isDisabled = ['sqlserver', 'oracle', 'postgresql'].includes(type.value);
+                    return (
+                      <button
+                        key={type.value}
+                        onClick={() => !isDisabled && handleTypeChange(type.value as DatabaseConfig['type'])}
+                        disabled={isDisabled}
+                        title={isDisabled ? '功能暂未开放' : undefined}
+                        className={`flex flex-col items-center gap-2 rounded-lg border-2 p-4 transition-all ${
+                          config.type === type.value
+                            ? 'border-blue-500 bg-blue-50 dark:border-blue-500 dark:bg-blue-900/20'
+                            : 'border-gray-200 hover:border-gray-300 dark:border-gray-600 dark:hover:border-gray-500'
+                        } ${isDisabled ? 'disabled:opacity-50 disabled:cursor-not-allowed' : ''}`}
+                      >
+                        <span className="text-3xl">{type.icon}</span>
+                        <span className="text-sm font-medium text-gray-900 dark:text-white">
+                          {type.label}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -451,87 +462,156 @@ export default function AddDatabasePage() {
               <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
                 高级选项
               </h2>
-              <div className="grid gap-6 md:grid-cols-2">
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    SSL 连接
-                  </label>
-                  <select
-                    value={config.options?.ssl ? 'true' : 'false'}
-                    disabled
-                    title="功能暂未开放"
-                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed dark:disabled:bg-gray-700 dark:disabled:text-gray-400"
-                  >
-                    <option value="false">禁用</option>
-                    <option value="true">启用</option>
-                  </select>
-                </div>
+              
+              {config.type === 'mongodb' ? (
+                <div className="grid gap-6 md:grid-cols-2">
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      认证数据库 <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={config.mongoOptions?.authSource || 'admin'}
+                      onChange={(e) => setConfig(prev => ({
+                        ...prev,
+                        mongoOptions: { ...prev.mongoOptions, authSource: e.target.value }
+                      }))}
+                      placeholder="admin"
+                      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                    />
+                    <p className="mt-1 text-xs text-gray-500">用于身份验证的数据库，通常为 admin</p>
+                  </div>
 
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    字符集
-                  </label>
-                  <select
-                    value={config.charset || 'latin1'}
-                    onChange={(e) => handleInputChange('charset', e.target.value)}
-                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                  >
-                    <option value="latin1">latin1 (MySQL默认)</option>
-                    <option value="utf8">utf8</option>
-                    <option value="utf8mb4">utf8mb4 (推荐)</option>
-                    <option value="gb2312">gb2312</option>
-                    <option value="gbk">gbk</option>
-                  </select>
-                </div>
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      副本集名称（可选）
+                    </label>
+                    <input
+                      type="text"
+                      value={config.mongoOptions?.replicaSet || ''}
+                      onChange={(e) => setConfig(prev => ({
+                        ...prev,
+                        mongoOptions: { ...prev.mongoOptions, replicaSet: e.target.value }
+                      }))}
+                      placeholder="rs0"
+                      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                    />
+                    <p className="mt-1 text-xs text-gray-500">如果连接到副本集，需要指定副本集名称</p>
+                  </div>
 
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    时区
-                  </label>
-                  <select
-                    value={config.options?.timezone || 'UTC'}
-                    disabled
-                    title="功能暂未开放"
-                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed dark:disabled:bg-gray-700 dark:disabled:text-gray-400"
-                  >
-                    <option value="UTC">UTC</option>
-                    <option value="Asia/Shanghai">Asia/Shanghai</option>
-                    <option value="Asia/Tokyo">Asia/Tokyo</option>
-                    <option value="America/New_York">America/New_York</option>
-                    <option value="Europe/London">Europe/London</option>
-                  </select>
-                </div>
+                  <div className="flex items-center">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={config.mongoOptions?.ssl || false}
+                        onChange={(e) => setConfig(prev => ({
+                          ...prev,
+                          mongoOptions: { ...prev.mongoOptions, ssl: e.target.checked }
+                        }))}
+                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-gray-700 dark:text-gray-300">使用SSL连接</span>
+                    </label>
+                  </div>
 
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    连接超时（秒）
-                  </label>
-                  <input
-                    type="number"
-                    value={config.options?.connectionTimeout || 30}
-                    disabled
-                    title="功能暂未开放"
-                    min="1"
-                    max="300"
-                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed dark:disabled:bg-gray-700 dark:disabled:text-gray-400"
-                  />
+                  <div className="flex items-center">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={config.mongoOptions?.directConnection || false}
+                        onChange={(e) => setConfig(prev => ({
+                          ...prev,
+                          mongoOptions: { ...prev.mongoOptions, directConnection: e.target.checked }
+                        }))}
+                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-gray-700 dark:text-gray-300">直接连接模式</span>
+                    </label>
+                  </div>
                 </div>
+              ) : (
+                <div className="grid gap-6 md:grid-cols-2">
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      SSL 连接
+                    </label>
+                    <select
+                      value={config.options?.ssl ? 'true' : 'false'}
+                      disabled
+                      title="功能暂未开放"
+                      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed dark:disabled:bg-gray-700 dark:disabled:text-gray-400"
+                    >
+                      <option value="false">禁用</option>
+                      <option value="true">启用</option>
+                    </select>
+                  </div>
 
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    最大连接数
-                  </label>
-                  <input
-                    type="number"
-                    value={config.options?.maxConnections || 10}
-                    disabled
-                    title="功能暂未开放"
-                    min="1"
-                    max="100"
-                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed dark:disabled:bg-gray-700 dark:disabled:text-gray-400"
-                  />
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      字符集
+                    </label>
+                    <select
+                      value={config.charset || 'latin1'}
+                      onChange={(e) => handleInputChange('charset', e.target.value)}
+                      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                    >
+                      <option value="latin1">latin1 (MySQL默认)</option>
+                      <option value="utf8">utf8</option>
+                      <option value="utf8mb4">utf8mb4 (推荐)</option>
+                      <option value="gb2312">gb2312</option>
+                      <option value="gbk">gbk</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      时区
+                    </label>
+                    <select
+                      value={config.options?.timezone || 'UTC'}
+                      disabled
+                      title="功能暂未开放"
+                      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed dark:disabled:bg-gray-700 dark:disabled:text-gray-400"
+                    >
+                      <option value="UTC">UTC</option>
+                      <option value="Asia/Shanghai">Asia/Shanghai</option>
+                      <option value="Asia/Tokyo">Asia/Tokyo</option>
+                      <option value="America/New_York">America/New_York</option>
+                      <option value="Europe/London">Europe/London</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      连接超时（秒）
+                    </label>
+                    <input
+                      type="number"
+                      value={config.options?.connectionTimeout || 30}
+                      disabled
+                      title="功能暂未开放"
+                      min="1"
+                      max="300"
+                      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed dark:disabled:bg-gray-700 dark:disabled:text-gray-400"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      最大连接数
+                    </label>
+                    <input
+                      type="number"
+                      value={config.options?.maxConnections || 10}
+                      disabled
+                      title="功能暂未开放"
+                      min="1"
+                      max="100"
+                      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed dark:disabled:bg-gray-700 dark:disabled:text-gray-400"
+                    />
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {testResult && (

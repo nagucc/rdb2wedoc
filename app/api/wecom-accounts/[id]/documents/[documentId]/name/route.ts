@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getWeComAccountById, getIntelligentDocumentById, saveIntelligentDocument } from '@/lib/config/storage';
 import { weComDocumentService } from '@/lib/services/wecom-document.service';
 
+export const runtime = 'nodejs';
+
 interface RetryConfig {
   maxRetries: number;
   retryDelay: number;

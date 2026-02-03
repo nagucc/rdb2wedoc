@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDatabaseById } from '@/lib/config/storage';
 import { Logger } from '@/lib/utils/helpers';
 
+export const runtime = 'nodejs';
+
 // 获取单个数据源的完整信息（包括密码）
 export async function GET(
   request: NextRequest,

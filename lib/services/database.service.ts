@@ -2,12 +2,15 @@ import mysql from 'mysql2/promise';
 import { Pool as PostgresPool } from 'pg';
 import { ConnectionPool as SqlServerPool } from 'mssql';
 import oracledb from 'oracledb';
+import { MongoClient, Db, Collection } from 'mongodb';
 import { DatabaseConnection, DatabaseTable, DatabaseColumn, DatabaseType } from '@/types';
 import { Logger } from '../utils/helpers';
 
 export class DatabaseService {
   private connection: any = null;
   private pool: any = null;
+  private mongoClient: MongoClient | null = null;
+  private mongoDb: Db | null = null;
 
   async connect(dbConfig: DatabaseConnection): Promise<boolean> {
     try {
@@ -23,6 +26,9 @@ export class DatabaseService {
           break;
         case 'oracle':
           await this.connectOracle(dbConfig);
+          break;
+        case 'mongodb':
+          await this.connectMongoDB(dbConfig);
           break;
         default:
           throw new Error(`不支持的数据库类型: ${dbConfig.type}`);
@@ -153,6 +159,263 @@ export class DatabaseService {
     await connection.close();
   }
 
+  private async connectMongoDB(config: DatabaseConnection): Promise<void> {
+    const mongoConfig = config.mongoOptions || {};
+    const uri = this.buildMongoURI(config);
+    
+    this.mongoClient = new MongoClient(uri, {
+      maxPoolSize: mongoConfig.maxPoolSize || 10,
+      serverSelectionTimeoutMS: mongoConfig.connectionTimeout || 30000,
+      directConnection: mongoConfig.directConnection || false,
+      tls: mongoConfig.ssl || false
+    });
+    
+    await this.mongoClient.connect();
+    this.mongoDb = this.mongoClient.db(config.database);
+    
+    Logger.info(`MongoDB连接成功: ${config.host}:${config.port}/${config.database}`);
+  }
+
+  private buildMongoURI(config: DatabaseConnection): string {
+    const { host, port, username, password, database } = config;
+    const authSource = config.mongoOptions?.authSource || 'admin';
+    
+    const encodedUsername = encodeURIComponent(username);
+    const encodedPassword = encodeURIComponent(password);
+    
+    let uri = `mongodb://${encodedUsername}:${encodedPassword}@${host}:${port}/${database}?authSource=${authSource}`;
+    
+    if (config.mongoOptions?.replicaSet) {
+      uri += `&replicaSet=${config.mongoOptions.replicaSet}`;
+    }
+    
+    return uri;
+  }
+
+  async testMongoDBConnection(config: DatabaseConnection): Promise<boolean> {
+    try {
+      await this.connectMongoDB(config);
+      await this.mongoDb!.command({ ping: 1 });
+      return true;
+    } catch (error) {
+      Logger.error('MongoDB连接测试失败', { error: (error as Error).message });
+      return false;
+    } finally {
+      await this.disconnect();
+    }
+  }
+
+  async getCollections(config: DatabaseConnection): Promise<DatabaseTable[]> {
+    try {
+      await this.connectMongoDB(config);
+      
+      const collections = await this.mongoDb!.listCollections().toArray();
+      const tables: DatabaseTable[] = [];
+      
+      for (const col of collections) {
+        const collection = this.mongoDb!.collection(col.name);
+        
+        const sampleDocs = await collection
+          .find({})
+          .limit(100)
+          .toArray();
+        
+        const columns = this.inferFieldsFromDocuments(sampleDocs);
+        
+        tables.push({
+          name: col.name,
+          comment: '',
+          columns
+        });
+      }
+      
+      return tables;
+    } catch (error) {
+      Logger.error('获取MongoDB集合列表失败', { error: (error as Error).message });
+      throw error;
+    } finally {
+      await this.disconnect();
+    }
+  }
+
+  private inferFieldsFromDocuments(documents: any[]): DatabaseColumn[] {
+    if (!documents || documents.length === 0) {
+      return [];
+    }
+    
+    const fieldMap = new Map<string, DatabaseColumn>();
+    
+    for (const doc of documents) {
+      this.extractFields('', doc, fieldMap);
+    }
+    
+    return Array.from(fieldMap.values());
+  }
+
+  private extractFields(prefix: string, doc: any, fieldMap: Map<string, DatabaseColumn>): void {
+    if (doc === null || doc === undefined) {
+      return;
+    }
+
+    if (Array.isArray(doc)) {
+      const fullPath = prefix || '[]';
+      const elementType = doc.length > 0 ? this.inferBSONType(doc[0]) : 'unknown';
+      
+      if (prefix) {
+        const existing = fieldMap.get(prefix);
+        if (existing) {
+          if (!existing.type.includes('|')) {
+            existing.type = `${existing.type}|array`;
+          }
+        } else {
+          fieldMap.set(prefix, {
+            name: `${prefix}[]`,
+            type: `array<${elementType}>`,
+            nullable: true,
+            primaryKey: false,
+            comment: ''
+          });
+        }
+      } else {
+        fieldMap.set('[]', {
+          name: '[]',
+          type: `array<${elementType}>`,
+          nullable: true,
+          primaryKey: false,
+          comment: ''
+        });
+      }
+      
+      if (doc.length > 0) {
+        this.extractFields(`${fullPath}[]`, doc[0], fieldMap);
+      }
+      return;
+    }
+    
+    if (typeof doc === 'object') {
+      for (const [key, value] of Object.entries(doc)) {
+        const fullPath = prefix ? `${prefix}.${key}` : key;
+        
+        const type = this.inferBSONType(value);
+        
+        const existing = fieldMap.get(fullPath);
+        if (existing) {
+          if (!existing.type.includes('|')) {
+            existing.type = `${existing.type}|${type}`;
+          }
+          if (existing.type.includes('object') && Array.isArray(value)) {
+            existing.type = existing.type.replace('object', 'array');
+            existing.name = `${fullPath}[]`;
+          }
+        } else {
+          let fieldName = fullPath;
+          let fieldType = type;
+          
+          if (Array.isArray(value)) {
+            fieldName = `${fullPath}[]`;
+            const elementType = value.length > 0 ? this.inferBSONType(value[0]) : 'unknown';
+            fieldType = `array<${elementType}>`;
+          }
+          
+          fieldMap.set(fullPath, {
+            name: fieldName,
+            type: fieldType,
+            nullable: true,
+            primaryKey: false,
+            comment: ''
+          });
+        }
+        
+        if (value !== null && typeof value === 'object') {
+          if (Array.isArray(value)) {
+            if (value.length > 0) {
+              this.extractFields(`${fullPath}[]`, value[0], fieldMap);
+            }
+          } else {
+            this.extractFields(fullPath, value, fieldMap);
+          }
+        }
+      }
+    }
+  }
+
+  private inferBSONType(value: any): string {
+    if (value === null) return 'null';
+    if (value === undefined) return 'undefined';
+    
+    const type = typeof value;
+    
+    switch (type) {
+      case 'string': return 'string';
+      case 'number': 
+        return Number.isInteger(value) ? 'int64' : 'double';
+      case 'boolean': return 'bool';
+      case 'object':
+        if (value instanceof Date) return 'date';
+        if (value instanceof Buffer) return 'binData';
+        return 'object';
+      case 'function':
+        return 'javascript';
+      default: return 'mixed';
+    }
+  }
+
+  async mongoQuery(
+    config: DatabaseConnection, 
+    collectionName: string, 
+    filter?: Record<string, any>,
+    options?: {
+      projection?: Record<string, any>;
+      sort?: Record<string, 1 | -1>;
+      limit?: number;
+      skip?: number;
+    }
+  ): Promise<any[]> {
+    try {
+      await this.connectMongoDB(config);
+      
+      const collection = this.mongoDb!.collection(collectionName);
+      const cursor = collection.find(filter || {}, options);
+      
+      if (options?.sort) {
+        cursor.sort(options.sort);
+      }
+      if (options?.skip) {
+        cursor.skip(options.skip);
+      }
+      if (options?.limit) {
+        cursor.limit(options.limit);
+      }
+      
+      return await cursor.toArray();
+    } catch (error) {
+      Logger.error('MongoDB查询失败', { error: (error as Error).message });
+      throw error;
+    } finally {
+      await this.disconnect();
+    }
+  }
+
+  async mongoAggregate(
+    config: DatabaseConnection, 
+    collectionName: string, 
+    pipeline: Record<string, any>[]
+  ): Promise<any[]> {
+    try {
+      await this.connectMongoDB(config);
+      
+      const collection = this.mongoDb!.collection(collectionName);
+      const cursor = collection.aggregate(pipeline);
+      
+      return await cursor.toArray();
+    } catch (error) {
+      Logger.error('MongoDB聚合查询失败', { error: (error as Error).message });
+      throw error;
+    } finally {
+      await this.disconnect();
+    }
+  }
+
   async testConnection(dbConfig: DatabaseConnection): Promise<boolean> {
     try {
       await this.connect(dbConfig);
@@ -181,6 +444,9 @@ export class DatabaseService {
           break;
         case 'oracle':
           tables = await this.getOracleTables();
+          break;
+        case 'mongodb':
+          tables = await this.getCollections(dbConfig);
           break;
       }
       
@@ -453,6 +719,12 @@ export class DatabaseService {
 
   async disconnect(): Promise<void> {
     try {
+      if (this.mongoClient) {
+        await this.mongoClient.close();
+        this.mongoClient = null;
+        this.mongoDb = null;
+      }
+      
       if (this.pool) {
         switch (this.pool.constructor.name) {
           case 'Pool':

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { fieldMappingService } from '@/lib/services/field-mapping.service';
 import { Logger } from '@/lib/utils/helpers';
 
+export const runtime = 'nodejs';
+
 // 验证字段映射配置
 export async function POST(request: NextRequest) {
   try {

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { backupService } from '@/lib/services/backup.service';
 import { Logger } from '@/lib/utils/helpers';
 
+export const runtime = 'nodejs';
+
 /**
  * POST /api/backup/[id]/restore
  * 恢复指定的备份

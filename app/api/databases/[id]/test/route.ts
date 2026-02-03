@@ -3,6 +3,8 @@ import { getDatabaseById } from '@/lib/config/storage';
 import { databaseService } from '@/lib/services/database.service';
 import { Logger } from '@/lib/utils/helpers';
 
+export const runtime = 'nodejs';
+
 // 测试数据库连接
 export async function POST(
   request: NextRequest,

@@ -3,6 +3,8 @@ import { getDocumentById } from '@/lib/config/storage';
 import { weComDocumentService } from '@/lib/services/wecom-document.service';
 import { Logger } from '@/lib/utils/helpers';
 
+export const runtime = 'nodejs';
+
 // 测试企业微信文档连接
 export async function POST(
   request: NextRequest,

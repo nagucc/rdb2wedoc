@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { dataSourceService } from '@/lib/services/datasource.service';
 import { getDatabases } from '@/lib/config/storage';
 
+export const runtime = 'nodejs';
+
 export async function GET() {
   try {
     const connections = getDatabases();
