@@ -32,7 +32,18 @@ export interface AuthSession {
 }
 
 // 数据库相关类型
-export type DatabaseType = 'mysql' | 'postgresql' | 'sqlserver' | 'oracle';
+export type DatabaseType = 'mysql' | 'postgresql' | 'sqlserver' | 'oracle' | 'mongodb';
+
+export type MongoDBMappingType = 'flatten' | 'array_expand';
+
+export interface MongoDBConnectionOptions {
+  authSource?: string;
+  replicaSet?: string;
+  ssl?: boolean;
+  directConnection?: boolean;
+  connectionTimeout?: number;
+  maxPoolSize?: number;
+}
 
 export interface DatabaseConnection {
   id: string;
@@ -44,6 +55,7 @@ export interface DatabaseConnection {
   password: string;
   database: string;
   charset?: string;
+  mongoOptions?: MongoDBConnectionOptions;
   options?: Record<string, any>;
   createdAt: string;
   updatedAt: string;
@@ -63,6 +75,31 @@ export interface DatabaseColumn {
   primaryKey: boolean;
   defaultValue?: any;
   comment?: string;
+}
+
+export interface MongoDBCollection {
+  name: string;
+  type: 'collection' | 'view';
+  documentCount: number;
+  size: number;
+  avgDocumentSize: number;
+  indexes: MongoIndexInfo[];
+}
+
+export interface MongoIndexInfo {
+  name: string;
+  keys: Record<string, 1 | -1 | 'text'>;
+  unique: boolean;
+  sparse: boolean;
+  expireAfterSeconds?: number;
+}
+
+export interface MongoDBField {
+  path: string;
+  type: string;
+  nullable: boolean;
+  isArray: boolean;
+  sampleValues: any[];
 }
 
 export type DatabaseField = DatabaseColumn;
@@ -331,10 +368,13 @@ export interface MappingConfig {
   targetName?: string;
   documentName?: string;
   sheetName?: string;
+  mongoMappingType?: MongoDBMappingType;
+  mongoArrayField?: string;
 }
 
 export interface MappingConfigUI extends Omit<MappingConfig, 'fieldMappings'> {
   fieldMappings: FieldMappingUI[];
+  sourceDatabaseType?: string;
 }
 
 // API响应类型

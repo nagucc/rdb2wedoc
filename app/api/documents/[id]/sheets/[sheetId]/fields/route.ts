@@ -3,6 +3,8 @@ import { getDocumentById, getWeComAccountById } from '@/lib/config/storage';
 import { weComDocumentService } from '@/lib/services/wecom-document.service';
 import { Logger } from '@/lib/utils/helpers';
 
+export const runtime = 'nodejs';
+
 // 获取Sheet的字段信息
 export async function GET(
   request: NextRequest,

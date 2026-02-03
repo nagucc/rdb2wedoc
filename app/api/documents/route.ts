@@ -4,6 +4,8 @@ import { getDocuments, saveDocument, saveHistory } from '@/lib/config/storage';
 import { weComDocumentService } from '@/lib/services/wecom-document.service';
 import { generateId, Logger } from '@/lib/utils/helpers';
 
+export const runtime = 'nodejs';
+
 // 获取所有企业微信文档
 export async function GET(request: NextRequest) {
   try {

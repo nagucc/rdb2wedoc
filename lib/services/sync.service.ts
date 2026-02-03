@@ -1,7 +1,7 @@
 import * as cron from 'node-cron';
 import { databaseService } from './database.service';
 import { weComDocumentService } from './wecom-document.service';
-import { SyncJob, FieldMapping, ConflictStrategy, ExecutionLog, WeComDocument } from '@/types';
+import { SyncJob, FieldMapping, ConflictStrategy, ExecutionLog, WeComDocument, MappingConfig } from '@/types';
 import { getDatabaseById, getDocumentById, saveJob, saveLog, getJobById, getMappingById, getWeComAccountById } from '../config/storage';
 import { Logger, generateId, formatDate, retry } from '../utils/helpers';
 
@@ -53,14 +53,24 @@ export class SyncService {
       }
 
       // 从数据库读取数据
-      const dbData = await this.readFromDatabase(database, mappingConfig.sourceTableName);
+      Logger.info('读取数据库数据', { 
+        table: mappingConfig.sourceTableName,
+        mongoMappingType: mappingConfig.mongoMappingType,
+        mongoArrayField: mappingConfig.mongoArrayField 
+      });
+      const dbData = await this.readFromDatabase(database, mappingConfig.sourceTableName, mappingConfig);
+      Logger.info('数据库数据读取完成', { recordCount: dbData.length, sampleData: dbData.slice(0, 2) });
       log.recordsProcessed = dbData.length;
 
       // 获取文档字段类型映射
       const fieldTypeMap = await this.getDocumentFields(document, mappingConfig.targetSheetId);
 
       // 转换数据格式
-      const transformedData = this.transformData(dbData, mappingConfig.fieldMappings, fieldTypeMap);
+      const transformedData = this.transformData(dbData, mappingConfig.fieldMappings, fieldTypeMap, mappingConfig);
+      Logger.info('数据转换完成', { 
+        recordCount: transformedData.length, 
+        sampleTransformed: transformedData.slice(0, 2) 
+      });
 
       // 根据冲突策略写入文档
       if (job.conflictStrategy === 'overwrite') {
@@ -151,9 +161,23 @@ export class SyncService {
     return log;
   }
 
-  private async readFromDatabase(database: any, table: string): Promise<any[]> {
-    const sql = `SELECT * FROM ${table}`;
-    return await databaseService.query(database, sql);
+  private async readFromDatabase(database: any, table: string, mappingConfig?: MappingConfig): Promise<any[]> {
+    if (database.type === 'mongodb') {
+      if (mappingConfig?.mongoMappingType === 'array_expand' && mappingConfig.mongoArrayField) {
+        const arrayField = mappingConfig.mongoArrayField.endsWith('[]')
+          ? mappingConfig.mongoArrayField.slice(0, -2)
+          : mappingConfig.mongoArrayField;
+        Logger.debug('执行数组展开聚合', { arrayField });
+        return await databaseService.mongoAggregate(database, table, [
+          { $unwind: `$${arrayField}` },
+          { $limit: 10000 }
+        ]);
+      }
+      return await databaseService.mongoQuery(database, table);
+    } else {
+      const sql = `SELECT * FROM ${table}`;
+      return await databaseService.query(database, sql);
+    }
   }
 
   private async getDocumentFields(document: WeComDocument, sheetId: string): Promise<Map<string, string>> {
@@ -178,27 +202,59 @@ export class SyncService {
     }
   }
 
-  private transformData(data: any[], mappings: FieldMapping[], fieldTypeMap: Map<string, string>): any[] {
+  private transformData(data: any[], mappings: FieldMapping[], fieldTypeMap: Map<string, string>, mappingConfig?: MappingConfig): any[] {
+    const arrayExpandMode = mappingConfig?.mongoMappingType === 'array_expand' && mappingConfig.mongoArrayField;
+    
+    const normalizedArrayField = arrayExpandMode 
+      ? mappingConfig?.mongoArrayField?.endsWith('[]') 
+        ? mappingConfig.mongoArrayField!.slice(0, -2)
+        : mappingConfig.mongoArrayField
+      : undefined;
+    
+    if (arrayExpandMode) {
+      Logger.info('数组展开模式转换数据', { 
+        mongoArrayField: mappingConfig.mongoArrayField,
+        normalizedArrayField,
+        mappingCount: mappings.length,
+        mappings: mappings.map(m => ({ databaseColumn: m.databaseColumn, documentField: m.documentField }))
+      });
+    }
+    
     return data.map(row => {
       const transformed: any = {};
       
       mappings.forEach(mapping => {
-        const value = row[mapping.databaseColumn];
+        let value = row[mapping.databaseColumn];
+        
+        if (value === undefined && arrayExpandMode) {
+          const arrayPrefix = `${normalizedArrayField}[]`;
+          if (mapping.databaseColumn.startsWith(arrayPrefix)) {
+            const fieldPath = mapping.databaseColumn.slice(arrayPrefix.length + 1);
+            value = this.getNestedValue(row, `${normalizedArrayField}.${fieldPath}`);
+            Logger.debug('数组展开模式-嵌套字段值获取', { 
+              databaseColumn: mapping.databaseColumn, 
+              normalizedArrayField,
+              fieldPath, 
+              actualPath: `${normalizedArrayField}.${fieldPath}`,
+              value 
+            });
+          } else if (normalizedArrayField && (mapping.databaseColumn === normalizedArrayField || mapping.databaseColumn === `${normalizedArrayField}[]`)) {
+            value = row[normalizedArrayField!] ?? row[`${normalizedArrayField}[]`];
+          }
+        }
+        
         const fieldType = fieldTypeMap.get(mapping.documentField);
         
         if (mapping.transform) {
           try {
-            // 简单的数据转换逻辑
             transformed[mapping.documentField] = this.applyTransform(value, mapping.transform);
           } catch (error) {
             Logger.warn('数据转换失败', { value, transform: mapping.transform });
             transformed[mapping.documentField] = value;
           }
         } else if (fieldType) {
-          // 根据目标字段类型自动转换
           transformed[mapping.documentField] = this.autoConvertType(value, fieldType);
         } else {
-          // 字段类型未知，保持原值
           transformed[mapping.documentField] = value;
         }
       });
@@ -207,8 +263,36 @@ export class SyncService {
     });
   }
 
+  private getNestedValue(obj: any, path: string): any {
+    try {
+      const keys = path.split('.');
+      let current: any = obj;
+      
+      for (const key of keys) {
+        if (current === null || current === undefined) {
+          Logger.debug('路径访问中断，属性不存在', { path, currentKey: key, currentValue: current });
+          return undefined;
+        }
+        current = current[key];
+      }
+      
+      return current;
+    } catch (error) {
+      Logger.warn('获取嵌套值失败', { path, error: (error as Error).message });
+      return undefined;
+    }
+  }
+
   private autoConvertType(value: any, fieldType: string): any {
     if (value === null || value === undefined) {
+      return value;
+    }
+
+    if (Array.isArray(value)) {
+      if (fieldType === 'text' || fieldType === 'phone' || fieldType === 'email' || 
+          fieldType === 'url' || fieldType === 'select' || fieldType === 'multi_select') {
+        return JSON.stringify(value);
+      }
       return value;
     }
 
@@ -376,13 +460,28 @@ export class SyncService {
         throw new Error('目标文档配置不存在');
       }
 
-      const sql = `SELECT * FROM ${mappingConfig.sourceTableName} LIMIT ${limit}`;
-      const dbData = await databaseService.query(database, sql);
+      let dbData: any[];
+      if (database.type === 'mongodb') {
+        if (mappingConfig.mongoMappingType === 'array_expand' && mappingConfig.mongoArrayField) {
+          const arrayField = mappingConfig.mongoArrayField.endsWith('[]')
+            ? mappingConfig.mongoArrayField.slice(0, -2)
+            : mappingConfig.mongoArrayField;
+          dbData = await databaseService.mongoAggregate(database, mappingConfig.sourceTableName, [
+            { $unwind: `$${arrayField}` },
+            { $limit: limit }
+          ]);
+        } else {
+          dbData = await databaseService.mongoQuery(database, mappingConfig.sourceTableName, undefined, { limit });
+        }
+      } else {
+        const sql = `SELECT * FROM ${mappingConfig.sourceTableName} LIMIT ${limit}`;
+        dbData = await databaseService.query(database, sql);
+      }
       
       // 获取文档字段类型映射
       const fieldTypeMap = await this.getDocumentFields(document, mappingConfig.targetSheetId);
       
-      return this.transformData(dbData, mappingConfig.fieldMappings, fieldTypeMap);
+      return this.transformData(dbData, mappingConfig.fieldMappings, fieldTypeMap, mappingConfig);
     } catch (error) {
       Logger.error('预览数据失败', { error: (error as Error).message });
       throw error;

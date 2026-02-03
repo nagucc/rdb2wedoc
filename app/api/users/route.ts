@@ -11,6 +11,8 @@ import {
 } from '@/lib/config/storage';
 import { hashPassword, verifyPassword, generateId, validatePassword, isValidEmail, Logger } from '@/lib/utils/helpers';
 
+export const runtime = 'nodejs';
+
 // 用户注册
 export async function POST(request: NextRequest) {
   try {

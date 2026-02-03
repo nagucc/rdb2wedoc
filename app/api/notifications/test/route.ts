@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { notificationService } from '@/lib/services/notification.service';
 import { Logger } from '@/lib/utils/helpers';
 
+export const runtime = 'nodejs';
+
 // 测试通知
 export async function POST(request: NextRequest) {
   try {

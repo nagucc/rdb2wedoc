@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getUserById, deleteUser, saveUser, saveHistory } from '@/lib/config/storage';
 import { hashPassword, generateId, validatePassword, Logger } from '@/lib/utils/helpers';
 
+export const runtime = 'nodejs';
+
 // 获取单个用户
 export async function GET(
   request: NextRequest,

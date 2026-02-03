@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { monitoringService } from '@/lib/services/monitoring.service';
 import { Logger } from '@/lib/utils/helpers';
 
+export const runtime = 'nodejs';
+
 // 获取系统指标
 export async function GET(request: NextRequest) {
   try {

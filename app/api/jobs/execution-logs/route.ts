@@ -5,6 +5,8 @@ import { getMySQLLogStorage } from '@/lib/config/mysql-log-storage';
 import path from 'path';
 import { ExecutionLog } from '@/types';
 
+export const runtime = 'nodejs';
+
 const DATA_DIR = path.join(process.cwd(), 'data');
 
 export async function GET(request: NextRequest) {

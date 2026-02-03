@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { syncService } from '@/lib/services/sync.service';
 import { Logger } from '@/lib/utils/helpers';
 
+export const runtime = 'nodejs';
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

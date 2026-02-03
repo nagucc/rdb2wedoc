@@ -3,6 +3,8 @@ import { getJobById, getJobLogs, saveJobLog } from '@/lib/config/storage';
 import { syncService } from '@/lib/services/sync.service';
 import { generateId, Logger } from '@/lib/utils/helpers';
 
+export const runtime = 'nodejs';
+
 // 获取同步作业的执行日志
 export async function GET(
   request: NextRequest,

@@ -4,6 +4,8 @@ import { getJobs, getJobById, saveJob, deleteJob, saveHistory, deleteLogsByJob }
 import { generateId, validateCronExpression, Logger } from '@/lib/utils/helpers';
 import { schedulerManager } from '@/lib/services/scheduler';
 
+export const runtime = 'nodejs';
+
 // 获取所有同步作业
 export async function GET(request: NextRequest) {
   try {

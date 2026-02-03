@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getWeComAccountById, deleteIntelligentDocument } from '@/lib/config/storage';
 
+export const runtime = 'nodejs';
+
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; documentId: string }> }

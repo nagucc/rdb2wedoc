@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { aiMappingService } from '@/lib/services/ai-mapping.service';
-import { DatabaseField, DocumentField } from '@/types';
+import { DatabaseField, DocumentField, MongoDBMappingType } from '@/types';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { databaseFields, documentFields } = body;
+    const { databaseFields, documentFields, mongoMappingType, mongoArrayField } = body as {
+      databaseFields: DatabaseField[];
+      documentFields: DocumentField[];
+      mongoMappingType?: MongoDBMappingType;
+      mongoArrayField?: string;
+    };
 
     if (!databaseFields || !Array.isArray(databaseFields)) {
       return NextResponse.json(
@@ -35,10 +40,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const mappings = await aiMappingService.suggestFieldMappings(
-      databaseFields as DatabaseField[],
-      documentFields as DocumentField[]
-    );
+    let mappings;
+
+    if (mongoMappingType) {
+      mappings = await aiMappingService.suggestMongoDBFieldMappings(
+        databaseFields,
+        documentFields,
+        mongoMappingType,
+        mongoArrayField
+      );
+    } else {
+      mappings = await aiMappingService.suggestFieldMappings(
+        databaseFields as DatabaseField[],
+        documentFields as DocumentField[]
+      );
+    }
 
     return NextResponse.json({
       success: true,

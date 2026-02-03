@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { schedulerManager } from '@/lib/services/scheduler';
 import { Logger } from '@/lib/utils/helpers';
 
+export const runtime = 'nodejs';
+
 // 获取调度器状态
 export async function GET(request: NextRequest) {
   try {

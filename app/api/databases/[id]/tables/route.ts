@@ -3,6 +3,8 @@ import { getDatabaseById } from '@/lib/config/storage';
 import { databaseService } from '@/lib/services/database.service';
 import { Logger } from '@/lib/utils/helpers';
 
+export const runtime = 'nodejs';
+
 // 获取数据库的所有表
 export async function GET(
   request: NextRequest,

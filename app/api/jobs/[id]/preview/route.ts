@@ -3,6 +3,8 @@ import { getJobById } from '@/lib/config/storage';
 import { syncService } from '@/lib/services/sync.service';
 import { Logger } from '@/lib/utils/helpers';
 
+export const runtime = 'nodejs';
+
 // 预览同步作业数据
 export async function POST(
   request: NextRequest,

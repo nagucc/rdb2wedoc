@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { notificationService } from '@/lib/services/notification.service';
 import { Logger } from '@/lib/utils/helpers';
 
+export const runtime = 'nodejs';
+
 // 获取通知配置
 export async function GET(request: NextRequest) {
   try {

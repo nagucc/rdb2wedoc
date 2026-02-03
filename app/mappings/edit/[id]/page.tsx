@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { RefreshCw, ArrowLeft, Edit2, Trash2, AlertTriangle, Sparkles, AlertCircle } from 'lucide-react';
 import { authService } from '@/lib/services/authService';
 import Header from '@/components/layout/Header';
-import { FieldMappingUI, MappingConfigUI, DatabaseField, DocumentField } from '@/types';
+import { FieldMappingUI, MappingConfigUI, DatabaseField, DocumentField, MongoDBMappingType } from '@/types';
 import FieldMappingDialog from '@/components/FieldMappingDialog';
 import MappingFormFields from '@/components/mappings/MappingFormFields';
 
@@ -96,6 +96,9 @@ export default function EditMappingPage() {
   const [documentFields, setDocumentFields] = useState<DocumentField[]>([]);
   const [loadingDatabaseFields, setLoadingDatabaseFields] = useState(false);
   const [loadingDocumentFields, setLoadingDocumentFields] = useState(false);
+  const [mongoMappingType, setMongoMappingType] = useState<MongoDBMappingType | null>(null);
+  const [mongoArrayField, setMongoArrayField] = useState<string>('');
+  const [mongoArrayFields, setMongoArrayFields] = useState<string[]>([]);
   const loadingDocumentFieldsRef = useRef(loadingDocumentFields);
 
   useEffect(() => {
@@ -117,6 +120,7 @@ export default function EditMappingPage() {
   const [aiError, setAiError] = useState<string | null>(null);
   const [countdown, setCountdown] = useState<number | null>(null);
   const countdownRef = useRef<NodeJS.Timeout | null>(null);
+  const aiMatchingAttemptRef = useRef<number>(0);
   const [aiTimeout, setAiTimeout] = useState<number>(90000); // 默认值，与config.json一致
 
   useEffect(() => {
@@ -184,7 +188,12 @@ export default function EditMappingPage() {
           setSelectedTable(mapping.sourceTableName);
           setSelectedDocument(mapping.targetDocId);
           setFieldMappings(validFieldMappings);
-          // 如果已有字段映射，自动锁定配置
+          if (mapping.mongoMappingType) {
+            setMongoMappingType(mapping.mongoMappingType);
+          }
+          if (mapping.mongoArrayField) {
+            setMongoArrayField(mapping.mongoArrayField);
+          }
           if (validFieldMappings.length > 0) {
             setIsConfig(true);
           }
@@ -421,6 +430,21 @@ export default function EditMappingPage() {
         const result = await response.json();
         if (result.success) {
           setDatabaseFields(result.data);
+          
+          const selectedDbInfo = databases.find(d => d.id === selectedDatabase);
+          if (selectedDbInfo?.type === 'mongodb') {
+            const arrayFields = result.data
+              .filter((f: any) => f.name.endsWith('[]'))
+              .map((f: any) => f.name);
+            setMongoArrayFields(arrayFields);
+            
+            if (mongoArrayField && !arrayFields.includes(mongoArrayField)) {
+              const normalizedField = mongoArrayField.endsWith('[]') ? mongoArrayField : `${mongoArrayField}[]`;
+              if (arrayFields.includes(normalizedField)) {
+                setMongoArrayField(normalizedField);
+              }
+            }
+          }
         }
       } catch (error) {
         console.error('Failed to fetch database fields:', error);
@@ -536,21 +560,28 @@ export default function EditMappingPage() {
     }
 
     // 启动倒计时
-    const timeout = aiTimeout; // 使用从配置中获取的timeout值
-    setCountdown(Math.ceil(timeout / 1000));
+    const timeout = aiTimeout;
+    const currentAttempt = aiMatchingAttemptRef.current + 1;
+    aiMatchingAttemptRef.current = currentAttempt;
     
-    // 清除之前的倒计时
+    // 清除之前的倒计时并设置新的倒计时
     if (countdownRef.current) {
       clearInterval(countdownRef.current);
     }
+    setCountdown(Math.ceil(timeout / 1000));
     
     // 设置新的倒计时
     countdownRef.current = setInterval(() => {
+      if (aiMatchingAttemptRef.current !== currentAttempt) {
+        return;
+      }
       setCountdown((prev) => {
         if (prev && prev > 1) {
           return prev - 1;
         }
-        clearInterval(countdownRef.current!);
+        if (countdownRef.current) {
+          clearInterval(countdownRef.current);
+        }
         return null;
       });
     }, 1000);
@@ -913,6 +944,11 @@ export default function EditMappingPage() {
                 loadingTables={loadingTables}
                 refreshingTables={refreshingTables}
                 onRefreshTables={handleRefreshTables}
+                mongoMappingType={mongoMappingType}
+                onMongoMappingTypeChange={setMongoMappingType}
+                mongoArrayField={mongoArrayField}
+                onMongoArrayFieldChange={setMongoArrayField}
+                mongoArrayFields={mongoArrayFields}
                 selectedWeComAccount={selectedWeComAccount}
                 onWeComAccountChange={setSelectedWeComAccount}
                 wecomAccounts={wecomAccounts}
@@ -1075,6 +1111,7 @@ export default function EditMappingPage() {
               documentFields={documentFields}
               loadingDatabaseFields={loadingDatabaseFields}
               loadingDocumentFields={loadingDocumentFields}
+              mongoArrayField={mongoMappingType === 'array_expand' ? mongoArrayField : undefined}
             />
 
             {/* 删除确认对话框 */}

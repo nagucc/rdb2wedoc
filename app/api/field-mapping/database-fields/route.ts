@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { fieldMappingService } from '@/lib/services/field-mapping.service';
 import { Logger } from '@/lib/utils/helpers';
 
+export const runtime = 'nodejs';
+
 // 获取数据库表的字段信息
 export async function GET(request: NextRequest) {
   try {

@@ -1,5 +1,5 @@
 import { getAIConfig, getConfig } from '@/lib/config';
-import { DatabaseField, DocumentField, FieldMappingUI } from '@/types';
+import { DatabaseField, DocumentField, FieldMappingUI, MongoDBMappingType } from '@/types';
 import { Logger } from '@/lib/utils/helpers';
 
 interface AIMappingResponse {
@@ -10,6 +10,12 @@ interface AIMappingResponse {
     dataType: string;
     description?: string;
   }>;
+}
+
+interface MongoDBFieldInfo {
+  databaseFields: DatabaseField[];
+  mongoMappingType: MongoDBMappingType;
+  mongoArrayField?: string;
 }
 
 
@@ -40,6 +46,67 @@ export class AIMappingService {
     return config.templates.fieldMapping
       .replace('{{dbFieldsInfo}}', dbFieldsInfo)
       .replace('{{docFieldsInfo}}', docFieldsInfo);
+  }
+
+  private processMongoDBFieldsForAI(info: MongoDBFieldInfo): DatabaseField[] {
+    const { databaseFields, mongoMappingType, mongoArrayField } = info;
+
+    if (mongoMappingType === 'array_expand' && mongoArrayField) {
+      const idField = databaseFields.find(f => f.name === '_id');
+      const arrayField = databaseFields.find(f => f.name === mongoArrayField);
+      
+      if (!idField) {
+        Logger.warn('MongoDB文档中未找到 _id 字段');
+        return [];
+      }
+
+      const result: DatabaseField[] = [{
+        ...idField,
+        name: '_id',
+        comment: '文档ID，用于关联原文档'
+      }];
+
+      const normalizedMongoArrayField = mongoArrayField.endsWith('[]') ? mongoArrayField : `${mongoArrayField}[]`;
+
+      databaseFields.forEach(field => {
+        if (field.name === mongoArrayField || field.name === normalizedMongoArrayField) {
+          result.push({
+            ...field,
+            name: normalizedMongoArrayField,
+            comment: `${mongoArrayField} 数组展开后的元素值`
+          });
+        } else if (field.name.startsWith(normalizedMongoArrayField + '.')) {
+          result.push({
+            ...field,
+            name: field.name,
+            comment: field.comment || `嵌套字段，路径: ${field.name}`
+          });
+        }
+      });
+
+      return result;
+    }
+
+    return databaseFields.map(field => {
+      let displayName = field.name;
+      let description = field.comment || '';
+
+      if (field.name.endsWith('[]')) {
+        const baseName = field.name.slice(0, -2);
+        displayName = `${baseName} (数组)`;
+        description = description || `数组类型，包含多个${baseName}值`;
+      } else if (field.name.includes('.')) {
+        const parts = field.name.split('.');
+        displayName = parts.join(' → ');
+        description = description || `嵌套字段，路径: ${field.name}`;
+      }
+
+      return {
+        ...field,
+        name: displayName,
+        comment: description
+      };
+    });
   }
 
   private async callOpenAI(prompt: string): Promise<AIMappingResponse> {
@@ -108,7 +175,8 @@ export class AIMappingService {
 
   async suggestFieldMappings(
     databaseFields: DatabaseField[],
-    documentFields: DocumentField[]
+    documentFields: DocumentField[],
+    useFallback: boolean = true
   ): Promise<FieldMappingUI[]> {
     try {
       if (!databaseFields.length) {
@@ -278,6 +346,156 @@ export class AIMappingService {
     }
 
     return 'string';
+  }
+
+  async suggestMongoDBFieldMappings(
+    databaseFields: DatabaseField[],
+    documentFields: DocumentField[],
+    mongoMappingType: MongoDBMappingType,
+    mongoArrayField?: string
+  ): Promise<FieldMappingUI[]> {
+    try {
+      if (!databaseFields.length) {
+        throw new Error('源数据库字段不能为空');
+      }
+
+      if (!documentFields.length) {
+        throw new Error('目标文档字段不能为空');
+      }
+
+      const processedFields = this.processMongoDBFieldsForAI({
+        databaseFields,
+        mongoMappingType,
+        mongoArrayField
+      });
+
+      if (processedFields.length === 0) {
+        throw new Error('处理后的MongoDB字段为空，无法进行映射');
+      }
+
+      const prompt = this.buildMongoDBPrompt(processedFields, documentFields, mongoMappingType);
+      const config = getAIConfig();
+
+      let lastError: Error | null = null;
+      
+      for (let attempt = 1; attempt <= config.maxRetries; attempt++) {
+        try {
+          Logger.info(`MongoDB AI字段映射请求 - 尝试 ${attempt}/${config.maxRetries}`, {
+            dbFieldCount: processedFields.length,
+            docFieldCount: documentFields.length,
+            mongoMappingType
+          });
+
+          const response = await this.callOpenAI(prompt);
+          
+          const mappings: FieldMappingUI[] = response.mappings.map((m, index) => ({
+            id: `ai_mongo_mapping_${Date.now()}_${index}`,
+            databaseColumn: m.databaseColumn,
+            documentField: m.documentField,
+            documentFieldId: m.documentFieldId,
+            dataType: m.dataType as 'string' | 'number' | 'date' | 'boolean' | 'json',
+            description: m.description
+          }));
+
+          Logger.info('MongoDB AI字段映射成功', {
+            mappingCount: mappings.length,
+            mongoMappingType,
+            attempt
+          });
+
+          return mappings;
+        } catch (error) {
+          lastError = error as Error;
+          Logger.error(`MongoDB AI字段映射请求失败 - 尝试 ${attempt}/${config.maxRetries}`, {
+            error: (error as Error).message
+          });
+
+          if (attempt < config.maxRetries) {
+            const delay = attempt * 1000;
+            await new Promise(resolve => setTimeout(resolve, delay));
+          }
+        }
+      }
+
+      throw lastError || new Error('MongoDB AI字段映射请求失败');
+    } catch (error) {
+      Logger.error('MongoDB AI字段映射服务错误', {
+        error: (error as Error).message,
+        mongoMappingType,
+        mongoArrayField
+      });
+      throw error;
+    }
+  }
+
+  private buildMongoDBPrompt(
+    databaseFields: DatabaseField[],
+    documentFields: DocumentField[],
+    mongoMappingType: MongoDBMappingType
+  ): string {
+    const dbFieldsInfo = databaseFields.map(f => {
+      let fieldInfo = `- 名称: ${f.name}, 类型: ${f.type}`;
+      if (f.comment) {
+        fieldInfo += `, 说明: ${f.comment}`;
+      }
+      return fieldInfo;
+    }).join('\n');
+
+    const docFieldsInfo = documentFields.map(f => 
+      `- ID: ${f.id}, 名称: ${f.name}, 类型: ${f.type}, 描述: ${f.description || '无'}`
+    ).join('\n');
+
+    let mappingTypeDescription = '';
+    if (mongoMappingType === 'array_expand') {
+      mappingTypeDescription = `
+【重要】此为MongoDB数组展开映射模式：
+- 源数据是MongoDB文档中的数组字段
+- 每个数组元素将展开为单独的一行
+- 目标表格的每一行对应源数组的一个元素
+- 请将 _id 字段映射到能标识原文档的字段
+- 将数组元素值映射到适当的字段
+`;
+    } else {
+      mappingTypeDescription = `
+【重要】此为MongoDB展平映射模式：
+- 源数据是MongoDB文档的多个字段
+- 嵌套文档已展平为顶层字段（用下划线连接）
+- 数组字段已转为JSON字符串格式
+- 请根据字段名称和类型进行智能匹配
+`;
+    }
+
+    const config = getConfig();
+    
+    return `${mappingTypeDescription}
+源MongoDB字段信息：
+${dbFieldsInfo}
+
+目标智能表格字段：
+${docFieldsInfo}
+
+请分析字段名称、注释/描述等信息，为每个源字段找到最匹配的目标字段。
+
+重要规则：
+1. 每个目标字段只能映射一个源字段，不能多个源字段映射到同一个目标字段
+2. 优先匹配名称相似的字段（考虑大小写、下划线、驼峰命名等差异）
+3. 对于_id字段，优先映射到唯一标识字段
+4. 如果没有合适的匹配，可以跳过该字段
+
+请返回JSON格式的映射结果，格式如下：
+{
+  "mappings": [
+    {
+      "databaseColumn": "源字段名称",
+      "documentField": "目标字段名称",
+      "documentFieldId": "目标字段ID",
+      "dataType": "数据类型(string|number|date|boolean|json)",
+      "description": "映射说明（可选）"
+    }
+  ]
+}
+
+只返回JSON，不要包含其他文字说明。`;
   }
 }
 

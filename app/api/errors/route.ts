@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { errorHandlerService } from '@/lib/services/error-handler.service';
 import { Logger } from '@/lib/utils/helpers';
 
+export const runtime = 'nodejs';
+
 /**
  * GET /api/errors
  * 获取错误日志列表
